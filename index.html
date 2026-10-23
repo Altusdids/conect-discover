@@ -30,7 +30,7 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
 </style></head>
 <body><div class="app">
 <header><div class="logo">Conect<em>.</em></div><span class="tag">DISCOVER BETA</span></header>
-<div class="notice" id="demoNotice">Prototype mode: demo profiles and likes are stored only on this device. Your username is required in this demo; real accounts and messages are not connected yet.</div>
+<div class="notice" id="demoNotice">Conect is in test mode. Demo discovery profiles, likes, and photos are still local to this device. Your verified profile details and interests can sync to Conect’s database; real matching and messaging are coming next.</div>
 <div class="notice hidden" id="telegramAuthStatus" role="status" aria-live="polite"></div>
 <section id="signInPage" style="max-width:460px;margin:10px auto 20px">
 <div class="progress"><span></span><span></span><span></span></div>
@@ -104,37 +104,167 @@ const profiles=[
 ];
 const $=id=>document.getElementById(id);const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-// Verify Telegram Mini App initData on Conect's Supabase Edge Function.
-// This confirms identity only; profiles and likes are not database-synced yet.
+// Verify Telegram Mini App initData and sync basic profile data through the secured Edge Function.
 const TELEGRAM_SESSION_URL = "https://bixsxizzcgqfimpzbvwk.supabase.co/functions/v1/telegram-session";
 let verifiedTelegramUser = null;
+
+async function conectBackendRequest(action = "verify", profile = undefined) {
+  if (!tg || typeof tg.initData !== "string" || !tg.initData.trim()) {
+    throw new Error("Open Conect from your Telegram bot to sync data.");
+  }
+  const response = await fetch(TELEGRAM_SESSION_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ initData: tg.initData, action, ...(profile ? { profile } : {}) })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.ok !== true) {
+    throw new Error(result.error || `Request failed (${response.status})`);
+  }
+  return result;
+}
+
+function applyServerProfile(result) {
+  if (!result || !result.profile) return false;
+  const p = result.profile;
+  const interests = Array.isArray(result.interests) ? result.interests : [];
+  // Preserve device-only photo data until Storage uploads are implemented.
+  myProfile = {
+    ...myProfile,
+    name: p.display_name,
+    age: p.age,
+    gender: p.gender,
+    orientation: p.interested_in,
+    showMe: p.show_me,
+    country: p.country,
+    city: p.city,
+    loc: `${p.city}, ${p.country}`,
+    bio: p.bio || "",
+    purpose: p.purpose || "both",
+    interests
+  };
+  currentUsername = p.app_username;
+  selectedInterests = new Set(interests);
+  try {
+    localStorage.setItem("conect_username", currentUsername);
+    localStorage.setItem("mm2_profile", JSON.stringify(myProfile));
+  } catch (_) {}
+  $("signInUsername").value = currentUsername;
+  $("setupName").value = myProfile.name || "";
+  $("setupAge").value = myProfile.age || "";
+  $("setupCountry").value = myProfile.country || "";
+  $("setupCityManual").value = myProfile.city || "";
+  setupChoices.gender = myProfile.gender || "";
+  setupChoices.showMe = myProfile.showMe || "Any";
+  setupChoices.orientation = myProfile.orientation || "Any";
+  document.querySelectorAll("[data-group]").forEach(btn =>
+    btn.classList.toggle("active", setupChoices[btn.dataset.group] === btn.dataset.value)
+  );
+  if (myProfile.country && typeof loadCities === "function") {
+    void loadCities(myProfile.country, myProfile.city || "");
+  }
+  renderInterestChoices();
+  if (myProfile.photo) {
+    $("profilePhotoPreview").src = myProfile.photo;
+    $("profilePagePhoto").src = myProfile.photo;
+  }
+  return true;
+}
+
 async function verifyTelegramSession() {
   const status = $("telegramAuthStatus");
-  // Keep normal browser preview usable; real initData is supplied inside Telegram.
   if (!tg || typeof tg.initData !== "string" || !tg.initData.trim()) return;
-
   status.classList.remove("hidden");
   status.textContent = "Verifying your Telegram account…";
   try {
-    const response = await fetch(TELEGRAM_SESSION_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initData: tg.initData })
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || result.ok !== true || !result.telegramUser || !result.telegramUser.id) {
-      status.textContent = "Telegram verification failed: " + (result.error || "Request rejected") + ". Close and reopen Conect from Telegram, then try again.";
-      status.style.background = "#3a1c1c";
-      return;
+    const verified = await conectBackendRequest("verify");
+    if (!verified.telegramUser || !verified.telegramUser.id) {
+      throw new Error("Telegram user data was not returned.");
     }
-
-    verifiedTelegramUser = result.telegramUser;
-    status.textContent = "Telegram account verified" + (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") + ". Profile data is still saved on this device until database sync is connected.";
+    verifiedTelegramUser = verified.telegramUser;
     status.style.background = "#153320";
+    status.textContent = "Telegram account verified" +
+      (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
+      ". Checking for your saved Conect profile…";
+    try {
+      const saved = await conectBackendRequest("load_profile");
+      if (applyServerProfile(saved)) {
+        status.textContent = "Telegram account verified" +
+          (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
+          ". Your profile details and interests were loaded from Conect’s database. Photos and likes are still stored on this device.";
+        // If this profile has no device photo/interests yet, continue setup so the user can add them.
+        if (myProfile.photo && Array.isArray(myProfile.interests) && myProfile.interests.length >= 3) {
+          showPage("discoverPage");
+        } else {
+          renderInterestChoices();
+          showPage("interestsSetupPage");
+        }
+      } else {
+        const hasCompleteLocalProfile = Boolean(
+          currentUsername && myProfile.name && Number(myProfile.age) >= 18 && myProfile.gender &&
+          myProfile.country && myProfile.city && myProfile.photo &&
+          Array.isArray(myProfile.interests) && myProfile.interests.length >= 3
+        );
+        if (hasCompleteLocalProfile) {
+          // Migrate a completed profile from this device into the database once.
+          try {
+            await syncCurrentProfile();
+            status.style.background = "#153320";
+            status.textContent = "Telegram account verified" +
+              (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
+              ". Your existing profile details and interests have now synced to Conect’s database. Photos and likes are still stored on this device.";
+          } catch (syncError) {
+            status.style.background = "#3a1c1c";
+            status.textContent = "Telegram account verified, but your profile could not be saved to the database: " + syncError.message;
+          }
+        } else {
+          status.textContent = "Telegram account verified" +
+            (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
+            ". Finish profile setup to save your details and interests to Conect’s database. Photos and likes will sync in a later step.";
+        }
+      }
+    } catch (dbError) {
+      status.style.background = "#3a1c1c";
+      status.textContent = "Telegram account verified, but database sync could not be reached: " + dbError.message;
+    }
   } catch (error) {
-    status.textContent = "Could not reach Conect's verification service. Check your connection and reopen the app.";
     status.style.background = "#3a1c1c";
+    status.textContent = "Telegram verification failed: " + error.message + ". Close and reopen Conect from Telegram, then try again.";
   }
+}
+
+async function syncCurrentProfile() {
+  if (!tg || typeof tg.initData !== "string" || !tg.initData.trim()) {
+    return { localOnly: true };
+  }
+  if (!verifiedTelegramUser) throw new Error("Your Telegram account has not been verified yet. Close and reopen Conect, then try again.");
+  const location = String(myProfile.loc || "").trim();
+  let city = String(myProfile.city || "").trim();
+  let country = String(myProfile.country || "").trim();
+  if ((!city || !country) && location.includes(",")) {
+    const parts = location.split(",");
+    if (!city) city = parts.shift().trim();
+    if (!country) country = parts.join(",").trim();
+  } else if (!city && location) {
+    city = location;
+  }
+  if (!country && city) throw new Error("Please set your country on the registration page before syncing your profile.");
+  const interests = [...new Set(Array.from(selectedInterests || []).map(x => String(x).trim()).filter(Boolean))].slice(0, 10);
+  const profile = {
+    app_username: String(currentUsername || "").trim().toLowerCase(),
+    display_name: String(myProfile.name || "").trim(),
+    age: Number(myProfile.age),
+    gender: String(myProfile.gender || ""),
+    interested_in: String(myProfile.orientation || "Any"),
+    show_me: String(myProfile.showMe || "Any"),
+    country,
+    city,
+    bio: String(myProfile.bio || "").trim(),
+    purpose: String(myProfile.purpose || "both"),
+    interests
+  };
+  const saved = await conectBackendRequest("save_profile", profile);
+  return { localOnly: false, profile: saved.profile, interests: saved.interests || interests };
 }
 
 let index=0,mode="swipe",purpose="both",likesTab="liked",currentUsername=localStorage.getItem("conect_username")||"",setupChoices={gender:"",showMe:"Any",orientation:"Any"},liked=new Set(JSON.parse(localStorage.getItem("mm2_liked")||"[]")),passed=new Set(JSON.parse(localStorage.getItem("mm2_passed")||"[]")),matches=new Set(JSON.parse(localStorage.getItem("mm2_matches")||"[]")),myProfile=JSON.parse(localStorage.getItem("mm2_profile")||"{}");
@@ -222,16 +352,16 @@ function renderInterestChoices(){
 }
 function updateInterestCount(){$("interestCount").textContent=`${selectedInterests.size} / 10 selected`}
 $("profilePhotoInput").onchange=async e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith("image/")){$("photoError").textContent="Please choose an image file.";return}if(file.size>12*1024*1024){$("photoError").textContent="Choose an image smaller than 12 MB.";return}try{const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)});const img=new Image();img.onload=()=>{const canvas=document.createElement("canvas"),scale=Math.min(1,600/Math.max(img.width,img.height));canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);profilePhotoData=canvas.toDataURL("image/jpeg",.78);if(profilePhotos.length){profilePhotos[0]=profilePhotoData}else{profilePhotos=[profilePhotoData]}myProfile={...myProfile,photo:profilePhotoData,photos:profilePhotos};try{localStorage.setItem("mm2_profile",JSON.stringify(myProfile))}catch(e){}$("profilePhotoPreview").src=profilePhotoData;$("photoError").textContent="";renderProfilePhotos()};img.onerror=()=>{$("photoError").textContent="Could not read that image. Try another photo."};img.src=dataUrl}catch(err){$("photoError").textContent="Could not load that image. Try another photo."}};
-$("finishSetupBtn").onclick=()=>{if(!profilePhotoData){$("photoError").textContent="Please add a profile picture before continuing.";return}if(selectedInterests.size<3){$("interestError").textContent="Choose at least 3 interests to continue.";return}myProfile={...myProfile,photo:profilePhotoData,interests:[...selectedInterests]};try{localStorage.setItem("mm2_profile",JSON.stringify(myProfile))}catch(e){$("interestError").textContent="Your photo could not be saved. Try a smaller image.";return}$("photoError").textContent="";$("interestError").textContent="";showPage("discoverPage")};
+$("finishSetupBtn").onclick=async()=>{if(!profilePhotoData){$("photoError").textContent="Please add a profile picture before continuing.";return}if(selectedInterests.size<3){$("interestError").textContent="Choose at least 3 interests to continue.";return}myProfile={...myProfile,photo:profilePhotoData,photos:profilePhotos,interests:[...selectedInterests]};try{localStorage.setItem("mm2_profile",JSON.stringify(myProfile))}catch(e){$("interestError").textContent="Your photo could not be saved. Try a smaller image.";return}$("photoError").textContent="";$("interestError").textContent="";const btn=$("finishSetupBtn"),old=btn.textContent;btn.disabled=true;btn.textContent="Saving profile…";try{const sync=await syncCurrentProfile();if(sync.localOnly){$("telegramAuthStatus").classList.remove("hidden");$("telegramAuthStatus").textContent="Saved on this device. Open Conect inside Telegram to sync profile details and interests to the database."}else{$("telegramAuthStatus").classList.remove("hidden");$("telegramAuthStatus").style.background="#153320";$("telegramAuthStatus").textContent="Profile details and interests synced to Conect’s database. Photos and likes remain on this device for now."}showPage("discoverPage")}catch(err){$("interestError").textContent="Saved on this device, but database sync failed: "+err.message+". Try again after checking your connection."}finally{btn.disabled=false;btn.textContent=old}};
 $("backToBasicsBtn").onclick=()=>showPage("signInPage");
 $("filterBtn").onclick=()=>alert("Demo filters: choose Everyone, Dating, or Friends above. Distance filters will be added after backend/location permissions are designed.");
 $("backDiscover").onclick=()=>showPage("discoverPage");
 function openBasics(){ $("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("basicsBackdrop").classList.remove("hidden") }
 function closeBasics(){ $("basicsBackdrop").classList.add("hidden") }
 $("openBasicsBtn").onclick=openBasics;$("profilePagePhoto").onclick=openBasics;$("cancelBasicsBtn").onclick=closeBasics;$("basicsBackdrop").onclick=e=>{if(e.target===$("basicsBackdrop"))closeBasics()};
-$("saveBasicsBtn").onclick=()=>{const name=$("myName").value.trim(),age=Number($("myAge").value),gender=$("myGender").value,orientation=$("myOrientation").value,showMe=$("myShowMe").value,loc=$("myLocation").value.trim();if(!name){alert("Please enter your display name.");return}if(!Number.isInteger(age)||age<18||age>99){alert("Please enter a valid age from 18 to 99.");return}if(!gender){alert("Please choose your gender.");return}if(!loc){alert("Please enter your location.");return}myProfile={...myProfile,name,age,gender,orientation,showMe,loc};localStorage.setItem("mm2_profile",JSON.stringify(myProfile));$("profileHeroName").textContent=name+", "+age;$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+loc;closeBasics();$("profileSaved").textContent="Basic details saved on this device."};
+$("saveBasicsBtn").onclick=async()=>{const name=$("myName").value.trim(),age=Number($("myAge").value),gender=$("myGender").value,orientation=$("myOrientation").value,showMe=$("myShowMe").value,loc=$("myLocation").value.trim();if(!name){alert("Please enter your display name.");return}if(!Number.isInteger(age)||age<18||age>99){alert("Please enter a valid age from 18 to 99.");return}if(!gender){alert("Please choose your gender.");return}if(!loc){alert("Please enter your location.");return}let city=myProfile.city||"",country=myProfile.country||"";if(loc.includes(",")){const parts=loc.split(",");city=parts.shift().trim();country=parts.join(",").trim()}else{city=loc}myProfile={...myProfile,name,age,gender,orientation,showMe,loc,city,country};localStorage.setItem("mm2_profile",JSON.stringify(myProfile));$("profileHeroName").textContent=name+", "+age;$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+loc;const btn=$("saveBasicsBtn"),old=btn.textContent;btn.disabled=true;btn.textContent="Saving…";try{const sync=await syncCurrentProfile();closeBasics();$("profileSaved").textContent=sync.localOnly?"Saved on this device only; open inside Telegram to sync.":"Basic details synced to Conect’s database."}catch(err){$("profileSaved").textContent="Saved locally, but database sync failed: "+err.message}finally{btn.disabled=false;btn.textContent=old}};
 $("editInterestsBtn").onclick=()=>{renderInterestChoices();$("profilePhotoPreview").src=myProfile.photo||"";showPage("interestsSetupPage")};
-$("saveProfile").onclick=()=>{myProfile={...myProfile,bio:$("myBio").value.trim(),purpose:$("myPurpose").value};localStorage.setItem("mm2_profile",JSON.stringify(myProfile));$("profileSaved").textContent="Saved on this device only. Telegram account sync is not connected yet."};
+$("saveProfile").onclick=async()=>{myProfile={...myProfile,bio:$("myBio").value.trim(),purpose:$("myPurpose").value};localStorage.setItem("mm2_profile",JSON.stringify(myProfile));const btn=$("saveProfile"),old=btn.textContent;btn.disabled=true;btn.textContent="Saving…";try{const sync=await syncCurrentProfile();$("profileSaved").textContent=sync.localOnly?"Saved on this device only; open inside Telegram to sync.":"Profile details and interests synced to Conect’s database. Photos remain on this device."}catch(err){$("profileSaved").textContent="Saved locally, but database sync failed: "+err.message}finally{btn.disabled=false;btn.textContent=old}};
 renderAll();
 void verifyTelegramSession();
 if(currentUsername&&myProfile.name&&myProfile.age&&myProfile.gender&&myProfile.country&&myProfile.city){if(myProfile.photo&&Array.isArray(myProfile.interests)&&myProfile.interests.length>=3){showPage("discoverPage")}else{renderInterestChoices();if(profilePhotoData){$("profilePhotoPreview").src=profilePhotoData}showPage("interestsSetupPage")}}else{showPage("signInPage")} 
