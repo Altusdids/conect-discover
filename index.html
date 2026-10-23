@@ -106,7 +106,7 @@ const $=id=>document.getElementById(id);const esc=s=>String(s??"").replace(/[&<>
 
 // Verify Telegram Mini App initData on Conect's Supabase Edge Function.
 // This confirms identity only; profiles and likes are not database-synced yet.
-const TELEGRAM_SESSION_URL = "https://bixsxizzcqqfimpzbvwk.supabase.co/functions/v1/telegram-session";
+const TELEGRAM_SESSION_URL = "https://bixsxizzcgqfimpzbvwk.supabase.co/functions/v1/telegram-session";
 let verifiedTelegramUser = null;
 async function verifyTelegramSession() {
   const status = $("telegramAuthStatus");
