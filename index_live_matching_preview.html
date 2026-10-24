@@ -1523,11 +1523,125 @@ function act(action) {
   index = 0;
   renderAll();
 }
+function profileVisitAge(timestamp) {
+  const value = new Date(timestamp || "");
+  if (Number.isNaN(value.getTime())) return "Visited in the last 3 days";
+  const minutes = Math.max(0, Math.floor((Date.now() - value.getTime()) / 60000));
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return minutes + (minutes === 1 ? " minute ago" : " minutes ago");
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + (hours === 1 ? " hour ago" : " hours ago");
+  const days = Math.floor(hours / 24);
+  return days + (days === 1 ? " day ago" : " days ago");
+}
+function renderProfileVisits(visits, message = "") {
+  const root = $("profileVisitsList");
+  const count = $("profileVisitsCount");
+  if (!root || !count) return;
+  count.textContent = String(visits.length);
+  if (message) {
+    root.innerHTML = '<div class="profile-management-empty">' + esc(message) + '</div>';
+    return;
+  }
+  if (!visits.length) {
+    root.innerHTML = '<div class="profile-management-empty">No recent visits from people you’ve liked. Visits are kept here for 3 days.</div>';
+    return;
+  }
+  root.innerHTML = visits.map(profile => {
+    const id = inlineProfileId(profile.id);
+    return '<div class="profile-management-row">' + chatAvatarMarkup(profile) +
+      '<div class="profile-management-person"><div class="profile-management-name">' + esc(profile.name) +
+      (profile.age ? ', ' + esc(profile.age) : '') + '</div><div class="profile-management-meta">' +
+      esc(profile.loc || "Location not specified") + ' · ' + esc(profileVisitAge(profile.last_visited_at)) +
+      '</div></div><button type="button" class="secondary" onclick="showDetail(' + id + ')">View</button></div>';
+  }).join("");
+}
+async function loadProfileVisits() {
+  if (!$("profileVisitsList")) return;
+  if (!liveDiscoveryMode || !verifiedTelegramUser) {
+    renderProfileVisits([], "Profile visits appear here when your Telegram profile is connected.");
+    return;
+  }
+  renderProfileVisits([], "Loading recent visits…");
+  try {
+    const result = await conectBackendRequest("load_profile_visits");
+    const visits = (Array.isArray(result.visits) ? result.visits : []).map((raw) => {
+      const profile = mapConectProfile(raw);
+      profile.last_visited_at = raw.last_visited_at;
+      return profile;
+    });
+    renderProfileVisits(visits);
+  } catch (error) {
+    renderProfileVisits([], "Could not load profile visits: " + (error.message || "request failed"));
+  }
+}
+async function recordProfileVisit(profileId) {
+  if (!liveDiscoveryMode || !verifiedTelegramUser || !profileId) return;
+  try {
+    await conectBackendRequest("record_profile_visit", undefined, { targetUserId: String(profileId) });
+  } catch (error) {
+    console.warn("Profile visit could not be recorded", error);
+  }
+}
+function renderBlockedUsers(blockedUsers, message = "") {
+  const root = $("blockedUsersList");
+  if (!root) return;
+  if (message) {
+    root.innerHTML = '<div class="profile-management-empty">' + esc(message) + '</div>';
+    return;
+  }
+  if (!blockedUsers.length) {
+    root.innerHTML = '<div class="profile-management-empty">You haven’t blocked anyone.</div>';
+    return;
+  }
+  root.innerHTML = blockedUsers.map(profile => {
+    return '<div class="profile-management-row">' + chatAvatarMarkup(profile) +
+      '<div class="profile-management-person"><div class="profile-management-name">' + esc(profile.name) +
+      (profile.age ? ', ' + esc(profile.age) : '') + '</div><div class="profile-management-meta">' +
+      esc(profile.loc || "Location not specified") + '</div></div>' +
+      '<button type="button" class="secondary" onclick="unblockProfile(\'' + esc(profile.id) + '\')">Unblock</button></div>';
+  }).join("");
+}
+async function loadBlockedUsers() {
+  if (!$("blockedUsersList")) return;
+  if (!liveDiscoveryMode || !verifiedTelegramUser) {
+    renderBlockedUsers([], "Your blocked list appears here when your Telegram profile is connected.");
+    return;
+  }
+  renderBlockedUsers([], "Loading blocked users…");
+  try {
+    const result = await conectBackendRequest("load_blocked_users");
+    const blocked = (Array.isArray(result.blockedUsers) ? result.blockedUsers : []).map(mapConectProfile);
+    renderBlockedUsers(blocked);
+  } catch (error) {
+    renderBlockedUsers([], "Could not load blocked users: " + (error.message || "request failed"));
+  }
+}
+async function unblockProfile(profileId) {
+  const confirmed = window.confirm("Unblock this person? They may appear in discovery again, and messaging may become available if you still have a match.");
+  if (!confirmed) return;
+  const root = $("blockedUsersList");
+  if (root) root.querySelectorAll("button").forEach(button => {
+    if (button.textContent.trim() === "Unblock") { button.disabled = true; button.textContent = "Unblocking…"; }
+  });
+  try {
+    await conectBackendRequest("unblock_user", undefined, { targetUserId: String(profileId) });
+    if (liveDiscoveryLoaded) await loadLiveExperience({ force: true });
+    await loadBlockedUsers();
+    const status = $("profileSaved");
+    if (status) status.textContent = "User unblocked. They may appear in discovery again.";
+  } catch (error) {
+    await loadBlockedUsers();
+    const status = $("profileSaved");
+    if (status) status.textContent = "Could not unblock this user: " + (error.message || "request failed");
+  }
+}
 function showDetail(id) {
   const p = liveDiscoveryMode ? findConectProfile(id) : profiles.find(x => String(x.id) === String(id));
   if (!p) {
     $("detailContent").innerHTML = '<div class="empty">This profile is no longer available.</div>';
-    showPage("detailPage");
+    if (liveDiscoveryMode && verifiedTelegramUser) void recordProfileVisit(p.id);
+  showPage("detailPage");
     return;
   }
   const photos = profilePhotoUrls(p);
