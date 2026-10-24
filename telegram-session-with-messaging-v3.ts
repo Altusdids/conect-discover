@@ -317,7 +317,8 @@ Deno.serve(async (req: Request) => {
       action !== "unblock_user" &&
       action !== "load_blocked_users" &&
       action !== "load_profile_visits" &&
-      action !== "record_profile_visit"
+      action !== "record_profile_visit" &&
+      action !== "delete_account"
     ) {
       return jsonResponse({ error: "Unsupported action" }, 400);
     }
@@ -337,6 +338,66 @@ Deno.serve(async (req: Request) => {
         persistSession: false,
       },
     });
+
+    // PERMANENT ACCOUNT DELETION. The caller's profile is always resolved from
+    // Telegram's verified initData; a client-supplied profile ID is never trusted.
+    if (action === "delete_account") {
+      const { data: account, error: accountError } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("telegram_user_id", String(telegramUser.id))
+        .maybeSingle();
+
+      if (accountError) {
+        console.error("Delete account profile lookup error", accountError.message);
+        return jsonResponse({ error: "Could not verify the account to delete" }, 500);
+      }
+      if (!account) {
+        return jsonResponse({ ok: true, deleted: true, alreadyDeleted: true });
+      }
+
+      const { data: photoRows, error: photoRowsError } = await admin
+        .from("profile_photos")
+        .select("storage_path")
+        .eq("user_id", account.id);
+
+      if (photoRowsError) {
+        console.error("Delete account photo lookup error", photoRowsError.message);
+        return jsonResponse({ error: "Could not prepare account photo cleanup" }, 500);
+      }
+
+      const storagePaths = (photoRows || [])
+        .map((row: any) => row.storage_path)
+        .filter((path: unknown): path is string =>
+          typeof path === "string" && path.length > 0
+        );
+
+      if (storagePaths.length) {
+        const { error: storageDeleteError } = await admin.storage
+          .from(PHOTO_BUCKET)
+          .remove(storagePaths);
+        if (storageDeleteError) {
+          console.error("Delete account storage cleanup error", storageDeleteError.message);
+          return jsonResponse({
+            error: "Could not remove all account photos. Your account was not deleted; please retry.",
+          }, 500);
+        }
+      }
+
+      const { data: deletionResult, error: deletionError } = await admin.rpc(
+        "delete_conect_account_data",
+        { p_profile_id: account.id },
+      );
+
+      if (deletionError || !deletionResult?.ok) {
+        console.error("Delete account database cleanup error", deletionError?.message || "No confirmation returned");
+        return jsonResponse({
+          error: "Photo cleanup may have completed, but account data could not be fully deleted. Please retry or contact support.",
+        }, 500);
+      }
+
+      return jsonResponse({ ok: true, deleted: true });
+    }
 
     // REAL DISCOVERY AND SWIPES
     // Every operation identifies the caller from the verified Telegram ID,
