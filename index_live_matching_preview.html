@@ -115,7 +115,34 @@ h1{font-size:29px;line-height:1.1;letter-spacing:-1px;margin:7px 0}p{color:var(-
 
 @media(max-width:380px){.hero .photo-nav.next{right:49px}.detail-photo-gallery img{height:170px}}
 .subtext{text-align:center;font-size:12px;color:var(--muted);margin:5px 0 16px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.person{background:var(--panel);border:1px solid var(--line);border-radius:17px;overflow:hidden;cursor:pointer}.thumb{height:205px;background:linear-gradient(140deg,#a62c25,#fb702a);position:relative}.thumb img{width:100%;height:100%;object-fit:cover}.thumb:after{content:"";position:absolute;inset:50% 0 0;background:linear-gradient(transparent,#000b)}.thumbname{position:absolute;bottom:9px;left:10px;z-index:1;font-weight:750}.personinfo{padding:10px}.personinfo p{font-size:12px;margin:5px 0;color:#d0ced6}.personinfo button{width:100%;padding:9px;border-radius:10px;background:#332a31;color:#ff9c7d;font-weight:700}
-.section{margin-top:15px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;margin:10px 0}.profiletop{display:flex;gap:12px;align-items:center}.avatar{width:52px;height:52px;border-radius:17px;background:linear-gradient(135deg,#ff4c1d,#7c35f5);display:grid;place-items:center;font-size:21px;font-weight:800}.field{width:100%;padding:12px;border:1px solid var(--line);background:var(--panel2);color:white;border-radius:11px;margin:5px 0 12px;font:inherit}label{font-size:12px;color:var(--muted)}.primary{background:linear-gradient(120deg,#ff5a1f,#ff3044);border:0;color:white;border-radius:12px;padding:12px 15px;font-weight:750}.secondary{background:var(--panel2);color:white;border:1px solid var(--line);border-radius:12px;padding:11px 13px}.empty{text-align:center;padding:25px 12px;color:var(--muted)}.likes-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:5px;margin:16px 0}.likes-tabs button{background:transparent;color:var(--muted);border-radius:10px;padding:11px 5px;font-weight:700}.likes-tabs button.active{background:#3a2529;color:#ff997d;border:1px solid #6e382d}nav{position:fixed;z-index:15;bottom:8px;left:10px;right:10px;max-width:680px;margin:auto;background:rgba(29,31,32,.96);border:1px solid #ffffff0b;border-radius:28px;display:flex;justify-content:space-between;gap:3px;padding:6px 7px calc(6px + env(safe-area-inset-bottom));backdrop-filter:blur(18px);box-shadow:0 7px 24px #0007}
+.section{margin-top:15px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;margin:10px 0}.profiletop{display:flex;gap:12px;align-items:center}.avatar{width:52px;height:52px;border-radius:17px;background:linear-gradient(135deg,#ff4c1d,#7c35f5);display:grid;place-items:center;font-size:21px;font-weight:800}.field{width:100%;padding:12px;border:1px solid var(--line);background:var(--panel2);color:white;border-radius:11px;margin:5px 0 12px;font:inherit}label{font-size:12px;color:var(--muted)}.primary{background:linear-gradient(120deg,#ff5a1f,#ff3044);border:0;color:white;border-radius:12px;padding:12px 15px;font-weight:750}.secondary{background:var(--panel2);color:white;border:1px solid var(--line);border-radius:12px;padding:11px 13px}.empty{text-align:center;padding:25px 12px;color:var(--muted)}.likes-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:5px;margin:16px 0}.likes-tabs button{background:transparent;color:var(--muted);border-radius:10px;padding:11px 5px;font-weight:700}.likes-tabs button.active{background:#3a2529;color:#ff997d;border:1px solid #6e382d}
+ .likes-tabs button{display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
+ .likes-tab-badge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:12px;background:#343540;color:#c9c9d1;font-size:10px;font-weight:800;line-height:1}
+ .likes-tabs button.active .likes-tab-badge{background:#e83d72;color:#fff}
+ .likes-view-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:13px 1px 8px;color:var(--muted);font-size:12px}
+ .likes-view-toggle{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:3px}
+ .likes-view-toggle button{width:34px;height:30px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:18px;cursor:pointer}
+ .likes-view-toggle button.active{background:#3a2529;color:#ff9cbb}
+ .likes-person-list{display:flex;flex-direction:column}
+ .likes-person-row{display:flex;align-items:center;gap:11px;min-width:0;padding:12px 4px;border:0;border-bottom:1px solid #2a2b30;color:var(--text);text-align:left;background:transparent}
+ .likes-person-avatar{position:relative;display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#e83d72,#7c35f5);color:#fff;font-size:20px;font-weight:800}
+ .likes-person-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+ .likes-person-avatar span{position:relative;z-index:0}
+ .likes-person-meta{flex:1;min-width:0}
+ .likes-person-name{font-size:14px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .likes-person-location{font-size:12px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .likes-person-row .secondary{flex:0 0 auto;padding:8px 12px;border-radius:12px}
+ .likes-profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:9px}
+ .likes-grid-card{min-width:0;overflow:hidden;position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;cursor:pointer}
+ .likes-grid-photo{position:relative;aspect-ratio:4/4.7;background:linear-gradient(135deg,#343540,#201d28);overflow:hidden}
+ .likes-grid-photo img{width:100%;height:100%;object-fit:cover;display:block;position:relative;z-index:1}
+ .likes-grid-initial{position:absolute;inset:0;display:grid;place-items:center;font-size:42px;font-weight:850;background:linear-gradient(135deg,#e83d72,#7c35f5);color:#fff}
+ .likes-grid-meta{padding:9px 10px 11px}
+ .likes-grid-name{font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .likes-grid-location{font-size:11px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .likes-grid-view{margin-top:9px;width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:#f3b0c6;font-size:12px;font-weight:750}
+ @media(max-width:360px){.likes-tabs{gap:3px;padding:4px}.likes-tabs button{gap:3px;padding:10px 3px;font-size:12px}.likes-tab-badge{min-width:16px;height:16px;padding:0 4px;font-size:9px}.likes-person-avatar{flex-basis:48px;width:48px;height:48px}.likes-profile-grid{gap:8px}}
+nav{position:fixed;z-index:15;bottom:8px;left:10px;right:10px;max-width:680px;margin:auto;background:rgba(29,31,32,.96);border:1px solid #ffffff0b;border-radius:28px;display:flex;justify-content:space-between;gap:3px;padding:6px 7px calc(6px + env(safe-area-inset-bottom));backdrop-filter:blur(18px);box-shadow:0 7px 24px #0007}
 nav button{min-width:0;max-width:none;flex:1;background:transparent;color:#c4c4c8;padding:7px 2px 5px;border-radius:24px;font-size:10px;line-height:1.15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;white-space:nowrap}
 nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size:18px;line-height:1.05;font-weight:500}nav button .nav-badge{display:inline-grid;place-items:center;min-width:12px;height:12px;border-radius:9px;background:#e83d72;color:white;font-size:8px;line-height:1;padding:0 3px;margin-left:2px;vertical-align:top}
 @media(max-width:380px){nav{left:6px;right:6px;bottom:5px;padding-left:4px;padding-right:4px}nav button{font-size:9px}nav b{font-size:17px}.hero .side-actions{right:7px;gap:7px}.hero .side-action{width:35px;height:35px}.hero .onphoto{right:51px}}.notice{font-size:12px;color:#ffd4c6;background:#2c1b1a;border:1px solid #60352d;border-radius:12px;padding:10px 12px;margin:10px 0 14px}.progress{display:flex;gap:6px;margin:4px 0 18px}.progress span{height:4px;flex:1;border-radius:9px;background:#34363a}.progress span:first-child{background:#e94b70}.setup-card{background:var(--panel);border-radius:20px;padding:16px;margin:16px 0}.choice-row{display:flex;gap:8px;margin:7px 0 14px}.choice{flex:1;min-width:0;background:#101112;border:1px solid #303235;border-radius:14px;padding:13px 5px;color:#b8b8bd}.choice.active{border-color:#e94b70;background:#342027;color:white;box-shadow:inset 0 0 0 1px #e94b70}.choice:focus-visible{outline:2px solid #e94b70}.setup-title{font-size:25px!important;letter-spacing:-.5px!important}.continue-wide{width:100%;margin-top:4px;padding:16px}.helper{font-size:11px;color:#b6b6bc;margin:9px 5px}.photo-upload{border:1px dashed #555761;border-radius:18px;padding:16px;text-align:center;background:#121318}.photo-preview{width:124px;height:124px;border-radius:22px;object-fit:cover;display:block;margin:0 auto 12px;background:#252630;border:1px solid var(--line)}.interest-category{margin:17px 0}.interest-category h3{font-size:14px;margin:0 0 9px;color:#f3d2c9}.interest-tags{display:flex;flex-wrap:wrap;gap:8px}.interest-tag{background:#101112;border:1px solid #303235;border-radius:22px;color:#c6c6cd;padding:9px 11px;font-size:12px}.interest-tag.active{background:#342027;border-color:#e94b70;color:white}.interest-count{font-size:12px;color:var(--muted)}.hidden{display:none!important}
@@ -172,7 +199,7 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
 <div class="actions hidden"><button class="action pass" id="passBtn" aria-label="Pass">×</button><button class="action star" id="starBtn" aria-label="Super like">★</button><button class="action like" id="likeBtn" aria-label="Like">♥</button></div><div class="subtext" id="counter">Profile 1 of 6 · Like to connect</div></div>
 <div id="gridView" class="grid hidden"></div>
 </section>
-<section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="liked" role="tab" aria-selected="true">Liked</button><button data-likes-tab="matches" role="tab" aria-selected="false">Matches</button><button data-likes-tab="likes" role="tab" aria-selected="false">Likes</button></div><div id="likesList"></div></section>
+<section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="liked" role="tab" aria-selected="true"><span>Liked</span><span class="likes-tab-badge" data-likes-count="liked">0</span></button><button data-likes-tab="matches" role="tab" aria-selected="false"><span>Matches</span><span class="likes-tab-badge" data-likes-count="matches">0</span></button><button data-likes-tab="likes" role="tab" aria-selected="false"><span>Likes</span><span class="likes-tab-badge" data-likes-count="likes">0</span></button></div><div class="likes-view-toolbar"><span id="likesResultsLabel">People</span><div class="likes-view-toggle" role="group" aria-label="Change profile layout"><button type="button" id="likesListMode" class="active" aria-pressed="true" onclick="setLikesView('list')" title="List view" aria-label="List view">☰</button><button type="button" id="likesGridMode" aria-pressed="false" onclick="setLikesView('grid')" title="Grid view" aria-label="Grid view">▦</button></div></div><div id="likesList"></div></section>
 <section id="chatsPage" class="hidden"><div id="chatInboxControls"></div><div id="chatList"></div></section>
 <section id="morePage" class="hidden"><h1>More</h1><p>More ways to manage your Conect experience.</p><div class="panel"><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('profilePage')">♙  Edit my profile</button><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('likesPage')">♡  My likes and matches</button><button class="secondary" style="width:100%" onclick="alert('Settings and help will be available in a future version.')">⚙  Settings & help</button></div></section>
 <section id="profilePage" class="hidden"><h1>Your profile</h1><p>Tap your profile picture to edit your basic details.</p>
@@ -439,6 +466,7 @@ let selectedInterests=new Set(Array.isArray(myProfile.interests)?myProfile.inter
 let profilePhotos=Array.isArray(myProfile.photos)?myProfile.photos.slice(0,6):(myProfile.photo?[myProfile.photo]:[]);
 
 
+let likesView = "list";
 let liveDiscoveryMode = false;
 let liveDiscoveryLoaded = false;
 let liveProfilesLoading = false;
@@ -949,15 +977,45 @@ function renderGrid() {
       '<button style="margin-top:6px;background:#252630;color:white" onclick="showDetail(' + id + ')">View profile</button></div></div>';
   }).join("");
 }
+function setLikesView(view) {
+  likesView = view === "grid" ? "grid" : "list";
+  renderLikes();
+}
+function updateLikesCounts(counts) {
+  document.querySelectorAll("[data-likes-count]").forEach(badge => {
+    const count = Math.max(0, Number(counts[badge.dataset.likesCount]) || 0);
+    badge.textContent = count > 99 ? "99+" : String(count);
+    badge.classList.toggle("hidden", false);
+    badge.setAttribute("aria-label", count + " " + badge.dataset.likesCount);
+  });
+  const navBadge = $("likesBadge");
+  if (navBadge) {
+    const incoming = Math.max(0, Number(counts.likes) || 0);
+    navBadge.textContent = incoming > 99 ? "99+" : String(incoming);
+    navBadge.classList.toggle("hidden", incoming < 1);
+    navBadge.setAttribute("aria-label", incoming + " incoming likes");
+  }
+  const listButton = $("likesListMode"), gridButton = $("likesGridMode");
+  if (listButton) { listButton.classList.toggle("active", likesView === "list"); listButton.setAttribute("aria-pressed", String(likesView === "list")); }
+  if (gridButton) { gridButton.classList.toggle("active", likesView === "grid"); gridButton.setAttribute("aria-pressed", String(likesView === "grid")); }
+}
+function likesAvatarMarkup(p) {
+  const photos = profilePhotoUrls(p);
+  const photo = photos[0] || "";
+  return '<div class="likes-person-avatar"><span>' + esc(p.initial || String(p.name || "C").charAt(0).toUpperCase()) + '</span>' +
+    (photo ? '<img loading="lazy" src="' + esc(photo) + '" alt="' + esc(p.name || "Profile photo") + '" onerror="this.remove()">' : '') + '</div>';
+}
 function renderLikes() {
   document.querySelectorAll("[data-likes-tab]").forEach(b => {
     const active = b.dataset.likesTab === likesTab;
     b.classList.toggle("active", active);
     b.setAttribute("aria-selected", String(active));
   });
+  let people = [];
+  let empty = "";
+  let counts = { liked: 0, matches: 0, likes: 0 };
   if (liveDiscoveryMode) {
-    let people = [];
-    let empty = "";
+    counts = { liked: liveLikedProfiles.length, matches: liveMatches.length, likes: liveIncomingLikes.length };
     if (likesTab === "liked") {
       people = liveLikedProfiles;
       empty = "You haven’t liked anyone yet. Explore Discover and tap ♥ on profiles you like.";
@@ -968,31 +1026,51 @@ function renderLikes() {
       people = liveIncomingLikes;
       empty = "No incoming likes to show yet.";
     }
-    $("likesList").innerHTML = people.map(p => {
-      const id = inlineProfileId(p.id);
-      return '<div class="panel profiletop"><div class="avatar">' + esc(p.initial) +
-        '</div><div style="flex:1"><b>' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
-        '</b><div style="font-size:12px;color:var(--muted)">' + esc(p.loc) +
-        '</div></div><button class="secondary" onclick="showDetail(' + id + ')">View</button></div>';
-    }).join("") || '<div class="panel empty">' + empty + '</div>';
+  } else {
+    counts = { liked: liked.size, matches: matches.size, likes: 0 };
+    if (likesTab === "liked") {
+      people = [...liked].map(id => profiles.find(p => String(p.id) === String(id))).filter(Boolean);
+      empty = "You haven’t liked anyone yet. Explore Discover and tap ♥ on profiles you like.";
+    } else if (likesTab === "matches") {
+      people = [...matches].map(id => profiles.find(p => String(p.id) === String(id))).filter(Boolean);
+      empty = "No matches yet. Matches appear when you and another person like each other.";
+    } else {
+      people = [];
+      empty = "Incoming likes will appear here when your Telegram profile is connected.";
+    }
+  }
+  updateLikesCounts(counts);
+  const resultLabel = $("likesResultsLabel");
+  if (resultLabel) resultLabel.textContent = people.length + (people.length === 1 ? " person" : " people");
+  const root = $("likesList");
+  if (!root) return;
+  if (!people.length) {
+    root.innerHTML = '<div class="panel empty">' + empty + '</div>';
     return;
   }
-  let ids = [], empty = "";
-  if (likesTab === "liked") {
-    ids = [...liked];
-    empty = "You haven’t liked anyone yet. Explore Discover and tap ♥ on profiles you like.";
-  } else if (likesTab === "matches") {
-    ids = [...matches];
-    empty = "No matches yet. Matches appear when you and another person like each other.";
+  if (likesView === "grid") {
+    root.innerHTML = '<div class="likes-profile-grid">' + people.map(p => {
+      const id = inlineProfileId(p.id);
+      const photos = profilePhotoUrls(p);
+      const photo = photos[0] || "";
+      const initial = p.initial || String(p.name || "C").charAt(0).toUpperCase();
+      return '<article class="likes-grid-card" onclick="showDetail(' + id + ')">' +
+        '<div class="likes-grid-photo"><div class="likes-grid-initial">' + esc(initial) + '</div>' +
+        (photo ? '<img loading="lazy" src="' + esc(photo) + '" alt="' + esc(p.name || "Profile photo") + '" onerror="this.remove()">' : '') +
+        '</div><div class="likes-grid-meta"><div class="likes-grid-name">' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
+        '</div><div class="likes-grid-location">' + esc(p.loc || "Location not specified") + '</div>' +
+        '<button class="likes-grid-view" type="button" onclick="event.stopPropagation();showDetail(' + id + ')">View profile</button>' +
+        '</div></article>';
+    }).join("") + '</div>';
   } else {
-    ids = [];
-    empty = "No incoming likes to show yet. In the live app, this tab will show people who have liked your profile.";
+    root.innerHTML = '<div class="likes-person-list">' + people.map(p => {
+      const id = inlineProfileId(p.id);
+      return '<div class="likes-person-row">' + likesAvatarMarkup(p) +
+        '<div class="likes-person-meta"><div class="likes-person-name">' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
+        '</div><div class="likes-person-location">' + esc(p.loc || "Location not specified") + '</div></div>' +
+        '<button class="secondary" type="button" onclick="showDetail(' + id + ')">View</button></div>';
+    }).join("") + '</div>';
   }
-  const people = ids.map(id => profiles.find(p => p.id === id)).filter(Boolean);
-  $("likesList").innerHTML = people.map(p => '<div class="panel profiletop"><div class="avatar">' + esc(p.initial) +
-    '</div><div style="flex:1"><b>' + esc(p.name) + ', ' + esc(p.age) + '</b><div style="font-size:12px;color:var(--muted)">' +
-    esc(p.loc) + '</div></div><button class="secondary" onclick="showDetail(' + p.id + ')">View</button></div>').join("") ||
-    '<div class="panel empty">' + empty + '</div>';
 }
 function updateChatUnreadBadge() {
   const badge = $("chatsBadge");
