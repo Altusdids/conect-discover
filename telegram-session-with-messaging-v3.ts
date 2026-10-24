@@ -1410,7 +1410,7 @@ Deno.serve(async (req: Request) => {
       const { data: profile, error } = await admin
         .from("profiles")
         .select(
-          "id, app_username, display_name, age, gender, interested_in, show_me, country, city, bio, purpose",
+          "id, app_username, display_name, age, gender, interested_in, show_me, country, city, bio, purpose, email",
         )
         .eq("telegram_user_id", String(telegramUser.id))
         .maybeSingle();
@@ -1500,6 +1500,7 @@ Deno.serve(async (req: Request) => {
     const city = cleanString(input.city, 100);
     const bio = cleanString(input.bio, 500);
     const purpose = cleanString(input.purpose, 20) || "both";
+    const email = cleanString(input.email, 254).toLowerCase();
 
     const interestsRaw = Array.isArray(input.interests)
       ? input.interests
@@ -1556,6 +1557,10 @@ Deno.serve(async (req: Request) => {
       }, 400);
     }
 
+    if (email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)) {
+      return jsonResponse({ error: "Enter a valid email address or leave it blank" }, 400);
+    }
+
     if (!allowedPurposes.has(purpose)) {
       return jsonResponse({
         error: "Choose a valid purpose",
@@ -1587,6 +1592,7 @@ Deno.serve(async (req: Request) => {
       city,
       bio,
       purpose,
+      email: email || null,
       is_active: true,
       updated_at: new Date().toISOString(),
     };
