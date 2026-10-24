@@ -43,3 +43,25 @@ Do not test the new delete control before steps 1–3. The frontend is committed
 ## Rollback / recovery note
 
 Account deletion is intentionally permanent. A database failure after Storage removal can leave the account row present but its images removed; the UI reports this rather than claiming success. Retry or administrator review may be required if Supabase returns a partial-cleanup error.
+
+
+## Launch essentials — drafted 24 October 2026
+
+### Added to the repository
+- `privacy-policy.html`: user-facing privacy policy draft, linked from More → Settings & help. It explicitly identifies fields that the operator must complete before public launch.
+- `community-guidelines.html`: age-18+ rule, consent, anti-harassment/scam rules, reporting guidance and safety reminders.
+- `account-deletion.html`: explains the in-app deletion steps, what the current deletion workflow removes, and limitations around backups and partial failures.
+- `moderation-runbook.md`: internal beta procedure for triaging reports, reviewing the Supabase reports table manually, and handling urgent safety matters.
+- Updated Settings & help to link all three public pages.
+
+### Must be resolved before inviting a broad public audience
+- **Operator identity/contact:** replace the bracketed legal name, address and monitored privacy/support contact in the privacy policy. Do not ship the draft as a final policy with placeholders.
+- **Uganda PDPO registration:** confirm the operator's registration obligations and complete required registration. Government guidance currently states the requirement applies broadly to persons/entities collecting or processing personal data.
+- **Retention schedule:** set and disclose retention periods for active records, provider backups and security logs. The code does not establish a complete documented retention schedule yet.
+- **Photo privacy decision:** current profile responses use public Supabase Storage URLs. Treat profile photos as viewable by anyone who obtains the URL. Decide whether to retain that behaviour with explicit disclosure or migrate to a private bucket and signed URLs.
+- **Report evidence policy:** current account deletion removes report rows linked to the deleted account. Decide whether limited safety evidence needs restricted/anonymised retention, then implement the decision and update the policy before launch.
+- **Moderator staffing:** report submission exists, but there is no dedicated moderator dashboard or implemented response-time promise. Assign a moderator and backup, review reports manually during the beta, and do not publish service-level targets until they can be met.
+- **Legal review:** have the responsible operator review the public drafts for the real business setup, processing locations and legal obligations. These files are operational drafts, not legal advice or a certification of compliance.
+
+### Important scope note
+The privacy, community and deletion pages are linked from the app, but the privacy policy is deliberately labelled as a pre-launch draft until the operator details and remaining decisions above are completed.
