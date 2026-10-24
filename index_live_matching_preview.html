@@ -16,6 +16,16 @@ h1{font-size:29px;line-height:1.1;letter-spacing:-1px;margin:7px 0}p{color:var(-
 .hero .photo-indicator{position:absolute;z-index:6;top:15px;left:50%;transform:translateX(-50%);background:#111b;border:1px solid #ffffff35;padding:5px 9px;border-radius:20px;font-size:11px;color:#fff;white-space:nowrap}
 .detail-photo-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}
 .detail-photo-gallery img{width:100%;height:220px;object-fit:cover;border-radius:12px;background:var(--panel2)}
+.chat-thread{display:flex;flex-direction:column;gap:9px;max-height:52vh;min-height:220px;overflow:auto;padding:12px;background:#121319;border:1px solid var(--line);border-radius:16px;margin:12px 0}
+.chat-message{max-width:86%;padding:10px 12px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.chat-message.mine{align-self:flex-end;background:#57304a;border:1px solid #8a426e}
+.chat-message.theirs{align-self:flex-start;background:#252630;border:1px solid #3a3b48}
+.chat-message-time{display:block;text-align:right;font-size:10px;color:#c9c1cc;margin-top:5px}
+.chat-composer{display:flex;gap:8px;align-items:flex-end;margin:10px 0}
+.chat-composer textarea{flex:1;min-width:0;min-height:46px;max-height:130px;resize:vertical;background:var(--panel2);border:1px solid var(--line);border-radius:12px;color:#fff;padding:12px;font:inherit}
+.chat-composer button{min-height:46px}
+.chat-empty{margin:auto;text-align:center;color:var(--muted);padding:28px 12px}
+
 @media(max-width:380px){.hero .photo-nav.next{right:49px}.detail-photo-gallery img{height:170px}}
 .subtext{text-align:center;font-size:12px;color:var(--muted);margin:5px 0 16px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.person{background:var(--panel);border:1px solid var(--line);border-radius:17px;overflow:hidden;cursor:pointer}.thumb{height:205px;background:linear-gradient(140deg,#a62c25,#fb702a);position:relative}.thumb img{width:100%;height:100%;object-fit:cover}.thumb:after{content:"";position:absolute;inset:50% 0 0;background:linear-gradient(transparent,#000b)}.thumbname{position:absolute;bottom:9px;left:10px;z-index:1;font-weight:750}.personinfo{padding:10px}.personinfo p{font-size:12px;margin:5px 0;color:#d0ced6}.personinfo button{width:100%;padding:9px;border-radius:10px;background:#332a31;color:#ff9c7d;font-weight:700}
 .section{margin-top:15px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;margin:10px 0}.profiletop{display:flex;gap:12px;align-items:center}.avatar{width:52px;height:52px;border-radius:17px;background:linear-gradient(135deg,#ff4c1d,#7c35f5);display:grid;place-items:center;font-size:21px;font-weight:800}.field{width:100%;padding:12px;border:1px solid var(--line);background:var(--panel2);color:white;border-radius:11px;margin:5px 0 12px;font:inherit}label{font-size:12px;color:var(--muted)}.primary{background:linear-gradient(120deg,#ff5a1f,#ff3044);border:0;color:white;border-radius:12px;padding:12px 15px;font-weight:750}.secondary{background:var(--panel2);color:white;border:1px solid var(--line);border-radius:12px;padding:11px 13px}.empty{text-align:center;padding:25px 12px;color:var(--muted)}.likes-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:5px;margin:16px 0}.likes-tabs button{background:transparent;color:var(--muted);border-radius:10px;padding:11px 5px;font-weight:700}.likes-tabs button.active{background:#3a2529;color:#ff997d;border:1px solid #6e382d}nav{position:fixed;z-index:15;bottom:8px;left:10px;right:10px;max-width:680px;margin:auto;background:rgba(29,31,32,.96);border:1px solid #ffffff0b;border-radius:28px;display:flex;justify-content:space-between;gap:3px;padding:6px 7px calc(6px + env(safe-area-inset-bottom));backdrop-filter:blur(18px);box-shadow:0 7px 24px #0007}
@@ -350,6 +360,10 @@ let liveLikedProfiles = [];
 let liveIncomingLikes = [];
 let liveMatches = [];
 const discoveryPhotoIndexes = new Map();
+let activeChatMatchId = null;
+let chatRefreshTimer = null;
+let liveChatLoadBusy = false;
+let liveChatSendBusy = false;
 
 function filtered(){return profiles.filter(p=>(purpose==="both"||p.purpose.includes(purpose))&&!passed.has(p.id)&&!liked.has(p.id))}
 function chips(p){return p.interests.map(i=>`<span class="chip">${esc(i)}</span>`).join("")}
@@ -887,12 +901,16 @@ function renderLikes() {
 }
 function renderChats() {
   if (liveDiscoveryMode) {
+    if (activeChatMatchId) {
+      renderLiveChatShell();
+      return;
+    }
     $("chatList").innerHTML = liveMatches.map(item => {
       const p = item.profile;
       return '<div class="panel profiletop"><div class="avatar">' + esc(p.initial) +
         '</div><div style="flex:1"><b>' + esc(p.name) + '</b><div style="font-size:12px;color:var(--muted)">You matched on Conect</div></div>' +
-        '<button class="secondary" disabled title="Messaging is the next stage">Chat next</button></div>';
-    }).join("") || '<div class="panel empty">No matches yet. When you and another member both like each other, the match will appear here. Messaging is the next stage.</div>';
+        '<button class="secondary" onclick="openLiveChat(\'' + esc(item.id) + '\')">Open chat</button></div>';
+    }).join("") || '<div class="panel empty">No matches yet. When you and another member both like each other, the match will appear here.</div>';
     return;
   }
   $("chatList").innerHTML = [...matches].map(id => profiles.find(p => p.id === id)).filter(Boolean).map(p =>
@@ -900,6 +918,128 @@ function renderChats() {
     '</div><div style="flex:1"><b>' + esc(p.name) + '</b><div style="font-size:12px;color:var(--muted)">You matched in the demo</div></div>' +
     '<button class="secondary" onclick="alert(\'Demo only: real messaging requires a secure backend and a mutual like from the other account.\')">Open chat</button></div>'
   ).join("") || '<div class="panel empty">No matches yet. In the real app, chat unlocks only when both people like each other. Demo likes do not create real matches.</div>';
+}
+function stopLiveChatPolling() {
+  if (chatRefreshTimer !== null) {
+    clearInterval(chatRefreshTimer);
+    chatRefreshTimer = null;
+  }
+}
+function renderLiveChatShell() {
+  const match = liveMatches.find(item => String(item.id) === String(activeChatMatchId));
+  if (!match || !match.profile) {
+    activeChatMatchId = null;
+    stopLiveChatPolling();
+    return renderChats();
+  }
+  const p = match.profile;
+  $("chatList").innerHTML =
+    '<button class="secondary" onclick="closeLiveChat()">← All chats</button>' +
+    '<div class="panel profiletop"><div class="avatar">' + esc(p.initial) + '</div>' +
+    '<div style="flex:1"><b>' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
+    '</b><div style="font-size:12px;color:var(--muted)">' + esc(p.loc) + ' · Matched on Conect</div></div></div>' +
+    '<div id="messageThread" class="chat-thread" role="log" aria-live="polite"><div class="chat-empty">Loading conversation…</div></div>' +
+    '<form id="chatComposer" class="chat-composer"><textarea id="chatMessageInput" maxlength="4000" aria-label="Message" placeholder="Write a message…" required></textarea>' +
+    '<button id="chatSendBtn" type="submit" class="primary">Send</button></form>' +
+    '<p id="chatStatus" role="status" style="font-size:12px;color:var(--muted)"></p>' +
+    '<p style="font-size:11px;color:var(--muted)">Only you and your matched partner can access this conversation.</p>';
+  $("chatComposer").addEventListener("submit", event => {
+    event.preventDefault();
+    void sendLiveMessage();
+  });
+}
+function renderLiveMessages(messages, forceScroll = false) {
+  const thread = $("messageThread");
+  if (!thread) return;
+  const wasNearBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 90;
+  if (!messages.length) {
+    thread.innerHTML = '<div class="chat-empty">No messages yet. Say hello 👋</div>';
+  } else {
+    thread.innerHTML = messages.map(message => {
+      const mine = message.is_mine === true;
+      let time = "";
+      if (message.created_at) {
+        const date = new Date(message.created_at);
+        if (!Number.isNaN(date.getTime())) {
+          time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        }
+      }
+      return '<div class="chat-message ' + (mine ? "mine" : "theirs") + '">' +
+        esc(message.body) + (time ? '<span class="chat-message-time">' + esc(time) + '</span>' : '') + '</div>';
+    }).join("");
+  }
+  if (forceScroll || wasNearBottom) thread.scrollTop = thread.scrollHeight;
+}
+async function loadLiveMessages(silent = false) {
+  const matchId = activeChatMatchId;
+  if (!matchId || liveChatLoadBusy) return;
+  liveChatLoadBusy = true;
+  try {
+    const result = await conectBackendRequest("load_messages", undefined, { matchId });
+    if (activeChatMatchId !== matchId) return;
+    renderLiveMessages(Array.isArray(result.messages) ? result.messages : []);
+    const status = $("chatStatus");
+    if (status && !silent) status.textContent = "";
+  } catch (error) {
+    const status = $("chatStatus");
+    if (status && (!silent || !status.textContent)) {
+      status.textContent = "Could not load messages: " + (error.message || "request failed") +
+        ". Check that the messaging backend has been deployed.";
+    }
+  } finally {
+    liveChatLoadBusy = false;
+  }
+}
+async function openLiveChat(matchId) {
+  if (!liveDiscoveryMode) return;
+  const match = liveMatches.find(item => String(item.id) === String(matchId));
+  if (!match) {
+    alert("This match is no longer available. Refresh Conect and try again.");
+    return;
+  }
+  stopLiveChatPolling();
+  activeChatMatchId = String(match.id);
+  renderLiveChatShell();
+  await loadLiveMessages(false);
+  const selectedId = activeChatMatchId;
+  chatRefreshTimer = setInterval(() => {
+    if (activeChatMatchId === selectedId) void loadLiveMessages(true);
+  }, 5000);
+}
+function closeLiveChat() {
+  activeChatMatchId = null;
+  stopLiveChatPolling();
+  renderChats();
+}
+async function sendLiveMessage() {
+  if (liveChatSendBusy || !activeChatMatchId) return;
+  const input = $("chatMessageInput");
+  if (!input) return;
+  const message = input.value.trim();
+  if (!message) return;
+  if (message.length > 4000) {
+    $("chatStatus").textContent = "Messages can be up to 4,000 characters.";
+    return;
+  }
+  const matchId = activeChatMatchId;
+  const button = $("chatSendBtn");
+  liveChatSendBusy = true;
+  if (button) { button.disabled = true; button.textContent = "Sending…"; }
+  try {
+    await conectBackendRequest("send_message", undefined, { matchId, message });
+    if (activeChatMatchId !== matchId) return;
+    input.value = "";
+    $("chatStatus").textContent = "";
+    await loadLiveMessages(false);
+    input.focus();
+  } catch (error) {
+    const status = $("chatStatus");
+    if (status) status.textContent = "Could not send message: " + (error.message || "request failed") +
+      ". Check that the messaging backend has been deployed.";
+  } finally {
+    liveChatSendBusy = false;
+    if (button) { button.disabled = false; button.textContent = "Send"; }
+  }
 }
 function likePerson(id) {
   if (liveDiscoveryMode) {
