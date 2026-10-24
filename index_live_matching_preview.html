@@ -216,7 +216,6 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
 #discoverPage .toolbar .smallbtn{padding:9px 11px}
 #discoverPage .toolbar+.toolbar{margin-top:0;margin-bottom:11px}
 #discoverPage .hero{height:min(66svh,650px);min-height:390px;border-radius:20px}
-#discoverPage .hero .side-actions{display:none!important}
 #discoverPage .hero .onphoto{left:16px;right:16px;bottom:16px}
 #discoverPage .hero .onphoto h2{font-size:27px;line-height:1.15;margin-bottom:4px}
 #discoverPage .hero .location{font-size:12px}
@@ -312,6 +311,25 @@ body:has(#discoverPage:not(.hidden)){overflow:hidden}
  .feed-profile-card .side-actions.feed-profile-side-actions{right:7px;gap:10px}
  .feed-profile-card .feed-profile-side-actions .side-action{width:39px;height:39px;font-size:21px}
  .feed-profile-card .photo-nav.next{right:52px}
+}
+
+
+/* Corrective pass: restore side actions and make profile interests/bio expandable. */
+#discoverPage .feed-profile-card .side-actions.feed-profile-side-actions{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:absolute!important;right:10px!important;top:50%!important;transform:translateY(-50%)!important;z-index:12!important;flex-direction:column!important;gap:12px!important;align-items:center!important}
+#discoverPage .feed-profile-card .side-actions.feed-profile-side-actions .side-action{display:grid!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;width:44px;height:44px;font-size:23px;border:1px solid #ffffff70;background:#24242dbb;color:#fff;box-shadow:0 5px 16px #0008;backdrop-filter:blur(9px)}
+#discoverPage .feed-profile-card .side-actions.feed-profile-side-actions .feed-like-action{background:#e83d72!important;border-color:#f36b93!important}
+#discoverPage .feed-profile-card .side-actions.feed-profile-side-actions .feed-pass-action{font-size:29px!important;background:#24242dbb!important}
+.feed-profile-card .onphoto{right:67px;max-height:72%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.feed-profile-card .feed-profile-details .bio{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.feed-profile-card .feed-profile-details.feed-details-expanded .bio{display:block;-webkit-line-clamp:unset;overflow:visible}
+.feed-profile-card .extra-feed-interest{display:none}
+.feed-profile-card .feed-details-expanded .extra-feed-interest{display:inline-flex}
+.feed-profile-card .feed-show-more{display:inline-flex;align-items:center;margin:8px 0 0;padding:5px 10px;border:1px solid #ffffff38;border-radius:18px;background:#ffffff18;color:#fff;font:inherit;font-size:11px;font-weight:750;cursor:pointer}
+.feed-profile-card .feed-show-more:active{transform:scale(.97)}
+@media(max-width:380px){
+ #discoverPage .feed-profile-card .side-actions.feed-profile-side-actions{right:7px!important;gap:10px!important}
+ #discoverPage .feed-profile-card .side-actions.feed-profile-side-actions .side-action{width:39px;height:39px;font-size:21px}
+ .feed-profile-card .onphoto{right:59px}
 }
 
 </style></head>
@@ -1122,6 +1140,19 @@ function handleFeedProfileAction(profileId, action) {
   persist();
   renderAll();
 }
+function toggleFeedMore(profileId) {
+  const key = String(profileId);
+  const article = Array.from(document.querySelectorAll(".profile-scroll-card"))
+    .find(card => card.dataset.profileId === key);
+  if (!article) return;
+  const details = article.querySelector(".feed-profile-details");
+  const button = article.querySelector(".feed-show-more");
+  if (!details || !button) return;
+  const expanded = details.classList.toggle("feed-details-expanded");
+  button.textContent = expanded ? "Hide" : "Show more";
+  button.setAttribute("aria-expanded", String(expanded));
+  button.setAttribute("aria-label", expanded ? "Hide extra profile details" : "Show more interests and bio");
+}
 function renderSwipe() {
   const feed = $("profileScrollFeed");
   if (!feed) return;
@@ -1154,8 +1185,9 @@ function renderSwipe() {
     const badge = liveDiscoveryMode ? "✦ CONECT MEMBER" : "♥ " + profile.match + "% match";
     const idArg = "'" + String(profile.id).replace(/'/g, "") + "'";
     const interests = Array.isArray(profile.interests) ? profile.interests : [];
-    const interestMarkup = chips(interests.slice(0, 3)) +
-      (interests.length > 3 ? '<span class="chip chip-more">+' + (interests.length - 3) + ' more</span>' : '');
+    const interestMarkup = interests.map((interest, interestIndex) =>
+      '<span class="chip' + (interestIndex >= 3 ? ' extra-feed-interest' : '') + '">' + esc(interest) + '</span>'
+    ).join("");
     const purposes = Array.isArray(profile.purpose) ? profile.purpose : [profile.purpose].filter(Boolean);
     const purposeLabel = purposes.length ? purposes.join(" and ") : "not specified";
     return '<article class="profile-scroll-card" data-profile-id="' + esc(profile.id) + '">' +
@@ -1163,7 +1195,8 @@ function renderSwipe() {
         '<div class="match">' + badge + '</div>' +
         '<div class="onphoto"><h2>' + esc(profile.name) + (profile.age ? ', ' + esc(profile.age) : '') + '</h2>' +
         '<div class="location">⌖ ' + esc(profile.loc || "Location not specified") + '</div>' +
-        '<div class="bio">' + esc(profile.bio || "") + '</div><div class="chips">' + interestMarkup + '</div>' +
+        '<div class="feed-profile-details"><div class="bio">' + esc(profile.bio || "") + '</div><div class="chips">' + interestMarkup + '</div>' +
+        '<button type="button" class="feed-show-more" aria-expanded="false" onclick="event.stopPropagation();toggleFeedMore(' + idArg + ')">Show more</button></div>' +
         '<button type="button" class="smallbtn feed-view-profile" onclick="showDetail(' + idArg + ')">View full profile ↗</button></div>' +
         '<div class="side-actions feed-profile-side-actions" aria-label="Profile actions">' +
           '<button type="button" class="side-action feed-pass-action" aria-label="Pass on ' + esc(profile.name) + '" title="Pass" onclick="event.stopPropagation();handleFeedProfileAction(' + idArg + ',\'pass\')">×</button>' +
