@@ -490,6 +490,16 @@ Deno.serve(async (req: Request) => {
         }
         if ((blockedRows || []).length) return jsonResponse({ ok: true, skipped: true });
 
+        const retentionCutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+        const { error: cleanupError } = await admin
+          .from("profile_visits")
+          .delete()
+          .lt("last_visited_at", retentionCutoff);
+        if (cleanupError) {
+          console.error("Old profile visit cleanup error", cleanupError.message);
+          return jsonResponse({ error: "Could not record profile visit" }, 500);
+        }
+
         const { error: visitError } = await admin
           .from("profile_visits")
           .upsert({ visitor_user_id: viewer.id, visited_user_id: targetUserId, last_visited_at: new Date().toISOString() }, { onConflict: "visitor_user_id,visited_user_id" });
