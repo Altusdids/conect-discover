@@ -15,6 +15,25 @@ h1{font-size:29px;line-height:1.1;letter-spacing:-1px;margin:7px 0}p{color:var(-
 .hero .photo-nav.prev{left:10px}.hero .photo-nav.next{right:55px}
 .hero .photo-indicator{position:absolute;z-index:6;top:15px;left:50%;transform:translateX(-50%);background:#111b;border:1px solid #ffffff35;padding:5px 9px;border-radius:20px;font-size:11px;color:#fff;white-space:nowrap}
 .detail-photo-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}
+ .detail-profile-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:8px 0 0}
+ .detail-profile-heading h2{margin:0 0 5px;font-size:25px;line-height:1.15;letter-spacing:-.5px}
+ .detail-profile-heading .detail-profile-location{font-size:13px;color:var(--muted);margin:0 0 10px}
+ .profile-actions-wrap{position:relative;flex:0 0 auto}
+ .profile-actions-trigger{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:var(--panel);color:#fff;font-size:24px;line-height:1;display:grid;place-items:center;cursor:pointer}
+ .profile-actions-trigger:focus-visible{outline:2px solid #e83d72;outline-offset:2px}
+ .profile-action-menu{position:absolute;right:0;top:45px;z-index:30;width:205px;padding:6px;border:1px solid #3b3c47;border-radius:15px;background:#202127;box-shadow:0 12px 30px #0008}
+ .profile-action-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 10px;border:0;border-radius:10px;background:transparent;color:var(--text);text-align:left;font:inherit;font-size:13px;cursor:pointer}
+ .profile-action-menu button:active,.profile-action-menu button:hover{background:#ffffff0d}
+ .profile-action-menu button.danger{color:#ff9b9b}
+ .profile-action-divider{height:1px;background:#393a42;margin:4px 3px}
+ .profile-report-form{padding:14px;margin:13px 0;background:#1b1c23;border:1px solid var(--line);border-radius:16px}
+ .profile-report-form h3{font-size:16px;margin:0 0 7px}
+ .profile-report-form p{font-size:12px;margin:0 0 12px}
+ .profile-report-form select,.profile-report-form textarea{width:100%;background:#252630;color:white;border:1px solid #3b3c47;border-radius:11px;padding:11px;font:inherit;font-size:13px;margin:5px 0 10px}
+ .profile-report-actions{display:flex;gap:8px}
+ .profile-report-actions button{flex:1}
+ .profile-action-status{font-size:12px;color:#f5c1d4;margin:8px 0}
+
 .detail-photo-gallery img{width:100%;height:220px;object-fit:cover;border-radius:12px;background:var(--panel2)}
 .chat-thread{display:flex;flex-direction:column;gap:9px;max-height:52vh;min-height:220px;overflow:auto;padding:12px;background:#121319;border:1px solid var(--line);border-radius:16px;margin:12px 0}
 .chat-message{max-width:86%;padding:10px 12px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -1501,15 +1520,178 @@ function showDetail(id) {
   const purposes = Array.isArray(p.purpose) ? p.purpose : [p.purpose].filter(Boolean);
   const idArg = inlineProfileId(p.id);
   const purposeText = purposes.length ? purposes.join(" and ") : "not specified";
-  $("detailContent").innerHTML = image + '<h2>' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
-    '</h2><p>⌖ ' + esc(p.loc) + '</p><p>' + esc(p.bio) + '</p><div class="chips">' + chips(p) +
-    '</div><p style="font-size:12px">Looking for: ' + esc(purposeText) + '</p>' +
-    (liveDiscoveryMode
-      ? (profiles.some(candidate => String(candidate.id) === String(p.id))
-          ? '<div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(' + idArg + ')">♥ Like</button><button class="secondary" onclick="recordLiveSwipe(' + idArg + ', \'pass\').then(function(){showPage(\'discoverPage\')})">Pass</button></div>'
-          : '')
-      : '<div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(' + idArg + ')">♥ Like</button><button class="secondary" onclick="act(\'pass\')">Pass</button></div>');
+  const actionsMenu =
+    '<div class="profile-actions-wrap">' +
+      '<button type="button" class="profile-actions-trigger" onclick="toggleProfileActionMenu()" aria-label="More profile actions" aria-haspopup="menu" aria-expanded="false" title="More actions">⋮</button>' +
+      '<div id="profileActionMenu" class="profile-action-menu hidden" role="menu">' +
+        '<button type="button" role="menuitem" onclick="beginProfileReport(' + idArg + ')"><span aria-hidden="true">⚑</span> Report profile</button>' +
+        '<button type="button" role="menuitem" class="danger" onclick="blockProfile(' + idArg + ')"><span aria-hidden="true">⊘</span> Block profile</button>' +
+        '<div class="profile-action-divider"></div>' +
+        '<button type="button" role="menuitem" onclick="requestChatWithProfile(' + idArg + ')"><span aria-hidden="true">♧</span> Chat request</button>' +
+        '<button type="button" role="menuitem" onclick="closeProfileActionMenu()"><span aria-hidden="true">×</span> Cancel</button>' +
+      '</div>' +
+    '</div>';
+  const profileHeading =
+    '<div class="detail-profile-heading"><div style="min-width:0;flex:1"><h2>' + esc(p.name) +
+    (p.age ? ', ' + esc(p.age) : '') + '</h2><p class="detail-profile-location">⌖ ' + esc(p.loc) + '</p></div>' +
+    actionsMenu + '</div>';
+  const reportForm =
+    '<form id="profileReportForm" class="profile-report-form hidden">' +
+      '<h3>Report this profile</h3><p>Choose the reason that best describes your concern. Reports are private.</p>' +
+      '<label for="profileReportReason">Reason</label><select id="profileReportReason" required>' +
+        '<option value="">Choose a reason</option>' +
+        '<option value="fake_profile">Fake profile or impersonation</option>' +
+        '<option value="harassment">Harassment or abuse</option>' +
+        '<option value="spam">Spam or scam</option>' +
+        '<option value="inappropriate_content">Inappropriate photos or content</option>' +
+        '<option value="underage_suspicion">Possible underage user</option>' +
+        '<option value="other">Other concern</option></select>' +
+      '<label for="profileReportDetails">Additional details (optional)</label><textarea id="profileReportDetails" rows="3" maxlength="2000" placeholder="Tell us what happened"></textarea>' +
+      '<div class="profile-report-actions"><button type="button" class="secondary" onclick="cancelProfileReport()">Cancel</button><button type="submit" class="primary" id="submitProfileReportBtn">Submit report</button></div>' +
+    '</form><p id="profileActionStatus" class="profile-action-status" role="status" aria-live="polite"></p>';
+  const actionButtons = liveDiscoveryMode
+    ? (profiles.some(candidate => String(candidate.id) === String(p.id))
+        ? '<div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(' + idArg + ')">♥ Like</button><button class="secondary" onclick="recordLiveSwipe(' + idArg + ', \'pass\').then(function(){showPage(\'discoverPage\')})">Pass</button></div>'
+        : '')
+    : '<div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(' + idArg + ')">♥ Like</button><button class="secondary" onclick="act(\'pass\')">Pass</button></div>';
+  $("detailContent").innerHTML = image + profileHeading +
+    '<p>' + esc(p.bio) + '</p><div class="chips">' + chips(p) +
+    '</div><p style="font-size:12px;margin-top:12px">Looking for: ' + esc(purposeText) + '</p>' +
+    reportForm + actionButtons;
+  const reportFormElement = $("profileReportForm");
+  reportFormElement?.addEventListener("submit", event => {
+    event.preventDefault();
+    void submitProfileReport(p.id);
+  });
   showPage("detailPage");
+}
+function toggleProfileActionMenu() {
+  const menu = $("profileActionMenu");
+  if (!menu) return;
+  const open = menu.classList.toggle("hidden") === false;
+  const trigger = document.querySelector(".profile-actions-trigger");
+  if (trigger) trigger.setAttribute("aria-expanded", String(open));
+}
+function closeProfileActionMenu() {
+  $("profileActionMenu")?.classList.add("hidden");
+  const trigger = document.querySelector(".profile-actions-trigger");
+  if (trigger) trigger.setAttribute("aria-expanded", "false");
+}
+function beginProfileReport(profileId) {
+  closeProfileActionMenu();
+  const form = $("profileReportForm");
+  if (form) form.classList.remove("hidden");
+  $("profileReportReason")?.focus();
+}
+function cancelProfileReport() {
+  const form = $("profileReportForm");
+  if (form) form.classList.add("hidden");
+  const reason = $("profileReportReason");
+  const details = $("profileReportDetails");
+  if (reason) reason.value = "";
+  if (details) details.value = "";
+  const status = $("profileActionStatus");
+  if (status) status.textContent = "";
+}
+async function submitProfileReport(profileId) {
+  const reason = $("profileReportReason")?.value || "";
+  const details = $("profileReportDetails")?.value || "";
+  const status = $("profileActionStatus");
+  const button = $("submitProfileReportBtn");
+  if (!reason) {
+    if (status) status.textContent = "Choose a reason before submitting.";
+    $("profileReportReason")?.focus();
+    return;
+  }
+  if (!liveDiscoveryMode) {
+    if (status) status.textContent = "Reporting is available when you are connected to your Telegram profile.";
+    return;
+  }
+  if (button) { button.disabled = true; button.textContent = "Sending…"; }
+  try {
+    await conectBackendRequest("report_user", undefined, { targetUserId: String(profileId), reason, details });
+    const form = $("profileReportForm");
+    if (form) form.classList.add("hidden");
+    if (status) status.textContent = "Report submitted privately. Thank you for helping keep Conect safe.";
+  } catch (error) {
+    if (status) status.textContent = "Could not submit report: " + (error.message || "request failed");
+  } finally {
+    if (button) { button.disabled = false; button.textContent = "Submit report"; }
+  }
+}
+async function blockProfile(profileId) {
+  closeProfileActionMenu();
+  const p = liveDiscoveryMode ? findConectProfile(profileId) : profiles.find(item => String(item.id) === String(profileId));
+  const name = p?.name || "this profile";
+  if (!window.confirm("Block " + name + "? They will no longer appear in your discovery or chat lists, and messaging between you will be disabled.")) return;
+  if (!liveDiscoveryMode) {
+    const status = $("profileActionStatus");
+    if (status) status.textContent = "Blocking is available when you are connected to your Telegram profile.";
+    return;
+  }
+  const status = $("profileActionStatus");
+  if (status) status.textContent = "Blocking profile…";
+  try {
+    await conectBackendRequest("block_user", undefined, { targetUserId: String(profileId) });
+    const targetId = String(profileId);
+    const removedMatchIds = liveMatches.filter(item => String(item.profile?.id) === targetId).map(item => String(item.id));
+    profiles = profiles.filter(item => String(item.id) !== targetId);
+    liveLikedProfiles = liveLikedProfiles.filter(item => String(item.id) !== targetId);
+    liveIncomingLikes = liveIncomingLikes.filter(item => String(item.id) !== targetId);
+    liveMatches = liveMatches.filter(item => String(item.profile?.id) !== targetId);
+    removedMatchIds.forEach(id => { chatUnreadCounts.delete(id); chatMessagePreviews.delete(id); });
+    if (activeChatMatchId && removedMatchIds.includes(String(activeChatMatchId))) {
+      activeChatMatchId = null;
+      stopLiveChatPolling();
+    }
+    updateChatUnreadBadge();
+    renderAll();
+    showPage("chatsPage");
+    const chatStatus = $("telegramAuthStatus");
+    if (chatStatus) {
+      chatStatus.classList.remove("hidden");
+      chatStatus.style.background = "#3a1c1c";
+      chatStatus.textContent = name + " has been blocked. You can unblock people only through support for now.";
+    }
+  } catch (error) {
+    if (status) status.textContent = "Could not block profile: " + (error.message || "request failed");
+  }
+}
+async function requestChatWithProfile(profileId) {
+  closeProfileActionMenu();
+  const key = String(profileId);
+  const match = liveMatches.find(item => String(item.profile?.id) === key);
+  if (match && liveDiscoveryMode) {
+    showPage("chatsPage");
+    await openLiveChat(match.id);
+    return;
+  }
+  const p = liveDiscoveryMode ? findConectProfile(profileId) : profiles.find(item => String(item.id) === key);
+  const status = $("profileActionStatus");
+  if (!liveDiscoveryMode) {
+    if (status) status.textContent = "Chat requests unlock after a mutual match in the connected app.";
+    return;
+  }
+  const alreadyLiked = liveLikedProfiles.some(item => String(item.id) === key);
+  if (alreadyLiked) {
+    if (status) status.textContent = "You've already liked " + (p?.name || "this person") + ". Chat opens when they like you back.";
+    return;
+  }
+  if (status) status.textContent = "Sending your chat request…";
+  const result = await recordLiveSwipe(profileId, "like", false);
+  if (!result) {
+    if (status) status.textContent = "Could not send the chat request. Please try again.";
+    return;
+  }
+  await loadLiveRelationships();
+  const newMatch = liveMatches.find(item => String(item.profile?.id) === key);
+  if (newMatch) {
+    showPage("chatsPage");
+    await openLiveChat(newMatch.id);
+  } else {
+    const updatedStatus = $("profileActionStatus");
+    if (updatedStatus) updatedStatus.textContent = "Chat request sent as a like. You'll be able to chat if they like you back.";
+  }
 }
 function renderAll() {
   renderSwipe();
