@@ -53,7 +53,7 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
 <h1 class="setup-title">Add your photo & interests</h1><p>Help people get to know you. Add a profile picture and choose at least 3 interests (up to 10).</p>
 <div class="setup-card">
 <label for="profilePhotoInput">Profile picture (required)</label>
-<div class="photo-upload" style="margin-top:8px"><img id="profilePhotoPreview" class="photo-preview" alt="Your profile photo preview"><input id="profilePhotoInput" type="file" accept="image/*" class="field" style="margin-bottom:0"><div class="helper">Choose a clear photo of yourself. Images stay on this device in this prototype.</div></div>
+<div class="photo-upload" style="margin-top:8px"><img id="profilePhotoPreview" class="photo-preview" alt="Your profile photo preview"><input id="profilePhotoInput" type="file" accept="image/*" class="field" style="margin-bottom:0"><div class="helper">Choose a clear JPEG, PNG, or WebP photo. When opened inside Telegram, your photo can sync to Conect.</div></div>
 <p id="photoError" role="alert" style="font-size:12px;color:#ff8c8c"></p>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px"><b>Choose your interests</b><span class="interest-count" id="interestCount">0 / 10 selected</span></div>
 <div id="interestCategories"></div>
@@ -108,14 +108,19 @@ const $=id=>document.getElementById(id);const esc=s=>String(s??"").replace(/[&<>
 const TELEGRAM_SESSION_URL = "https://bixsxizzcgqfimpzbvwk.supabase.co/functions/v1/telegram-session";
 let verifiedTelegramUser = null;
 
-async function conectBackendRequest(action = "verify", profile = undefined) {
+async function conectBackendRequest(action = "verify", profile = undefined, extra = {}) {
   if (!tg || typeof tg.initData !== "string" || !tg.initData.trim()) {
     throw new Error("Open Conect from your Telegram bot to sync data.");
   }
   const response = await fetch(TELEGRAM_SESSION_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ initData: tg.initData, action, ...(profile ? { profile } : {}) })
+    body: JSON.stringify({
+      initData: tg.initData,
+      action,
+      ...(profile ? { profile } : {}),
+      ...(extra && typeof extra === "object" ? extra : {})
+    })
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || result.ok !== true) {
@@ -124,11 +129,58 @@ async function conectBackendRequest(action = "verify", profile = undefined) {
   return result;
 }
 
+function photoSource(photo) {
+  if (typeof photo === "string") return photo;
+  if (photo && typeof photo === "object") return photo.public_url || photo.url || "";
+  return "";
+}
+
+function isStoragePhoto(photo) {
+  return Boolean(photo && typeof photo === "object" && photo.storage_path);
+}
+
+async function uploadPhotoDataUrl(photoDataUrl) {
+  const result = await conectBackendRequest("upload_photo", undefined, { photoDataUrl });
+  if (!result.photo || !result.photo.storage_path || !result.photo.public_url) {
+    throw new Error("The server did not return the uploaded photo details.");
+  }
+  return result.photo;
+}
+
+async function syncLocalPhotosToServer() {
+  if (!tg || typeof tg.initData !== "string" || !tg.initData.trim()) {
+    return { localOnly: true };
+  }
+  if (!verifiedTelegramUser) {
+    throw new Error("Your Telegram account has not been verified. Close and reopen Conect inside Telegram.");
+  }
+  const working = [...profilePhotos].slice(0, 6);
+  for (let i = 0; i < working.length; i++) {
+    const item = working[i];
+    if (isStoragePhoto(item)) continue;
+    const dataUrl = typeof item === "string" && item.startsWith("data:image/jpeg;base64,") ? item : "";
+    if (!dataUrl) continue;
+    const uploaded = await uploadPhotoDataUrl(dataUrl);
+    working[i] = uploaded;
+    profilePhotos = [...working];
+    saveProfilePhotos();
+    renderProfilePhotos();
+  }
+  profilePhotos = working.filter(photo => Boolean(photoSource(photo)));
+  saveProfilePhotos();
+  renderProfilePhotos();
+  return { localOnly: false, photos: profilePhotos };
+}
+
 function applyServerProfile(result) {
   if (!result || !result.profile) return false;
   const p = result.profile;
   const interests = Array.isArray(result.interests) ? result.interests : [];
-  // Preserve device-only photo data until Storage uploads are implemented.
+  const serverPhotos = Array.isArray(result.photos) ? result.photos.slice(0, 6) : [];
+  if (serverPhotos.length) {
+    profilePhotos = serverPhotos;
+    profilePhotoData = photoSource(serverPhotos[0]);
+  }
   myProfile = {
     ...myProfile,
     name: p.display_name,
@@ -141,7 +193,8 @@ function applyServerProfile(result) {
     loc: `${p.city}, ${p.country}`,
     bio: p.bio || "",
     purpose: p.purpose || "both",
-    interests
+    interests,
+    ...(serverPhotos.length ? { photos: serverPhotos, photo: photoSource(serverPhotos[0]) } : {})
   };
   currentUsername = p.app_username;
   selectedInterests = new Set(interests);
@@ -191,7 +244,7 @@ async function verifyTelegramSession() {
       if (applyServerProfile(saved)) {
         status.textContent = "Telegram account verified" +
           (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
-          ". Your profile details and interests were loaded from Conect’s database. Photos and likes are still stored on this device.";
+          ". Your profile, interests, and saved photos were loaded from Conect’s database. Demo likes remain on this device.";
         // If this profile has no device photo/interests yet, continue setup so the user can add them.
         if (myProfile.photo && Array.isArray(myProfile.interests) && myProfile.interests.length >= 3) {
           showPage("discoverPage");
@@ -212,7 +265,7 @@ async function verifyTelegramSession() {
             status.style.background = "#153320";
             status.textContent = "Telegram account verified" +
               (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
-              ". Your existing profile details and interests have now synced to Conect’s database. Photos and likes are still stored on this device.";
+              ". Your profile details and interests have synced. Finish setup to sync any remaining local photos.";
           } catch (syncError) {
             status.style.background = "#3a1c1c";
             status.textContent = "Telegram account verified, but your profile could not be saved to the database: " + syncError.message;
@@ -220,7 +273,7 @@ async function verifyTelegramSession() {
         } else {
           status.textContent = "Telegram account verified" +
             (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
-            ". Finish profile setup to save your details and interests to Conect’s database. Photos and likes will sync in a later step.";
+            ". Finish profile setup to save your details, interests, and profile photo to Conect.";
         }
       }
     } catch (dbError) {
@@ -299,21 +352,134 @@ function renderChats(){$("chatList").innerHTML=[...matches].map(id=>profiles.fin
 function persist(){localStorage.setItem("mm2_liked",JSON.stringify([...liked]));localStorage.setItem("mm2_passed",JSON.stringify([...passed]));localStorage.setItem("mm2_matches",JSON.stringify([...matches]))}
 function likePerson(id){liked.add(id);persist();renderAll();showPage("likesPage")}
 function act(action){let list=filtered();if(!list.length)return;let p=list[index%list.length];if(action==="like")liked.add(p.id);if(action==="pass")passed.add(p.id);if(action==="star")liked.add(p.id);persist();index=0;renderAll()}
-function renderProfilePhotos(){
- const root=$("profilePhotoGallery"); if(!root)return;
- root.innerHTML=profilePhotos.map((src,i)=>`<div class="photo-gallery-tile"><img src="${src}" alt="Profile photo ${i+1}"><button type="button" class="photo-gallery-remove" data-remove-photo="${i}" aria-label="Remove photo ${i+1}">×</button></div>`).join("");
- if(profilePhotos.length<6)root.insertAdjacentHTML("beforeend",'<button type="button" class="photo-gallery-tile photo-gallery-add" id="addProfilePhotosBtn" aria-label="Add profile photos">+</button>');
- $("profileGalleryHelp").textContent=`Drag photos here or tap + · ${profilePhotos.length}/6`;
- const add=$("addProfilePhotosBtn");if(add)add.onclick=()=>$("profileGalleryInput").click();
- root.querySelectorAll("[data-remove-photo]").forEach(btn=>btn.onclick=()=>{profilePhotos.splice(Number(btn.dataset.removePhoto),1);saveProfilePhotos();renderProfilePhotos()});
+function renderProfilePhotos() {
+  const root = $("profilePhotoGallery");
+  if (!root) return;
+  root.innerHTML = profilePhotos.map((photo, i) => {
+    const src = photoSource(photo);
+    return `<div class="photo-gallery-tile"><img src="${esc(src)}" alt="Profile photo ${i + 1}"><button type="button" class="photo-gallery-remove" data-remove-photo="${i}" aria-label="Remove photo ${i + 1}">×</button></div>`;
+  }).join("");
+  if (profilePhotos.length < 6) {
+    root.insertAdjacentHTML("beforeend", '<button type="button" class="photo-gallery-tile photo-gallery-add" id="addProfilePhotosBtn" aria-label="Add profile photos">+</button>');
+  }
+  $("profileGalleryHelp").textContent = `Tap + to add photos · ${profilePhotos.length}/6`;
+  const add = $("addProfilePhotosBtn");
+  if (add) add.onclick = () => $("profileGalleryInput").click();
+  root.querySelectorAll("[data-remove-photo]").forEach(btn => {
+    btn.onclick = () => removeProfilePhoto(Number(btn.dataset.removePhoto));
+  });
 }
-function saveProfilePhotos(){
- myProfile={...myProfile,photos:profilePhotos,photo:profilePhotos[0]||""};profilePhotoData=myProfile.photo;
- try{localStorage.setItem("mm2_profile",JSON.stringify(myProfile));if(profilePhotoData){$("profilePagePhoto").src=profilePhotoData;$("profilePhotoPreview").src=profilePhotoData}else{$("profilePagePhoto").removeAttribute("src")}}
- catch(e){alert("These photos are too large to store on this device. Try fewer or smaller photos.");}
+
+function saveProfilePhotos() {
+  profilePhotoData = photoSource(profilePhotos[0]) || "";
+  myProfile = { ...myProfile, photos: profilePhotos, photo: profilePhotoData };
+  try {
+    localStorage.setItem("mm2_profile", JSON.stringify(myProfile));
+    if (profilePhotoData) {
+      $("profilePagePhoto").src = profilePhotoData;
+      $("profilePhotoPreview").src = profilePhotoData;
+    } else {
+      $("profilePagePhoto").removeAttribute("src");
+      $("profilePhotoPreview").removeAttribute("src");
+    }
+  } catch (e) {
+    alert("Your browser storage is full. Remove an image or try a smaller photo.");
+  }
 }
-function compressGalleryImage(file){return new Promise((resolve,reject)=>{if(!file.type.startsWith("image/")){reject(new Error("Choose image files only."));return}const reader=new FileReader();reader.onerror=()=>reject(new Error("Could not read an image."));reader.onload=()=>{const img=new Image();img.onerror=()=>reject(new Error("Could not open an image."));img.onload=()=>{const canvas=document.createElement("canvas"),scale=Math.min(1,700/Math.max(img.width,img.height));canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL("image/jpeg",.68))};img.src=reader.result};reader.readAsDataURL(file)})}
-async function addProfilePhotos(files){const incoming=Array.from(files||[]).filter(f=>f.type.startsWith("image/"));if(!incoming.length)return;const available=6-profilePhotos.length;if(available<=0){alert("You can add up to 6 profile photos. Remove a photo first.");return}const chosen=incoming.slice(0,available);try{const compressed=[];for(const file of chosen)compressed.push(await compressGalleryImage(file));const previous=[...profilePhotos];profilePhotos.push(...compressed);try{localStorage.setItem("mm2_profile",JSON.stringify({...myProfile,photos:profilePhotos,photo:profilePhotos[0]||""}));myProfile={...myProfile,photos:profilePhotos,photo:profilePhotos[0]||""};profilePhotoData=myProfile.photo;renderProfilePhotos();if(profilePhotoData){$("profilePagePhoto").src=profilePhotoData;$("profilePhotoPreview").src=profilePhotoData}}catch(e){profilePhotos=previous;alert("Your browser storage is full. Try adding fewer photos or smaller images.");renderProfilePhotos()}}catch(e){alert(e.message||"Could not load the selected photos.")}}
+
+async function removeProfilePhoto(index) {
+  const photo = profilePhotos[index];
+  if (!photo) return;
+  try {
+    if (isStoragePhoto(photo)) {
+      if (!tg || !tg.initData || !verifiedTelegramUser) {
+        throw new Error("Open Conect inside Telegram to remove a saved photo.");
+      }
+      const result = await conectBackendRequest("delete_photo", undefined, { storagePath: photo.storage_path });
+      profilePhotos = Array.isArray(result.photos) ? result.photos : [];
+    } else {
+      profilePhotos.splice(index, 1);
+    }
+    saveProfilePhotos();
+    renderProfilePhotos();
+  } catch (error) {
+    alert(error.message || "Could not remove the photo.");
+  }
+}
+
+function compressGalleryImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      reject(new Error("Choose a JPEG, PNG, or WebP image."));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read an image."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Could not open an image."));
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(1, 700 / Math.max(img.width, img.height));
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const context = canvas.getContext("2d");
+        if (!context) {
+          reject(new Error("Could not process this image."));
+          return;
+        }
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.68));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function addProfilePhotos(files) {
+  const incoming = Array.from(files || []).filter(f =>
+    ["image/jpeg", "image/png", "image/webp"].includes(f.type)
+  );
+  if (!incoming.length) {
+    alert("Choose JPEG, PNG, or WebP images.");
+    return;
+  }
+  let available = 6 - profilePhotos.length;
+  if (available <= 0) {
+    alert("You can add up to 6 profile photos. Remove a photo first.");
+    return;
+  }
+  const chosen = incoming.slice(0, available);
+  try {
+    const compressed = [];
+    for (const file of chosen) compressed.push(await compressGalleryImage(file));
+
+    const online = Boolean(tg && tg.initData && verifiedTelegramUser);
+    if (online) {
+      await syncCurrentProfile();
+      await syncLocalPhotosToServer();
+      available = 6 - profilePhotos.length;
+      if (available <= 0) throw new Error("You can have up to 6 profile photos. Remove one first.");
+    }
+
+    const accepted = compressed.slice(0, available);
+    if (online) {
+      for (const dataUrl of accepted) {
+        const uploaded = await uploadPhotoDataUrl(dataUrl);
+        profilePhotos.push(uploaded);
+        saveProfilePhotos();
+        renderProfilePhotos();
+      }
+    } else {
+      profilePhotos.push(...accepted);
+      saveProfilePhotos();
+      renderProfilePhotos();
+    }
+  } catch (error) {
+    alert(error.message || "Could not add the selected photos.");
+  }
+}
 $("profileGalleryInput").addEventListener("change",e=>{addProfilePhotos(e.target.files);e.target.value=""});
 const galleryDrop=$("profilePhotoGallery");galleryDrop.addEventListener("dragover",e=>{e.preventDefault();galleryDrop.classList.add("dragging")});galleryDrop.addEventListener("dragleave",()=>galleryDrop.classList.remove("dragging"));galleryDrop.addEventListener("drop",e=>{e.preventDefault();galleryDrop.classList.remove("dragging");addProfilePhotos(e.dataTransfer.files)});
 function showPage(id){["signInPage","interestsSetupPage","discoverPage","likesPage","chatsPage","morePage","profilePage","detailPage"].forEach(x=>$(x).classList.toggle("hidden",x!==id));document.querySelector("nav").classList.toggle("hidden",id==="signInPage"||id==="interestsSetupPage");document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));if(id==="likesPage")renderLikes();if(id==="chatsPage")renderChats();if(id==="profilePage"){ $("myUsername").value=currentUsername;$("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("myBio").value=myProfile.bio||"";$("myPurpose").value=myProfile.purpose||"both";$("profilePagePhoto").src=myProfile.photo||"";$("profileHeroName").textContent=(myProfile.name||"Your name")+(myProfile.age?", "+myProfile.age:"");$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+(myProfile.loc||"Add your location");renderProfilePhotos();$("profileInterestSummary").innerHTML=(myProfile.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join("")||"No interests selected yet."}}
@@ -351,8 +517,103 @@ function renderInterestChoices(){
  root.querySelectorAll("[data-interest]").forEach(btn=>btn.onclick=()=>{const item=btn.dataset.interest;if(selectedInterests.has(item)){selectedInterests.delete(item)}else{if(selectedInterests.size>=10){$("interestError").textContent="Choose up to 10 interests. Remove one before adding another.";return}selectedInterests.add(item)}$("interestError").textContent="";renderInterestChoices();updateInterestCount()});updateInterestCount();
 }
 function updateInterestCount(){$("interestCount").textContent=`${selectedInterests.size} / 10 selected`}
-$("profilePhotoInput").onchange=async e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith("image/")){$("photoError").textContent="Please choose an image file.";return}if(file.size>12*1024*1024){$("photoError").textContent="Choose an image smaller than 12 MB.";return}try{const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)});const img=new Image();img.onload=()=>{const canvas=document.createElement("canvas"),scale=Math.min(1,600/Math.max(img.width,img.height));canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);profilePhotoData=canvas.toDataURL("image/jpeg",.78);if(profilePhotos.length){profilePhotos[0]=profilePhotoData}else{profilePhotos=[profilePhotoData]}myProfile={...myProfile,photo:profilePhotoData,photos:profilePhotos};try{localStorage.setItem("mm2_profile",JSON.stringify(myProfile))}catch(e){}$("profilePhotoPreview").src=profilePhotoData;$("photoError").textContent="";renderProfilePhotos()};img.onerror=()=>{$("photoError").textContent="Could not read that image. Try another photo."};img.src=dataUrl}catch(err){$("photoError").textContent="Could not load that image. Try another photo."}};
-$("finishSetupBtn").onclick=async()=>{if(!profilePhotoData){$("photoError").textContent="Please add a profile picture before continuing.";return}if(selectedInterests.size<3){$("interestError").textContent="Choose at least 3 interests to continue.";return}myProfile={...myProfile,photo:profilePhotoData,photos:profilePhotos,interests:[...selectedInterests]};try{localStorage.setItem("mm2_profile",JSON.stringify(myProfile))}catch(e){$("interestError").textContent="Your photo could not be saved. Try a smaller image.";return}$("photoError").textContent="";$("interestError").textContent="";const btn=$("finishSetupBtn"),old=btn.textContent;btn.disabled=true;btn.textContent="Saving profile…";try{const sync=await syncCurrentProfile();if(sync.localOnly){$("telegramAuthStatus").classList.remove("hidden");$("telegramAuthStatus").textContent="Saved on this device. Open Conect inside Telegram to sync profile details and interests to the database."}else{$("telegramAuthStatus").classList.remove("hidden");$("telegramAuthStatus").style.background="#153320";$("telegramAuthStatus").textContent="Profile details and interests synced to Conect’s database. Photos and likes remain on this device for now."}showPage("discoverPage")}catch(err){$("interestError").textContent="Saved on this device, but database sync failed: "+err.message+". Try again after checking your connection."}finally{btn.disabled=false;btn.textContent=old}};
+$("profilePhotoInput").onchange = async e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    $("photoError").textContent = "Choose a JPEG, PNG, or WebP image.";
+    e.target.value = "";
+    return;
+  }
+  if (file.size > 12 * 1024 * 1024) {
+    $("photoError").textContent = "Choose an image smaller than 12 MB.";
+    e.target.value = "";
+    return;
+  }
+  if (isStoragePhoto(profilePhotos[0])) {
+    $("photoError").textContent = "Your main photo is already saved online. Use the Profile photo gallery to add or remove photos.";
+    e.target.value = "";
+    return;
+  }
+  try {
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(1, 600 / Math.max(img.width, img.height));
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      const context = canvas.getContext("2d");
+      if (!context) {
+        $("photoError").textContent = "Could not process this image.";
+        return;
+      }
+      context.drawImage(img, 0, 0, canvas.width, canvas.height);
+      profilePhotoData = canvas.toDataURL("image/jpeg", 0.78);
+      if (profilePhotos.length) profilePhotos[0] = profilePhotoData;
+      else profilePhotos = [profilePhotoData];
+      myProfile = { ...myProfile, photo: profilePhotoData, photos: profilePhotos };
+      try { localStorage.setItem("mm2_profile", JSON.stringify(myProfile)); } catch (_) {}
+      $("profilePhotoPreview").src = profilePhotoData;
+      $("photoError").textContent = "";
+      renderProfilePhotos();
+    };
+    img.onerror = () => {
+      $("photoError").textContent = "Could not read that image. Try another photo.";
+    };
+    img.src = dataUrl;
+  } catch (_) {
+    $("photoError").textContent = "Could not load that image. Try another photo.";
+  }
+};
+$("finishSetupBtn").onclick = async () => {
+  if (!profilePhotoData) {
+    $("photoError").textContent = "Please add a profile picture before continuing.";
+    return;
+  }
+  if (selectedInterests.size < 3) {
+    $("interestError").textContent = "Choose at least 3 interests to continue.";
+    return;
+  }
+
+  myProfile = { ...myProfile, photo: profilePhotoData, photos: profilePhotos, interests: [...selectedInterests] };
+  try {
+    localStorage.setItem("mm2_profile", JSON.stringify(myProfile));
+  } catch (_) {
+    $("interestError").textContent = "Your photo could not be saved. Try a smaller image.";
+    return;
+  }
+
+  $("photoError").textContent = "";
+  $("interestError").textContent = "";
+  const btn = $("finishSetupBtn");
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Saving profile…";
+  try {
+    const sync = await syncCurrentProfile();
+    if (sync.localOnly) {
+      $("telegramAuthStatus").classList.remove("hidden");
+      $("telegramAuthStatus").textContent = "Saved on this device. Open Conect inside Telegram to sync your profile and photos.";
+    } else {
+      await syncLocalPhotosToServer();
+      $("telegramAuthStatus").classList.remove("hidden");
+      $("telegramAuthStatus").style.background = "#153320";
+      $("telegramAuthStatus").textContent = "Your profile, interests, and photos have synced to Conect. Demo likes remain on this device.";
+    }
+    showPage("discoverPage");
+  } catch (err) {
+    $("interestError").textContent = "Profile saving or photo upload failed: " + err.message + ". Your local profile is preserved; try again after checking your connection.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = old;
+  }
+};
 $("backToBasicsBtn").onclick=()=>showPage("signInPage");
 $("filterBtn").onclick=()=>alert("Demo filters: choose Everyone, Dating, or Friends above. Distance filters will be added after backend/location permissions are designed.");
 $("backDiscover").onclick=()=>showPage("discoverPage");
