@@ -284,8 +284,22 @@ body:has(#discoverPage:not(.hidden)){overflow:hidden}
 .feed-filter-purpose button{background:#252630;color:#c9c9d1;border:1px solid #3b3c47;border-radius:13px;padding:13px 7px;font:inherit;font-size:13px;font-weight:700}
 .feed-filter-purpose button.active{background:#3b202b;border-color:#e83d72;color:#fff;box-shadow:inset 0 0 0 1px #e83d72}
 .feed-filter-note{font-size:11px;line-height:1.45;margin:12px 0 18px}
+.feed-filter-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:17px 0 2px}
+.feed-filter-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.feed-filter-field>span,.feed-filter-field>label{font-size:12px;font-weight:700;color:#dedde4}
+.feed-filter-field input,.feed-filter-field select{width:100%;min-width:0;min-height:43px;padding:10px 11px;background:#252630;color:#fff;border:1px solid #3b3c47;border-radius:11px;font:inherit;font-size:13px}
+.feed-filter-field input:focus,.feed-filter-field select:focus{outline:2px solid #e83d72;outline-offset:1px}
+.feed-filter-subsection{margin-top:17px}
+.feed-filter-subsection h3{margin-bottom:9px}
+.feed-filter-checks{display:grid;gap:9px}
+.feed-filter-check{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border:1px solid #373842;border-radius:12px;background:#23242c;color:#f5f4f7;font-size:13px;line-height:1.35}
+.feed-filter-check input{width:17px;height:17px;flex:0 0 auto;margin:1px 0 0;accent-color:#e83d72}
+.feed-filter-check small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.feed-filter-error{color:#ff9b9b;font-size:12px;min-height:0;margin:8px 0}
+.feed-filter-error:empty{display:none}
 .feed-filter-actions{display:flex;gap:9px}
 .feed-filter-actions button{flex:1}
+@media(max-width:380px){.feed-filter-fields{gap:9px}.feed-filter-sheet{padding:18px 15px 15px}}
 @media(max-width:380px){
  .discover-heading h1{font-size:23px}
  .discover-fixed-header{gap:7px}
@@ -454,12 +468,25 @@ body:has(#portfolioPage:not(.hidden)){overflow:hidden}
     <div class="feed-filter-sheet-head"><div><h2 id="feedFilterTitle">Discovery filters</h2><p>Choose the kind of connections you want to see.</p></div><button type="button" class="feed-filter-close" aria-label="Close filters" onclick="closeFeedFilters()">×</button></div>
     <h3>I'm here for</h3>
     <div class="feed-filter-purpose" role="group" aria-label="Discovery purpose">
-      <button type="button" data-purpose="both" class="active">Everyone</button>
-      <button type="button" data-purpose="dating">Dating</button>
-      <button type="button" data-purpose="friends">Friends</button>
+      <button type="button" data-purpose="both" class="active" aria-pressed="true">Everyone</button>
+      <button type="button" data-purpose="dating" aria-pressed="false">Dating</button>
+      <button type="button" data-purpose="friends" aria-pressed="false">Friends</button>
     </div>
-    <p class="feed-filter-note">Your choice updates the profiles in the feed. Other filters can be added here later.</p>
-    <div class="feed-filter-actions"><button type="button" class="secondary" onclick="resetFeedFilters()">Reset</button><button type="button" class="primary" onclick="closeFeedFilters()">Show profiles</button></div>
+    <div class="feed-filter-fields">
+      <label class="feed-filter-field" for="filterMinAge"><span>Minimum age</span><input id="filterMinAge" type="number" min="18" max="99" step="1" value="18" inputmode="numeric"></label>
+      <label class="feed-filter-field" for="filterMaxAge"><span>Maximum age</span><input id="filterMaxAge" type="number" min="18" max="99" step="1" value="99" inputmode="numeric"></label>
+      <label class="feed-filter-field" for="filterLocationScope" style="grid-column:1/-1"><span>Location</span><select id="filterLocationScope"><option value="any">Anywhere</option><option value="city">Same city</option><option value="country">Same country</option></select></label>
+    </div>
+    <div class="feed-filter-subsection">
+      <h3>Profile preferences</h3>
+      <div class="feed-filter-checks">
+        <label class="feed-filter-check"><input id="filterSharedInterests" type="checkbox"><span>Share at least one interest<small>Only show people who share an interest from your profile.</small></span></label>
+        <label class="feed-filter-check"><input id="filterWithPhotos" type="checkbox"><span>Only profiles with photos<small>Hide profiles without an uploaded profile picture.</small></span></label>
+      </div>
+    </div>
+    <p class="feed-filter-note">Location uses the city and country written on profiles; it doesn't calculate distance. Filters narrow the profiles available to you.</p>
+    <p class="feed-filter-error" id="feedFilterError" role="alert" aria-live="polite"></p>
+    <div class="feed-filter-actions"><button type="button" class="secondary" onclick="resetFeedFilters()">Reset</button><button type="button" class="primary" onclick="applyFeedFilters()">Show profiles</button></div>
   </div>
 </div>
 <section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="liked" role="tab" aria-selected="true"><span>Liked</span><span class="likes-tab-badge" data-likes-count="liked">0</span></button><button data-likes-tab="matches" role="tab" aria-selected="false"><span>Matches</span><span class="likes-tab-badge" data-likes-count="matches">0</span></button><button data-likes-tab="likes" role="tab" aria-selected="false"><span>Likes</span><span class="likes-tab-badge" data-likes-count="likes">0</span></button></div><div class="likes-view-toolbar"><span id="likesResultsLabel">People</span><div class="likes-view-toggle" role="group" aria-label="Change profile layout"><button type="button" id="likesListMode" class="active" aria-pressed="true" onclick="setLikesView('list')" title="List view" aria-label="List view">☰</button><button type="button" id="likesGridMode" aria-pressed="false" onclick="setLikesView('grid')" title="Grid view" aria-label="Grid view">▦</button></div></div><div id="likesList"></div></section>
@@ -829,6 +856,7 @@ async function syncCurrentProfile() {
 }
 
 let index=0,mode="swipe",purpose="both",likesTab="liked",currentUsername=localStorage.getItem("conect_username")||"",setupChoices={gender:"",showMe:"Any",orientation:"Any"},liked=new Set(JSON.parse(localStorage.getItem("mm2_liked")||"[]")),passed=new Set(JSON.parse(localStorage.getItem("mm2_passed")||"[]")),matches=new Set(JSON.parse(localStorage.getItem("mm2_matches")||"[]")),myProfile=JSON.parse(localStorage.getItem("mm2_profile")||"{}");
+const discoveryFilters={minAge:18,maxAge:99,location:"any",sharedInterests:false,withPhotos:false};
 const interestGroups=[
 ["🎨 Creative & Arts",["Live Music / Concerts","Photography","Painting / Sketching","Writing / Poetry","Dancing","Museums & Galleries"]],
 ["👟 Fitness & Wellness",["Working out / Gym","Yoga / Pilates","Running","Swimming","Martial Arts","Meditation / Mindfulness"]],
@@ -1084,7 +1112,7 @@ if ($("gridMode")) $("gridMode").onclick=()=>{mode="grid";$("gridMode").classLis
 if ($("passBtn")) $("passBtn").onclick=()=>act("pass");
 if ($("likeBtn")) $("likeBtn").onclick=()=>act("like");
 if ($("starBtn")) $("starBtn").onclick=()=>act("star");
-document.querySelectorAll("[data-purpose]").forEach(b=>b.onclick=()=>{purpose=b.dataset.purpose;document.querySelectorAll("[data-purpose]").forEach(x=>x.classList.toggle("active",x.dataset.purpose===purpose));if($("activePurposeLabel"))$("activePurposeLabel").textContent=purpose==="both"?"Everyone":purpose==="dating"?"Dating":"Friends";index=0;renderAll()});
+document.querySelectorAll("[data-purpose]").forEach(b=>b.onclick=()=>{purpose=b.dataset.purpose;document.querySelectorAll("[data-purpose]").forEach(x=>{x.classList.toggle("active",x.dataset.purpose===purpose);x.setAttribute("aria-pressed",String(x.dataset.purpose===purpose))});updateFeedFilterButtonLabel();index=0;renderAll()});
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{if(!currentUsername){showPage("signInPage");return}showPage(b.dataset.page);if(b.dataset.page==="discoverPage"&&verifiedTelegramUser)void loadLiveExperience({force:true})});
 document.querySelectorAll("[data-likes-tab]").forEach(b=>b.onclick=()=>{likesTab=b.dataset.likesTab;renderLikes()});
 document.querySelectorAll("[data-group]").forEach(btn=>btn.onclick=()=>{const group=btn.dataset.group;setupChoices[group]=btn.dataset.value;document.querySelectorAll(`[data-group="${group}"]`).forEach(x=>x.classList.toggle("active",x===btn))});
@@ -1391,8 +1419,41 @@ function mapConectProfile(raw) {
     match: null
   };
 }
+function profilePassesDiscoveryFilters(profile) {
+  if (!profile) return false;
+  const age = Number(profile.age);
+  if (!Number.isFinite(age) || age < discoveryFilters.minAge || age > discoveryFilters.maxAge) return false;
+
+  const locationParts = String(profile.loc || profile.location || "")
+    .split(",").map(part => part.trim().toLocaleLowerCase()).filter(Boolean);
+  const ownCity = String(myProfile.city || "").trim().toLocaleLowerCase();
+  const ownCountry = String(myProfile.country || "").trim().toLocaleLowerCase();
+  if (discoveryFilters.location === "city" && (!ownCity || locationParts[0] !== ownCity)) return false;
+  if (discoveryFilters.location === "country" && (!ownCountry || !locationParts.includes(ownCountry))) return false;
+
+  if (discoveryFilters.withPhotos) {
+    const hasMainPhoto = Boolean(profile.img && String(profile.img).trim());
+    const hasGalleryPhoto = Array.isArray(profile.photos) && profile.photos.some(photo =>
+      typeof photo === "string" ? Boolean(photo.trim()) :
+      Boolean(photo && (photo.public_url || photo.url))
+    );
+    if (!hasMainPhoto && !hasGalleryPhoto) return false;
+  }
+
+  if (discoveryFilters.sharedInterests) {
+    const ownInterests = (Array.isArray(myProfile.interests) ? myProfile.interests : [...selectedInterests])
+      .map(value => String(value).trim().toLocaleLowerCase()).filter(Boolean);
+    const theirInterests = (Array.isArray(profile.interests) ? profile.interests : [])
+      .map(value => String(value).trim().toLocaleLowerCase()).filter(Boolean);
+    if (!ownInterests.length || !theirInterests.some(interest => ownInterests.includes(interest))) return false;
+  }
+  return true;
+}
 function currentProfileList() {
-  return profiles.filter(p => purpose === "both" || (Array.isArray(p.purpose) && p.purpose.includes(purpose)));
+  return profiles.filter(p =>
+    (purpose === "both" || (Array.isArray(p.purpose) && p.purpose.includes(purpose))) &&
+    profilePassesDiscoveryFilters(p)
+  );
 }
 function allLiveRelationshipProfiles() {
   return [...profiles, ...liveLikedProfiles, ...liveIncomingLikes, ...liveMatches.map(item => item.profile).filter(Boolean)];
@@ -1480,7 +1541,10 @@ async function recordLiveSwipe(profileId, action, openLikesAfter = false) {
 }
 function filtered() {
   if (liveDiscoveryMode) return currentProfileList();
-  return profiles.filter(p => (purpose === "both" || p.purpose.includes(purpose)) && !passed.has(p.id) && !liked.has(p.id));
+  return profiles.filter(p =>
+    (purpose === "both" || (Array.isArray(p.purpose) && p.purpose.includes(purpose))) &&
+    profilePassesDiscoveryFilters(p) && !passed.has(p.id) && !liked.has(p.id)
+  );
 }
 function chips(p) {
   return (Array.isArray(p.interests) ? p.interests : []).map(i => '<span class="chip">' + esc(i) + '</span>').join("");
@@ -1505,9 +1569,28 @@ function changeDiscoveryPhoto(profileId, delta) {
   renderSwipe();
   if (feed) feed.scrollTop = top;
 }
+function updateFeedFilterButtonLabel() {
+  const label = $("activePurposeLabel");
+  if (!label) return;
+  const purposeLabel = purpose === "dating" ? "Dating" : purpose === "friends" ? "Friends" : "Everyone";
+  const activeCount = Number(discoveryFilters.minAge !== 18 || discoveryFilters.maxAge !== 99) +
+    Number(discoveryFilters.location !== "any") +
+    Number(discoveryFilters.sharedInterests) +
+    Number(discoveryFilters.withPhotos);
+  label.textContent = purposeLabel + (activeCount ? " · " + activeCount : "");
+}
+function syncFeedFilterInputs() {
+  if ($("filterMinAge")) $("filterMinAge").value = String(discoveryFilters.minAge);
+  if ($("filterMaxAge")) $("filterMaxAge").value = String(discoveryFilters.maxAge);
+  if ($("filterLocationScope")) $("filterLocationScope").value = discoveryFilters.location;
+  if ($("filterSharedInterests")) $("filterSharedInterests").checked = discoveryFilters.sharedInterests;
+  if ($("filterWithPhotos")) $("filterWithPhotos").checked = discoveryFilters.withPhotos;
+}
 function openFeedFilters() {
   const overlay = $("feedFilterOverlay");
   if (!overlay) return;
+  syncFeedFilterInputs();
+  if ($("feedFilterError")) $("feedFilterError").textContent = "";
   overlay.classList.remove("hidden");
   document.querySelectorAll("[data-purpose]").forEach(button => {
     button.classList.toggle("active", button.dataset.purpose === purpose);
@@ -1517,14 +1600,45 @@ function openFeedFilters() {
 function closeFeedFilters() {
   $("feedFilterOverlay")?.classList.add("hidden");
 }
+function applyFeedFilters() {
+  const minValue = $("filterMinAge").value.trim();
+  const maxValue = $("filterMaxAge").value.trim();
+  const minAge = minValue === "" ? 18 : Number(minValue);
+  const maxAge = maxValue === "" ? 99 : Number(maxValue);
+  if (!Number.isInteger(minAge) || !Number.isInteger(maxAge) || minAge < 18 || maxAge > 99 || minAge > maxAge) {
+    $("feedFilterError").textContent = "Choose a valid age range between 18 and 99, with minimum age no greater than maximum age.";
+    return;
+  }
+  discoveryFilters.minAge = minAge;
+  discoveryFilters.maxAge = maxAge;
+  discoveryFilters.location = $("filterLocationScope").value || "any";
+  discoveryFilters.sharedInterests = $("filterSharedInterests").checked;
+  discoveryFilters.withPhotos = $("filterWithPhotos").checked;
+  updateFeedFilterButtonLabel();
+  if ($("feedFilterError")) $("feedFilterError").textContent = "";
+  index = 0;
+  const feed = $("profileScrollFeed");
+  if (feed) feed.scrollTop = 0;
+  renderAll();
+  closeFeedFilters();
+}
 function resetFeedFilters() {
   purpose = "both";
+  discoveryFilters.minAge = 18;
+  discoveryFilters.maxAge = 99;
+  discoveryFilters.location = "any";
+  discoveryFilters.sharedInterests = false;
+  discoveryFilters.withPhotos = false;
+  syncFeedFilterInputs();
+  if ($("feedFilterError")) $("feedFilterError").textContent = "";
   document.querySelectorAll("[data-purpose]").forEach(button => {
     button.classList.toggle("active", button.dataset.purpose === purpose);
     button.setAttribute("aria-pressed", String(button.dataset.purpose === purpose));
   });
-  if ($("activePurposeLabel")) $("activePurposeLabel").textContent = "Everyone";
+  updateFeedFilterButtonLabel();
   index = 0;
+  const feed = $("profileScrollFeed");
+  if (feed) feed.scrollTop = 0;
   renderAll();
 }
 function handleFeedProfileAction(profileId, action) {
@@ -1695,7 +1809,12 @@ function renderGrid() {
     $("gridView").innerHTML = '<div class="panel empty">Loading real Conect profiles…</div>';
     return;
   }
-  const list = liveDiscoveryMode ? currentProfileList() : profiles.filter(p => purpose === "both" || p.purpose.includes(purpose));
+  const list = liveDiscoveryMode
+    ? currentProfileList()
+    : profiles.filter(p =>
+        (purpose === "both" || (Array.isArray(p.purpose) && p.purpose.includes(purpose))) &&
+        profilePassesDiscoveryFilters(p)
+      );
   if (!list.length) {
     $("gridView").innerHTML = '<div class="panel empty">' + (liveDiscoveryMode ? "No new compatible profiles right now." : "No demo profiles available for this filter.") + '</div>';
     return;
