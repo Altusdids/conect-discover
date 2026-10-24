@@ -306,6 +306,7 @@ Deno.serve(async (req: Request) => {
       action !== "save_profile" &&
       action !== "upload_photo" &&
       action !== "delete_photo" &&
+      action !== "set_primary_photo" &&
       action !== "load_discovery" &&
       action !== "load_relationships" &&
       action !== "record_swipe" &&
@@ -1205,7 +1206,7 @@ Deno.serve(async (req: Request) => {
 
     // PHOTO ACTIONS
     // Find the database profile using the verified Telegram user ID.
-    if (action === "upload_photo" || action === "delete_photo") {
+    if (action === "upload_photo" || action === "delete_photo" || action === "set_primary_photo") {
       const { data: photoProfile, error: photoProfileError } =
         await admin
           .from("profiles")
@@ -1227,6 +1228,62 @@ Deno.serve(async (req: Request) => {
         return jsonResponse({
           error: "Save your Conect profile before managing photos",
         }, 409);
+      }
+
+      // SET THE MAIN PROFILE PHOTO. Only a row belonging to the verified user's profile can be selected.
+      if (action === "set_primary_photo") {
+        const photoId = cleanString(body.photoId, 80);
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(photoId)) {
+          return jsonResponse({ error: "Choose a valid profile photo" }, 400);
+        }
+
+        const { data: selectedPhoto, error: selectedPhotoError } = await admin
+          .from("profile_photos")
+          .select("id, storage_path")
+          .eq("id", photoId)
+          .eq("user_id", photoProfile.id)
+          .maybeSingle();
+
+        if (selectedPhotoError) {
+          console.error("Main profile photo lookup error", selectedPhotoError.message);
+          return jsonResponse({ error: "Could not verify that photo" }, 500);
+        }
+        if (!selectedPhoto) {
+          return jsonResponse({ error: "That photo does not belong to your profile" }, 404);
+        }
+
+        const { data: photoRows, error: photoRowsError } = await admin
+          .from("profile_photos")
+          .select("id, storage_path, sort_order, is_primary, created_at")
+          .eq("user_id", photoProfile.id)
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true });
+
+        if (photoRowsError) {
+          console.error("Main profile photo ordering lookup error", photoRowsError.message);
+          return jsonResponse({ error: "Could not load your photo gallery" }, 500);
+        }
+
+        const orderedRows = [...(photoRows || [])].sort((a: any, b: any) =>
+          a.id === photoId ? -1 : b.id === photoId ? 1 : a.sort_order - b.sort_order
+        );
+
+        for (let i = 0; i < orderedRows.length; i++) {
+          const row = orderedRows[i];
+          const { error: orderError } = await admin
+            .from("profile_photos")
+            .update({ sort_order: i + 1, is_primary: i === 0 })
+            .eq("id", row.id)
+            .eq("user_id", photoProfile.id);
+          if (orderError) {
+            console.error("Main profile photo update error", orderError.message);
+            return jsonResponse({ error: "Could not update the main profile photo. Please refresh and try again." }, 500);
+          }
+        }
+
+        const photos = await normalizePhotoOrder(admin, photoProfile.id);
+        if (!photos) return jsonResponse({ error: "Photo order could not be refreshed" }, 500);
+        return jsonResponse({ ok: true, photos });
       }
 
       // UPLOAD PHOTO
