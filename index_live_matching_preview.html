@@ -11,6 +11,12 @@ h1{font-size:29px;line-height:1.1;letter-spacing:-1px;margin:7px 0}p{color:var(-
 .hero .side-action{width:38px;height:38px;border:1px solid #ffffff28;border-radius:50%;display:grid;place-items:center;color:#fff;background:#ffffff32;backdrop-filter:blur(10px);box-shadow:0 3px 10px #0004;font-size:18px;line-height:1;padding:0;cursor:pointer}
 .hero .side-action.primary-like{background:#e83d72;border-color:#f36b93}.hero .side-action:active{transform:scale(.94)}
 .hero .onphoto{right:60px;bottom:15px}.hero .onphoto .chips{max-width:100%}
+.hero .photo-nav{position:absolute;z-index:6;top:46%;width:38px;height:38px;border:1px solid #ffffff55;border-radius:50%;background:#111a;color:#fff;font-size:25px;line-height:1;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(8px)}
+.hero .photo-nav.prev{left:10px}.hero .photo-nav.next{right:55px}
+.hero .photo-indicator{position:absolute;z-index:6;top:15px;left:50%;transform:translateX(-50%);background:#111b;border:1px solid #ffffff35;padding:5px 9px;border-radius:20px;font-size:11px;color:#fff;white-space:nowrap}
+.detail-photo-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.detail-photo-gallery img{width:100%;height:220px;object-fit:cover;border-radius:12px;background:var(--panel2)}
+@media(max-width:380px){.hero .photo-nav.next{right:49px}.detail-photo-gallery img{height:170px}}
 .subtext{text-align:center;font-size:12px;color:var(--muted);margin:5px 0 16px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.person{background:var(--panel);border:1px solid var(--line);border-radius:17px;overflow:hidden;cursor:pointer}.thumb{height:205px;background:linear-gradient(140deg,#a62c25,#fb702a);position:relative}.thumb img{width:100%;height:100%;object-fit:cover}.thumb:after{content:"";position:absolute;inset:50% 0 0;background:linear-gradient(transparent,#000b)}.thumbname{position:absolute;bottom:9px;left:10px;z-index:1;font-weight:750}.personinfo{padding:10px}.personinfo p{font-size:12px;margin:5px 0;color:#d0ced6}.personinfo button{width:100%;padding:9px;border-radius:10px;background:#332a31;color:#ff9c7d;font-weight:700}
 .section{margin-top:15px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;margin:10px 0}.profiletop{display:flex;gap:12px;align-items:center}.avatar{width:52px;height:52px;border-radius:17px;background:linear-gradient(135deg,#ff4c1d,#7c35f5);display:grid;place-items:center;font-size:21px;font-weight:800}.field{width:100%;padding:12px;border:1px solid var(--line);background:var(--panel2);color:white;border-radius:11px;margin:5px 0 12px;font:inherit}label{font-size:12px;color:var(--muted)}.primary{background:linear-gradient(120deg,#ff5a1f,#ff3044);border:0;color:white;border-radius:12px;padding:12px 15px;font-weight:750}.secondary{background:var(--panel2);color:white;border:1px solid var(--line);border-radius:12px;padding:11px 13px}.empty{text-align:center;padding:25px 12px;color:var(--muted)}.likes-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:5px;margin:16px 0}.likes-tabs button{background:transparent;color:var(--muted);border-radius:10px;padding:11px 5px;font-weight:700}.likes-tabs button.active{background:#3a2529;color:#ff997d;border:1px solid #6e382d}nav{position:fixed;z-index:15;bottom:8px;left:10px;right:10px;max-width:680px;margin:auto;background:rgba(29,31,32,.96);border:1px solid #ffffff0b;border-radius:28px;display:flex;justify-content:space-between;gap:3px;padding:6px 7px calc(6px + env(safe-area-inset-bottom));backdrop-filter:blur(18px);box-shadow:0 7px 24px #0007}
 nav button{min-width:0;max-width:none;flex:1;background:transparent;color:#c4c4c8;padding:7px 2px 5px;border-radius:24px;font-size:10px;line-height:1.15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;white-space:nowrap}
@@ -343,6 +349,7 @@ let liveSwipeBusy = false;
 let liveLikedProfiles = [];
 let liveIncomingLikes = [];
 let liveMatches = [];
+const discoveryPhotoIndexes = new Map();
 
 function filtered(){return profiles.filter(p=>(purpose==="both"||p.purpose.includes(purpose))&&!passed.has(p.id)&&!liked.has(p.id))}
 function chips(p){return p.interests.map(i=>`<span class="chip">${esc(i)}</span>`).join("")}
@@ -748,6 +755,23 @@ function filtered() {
 function chips(p) {
   return (Array.isArray(p.interests) ? p.interests : []).map(i => '<span class="chip">' + esc(i) + '</span>').join("");
 }
+function profilePhotoUrls(p) {
+  const gallery = (Array.isArray(p && p.photos) ? p.photos : [])
+    .map(photo => typeof photo === "string" ? photo : (photo && (photo.public_url || photo.url)) || "")
+    .filter(Boolean);
+  if (p && p.img) gallery.unshift(p.img);
+  return [...new Set(gallery)];
+}
+function changeDiscoveryPhoto(profileId, delta) {
+  const p = findConectProfile(profileId);
+  if (!p) return;
+  const photos = profilePhotoUrls(p);
+  if (photos.length < 2) return;
+  const key = String(p.id);
+  const current = discoveryPhotoIndexes.get(key) || 0;
+  discoveryPhotoIndexes.set(key, (current + delta + photos.length) % photos.length);
+  renderSwipe();
+}
 function renderSwipe() {
   const list = filtered();
   if (liveProfilesLoading) {
@@ -763,13 +787,22 @@ function renderSwipe() {
     return;
   }
   const p = list[index % list.length];
-  const image = p.img
-    ? '<img src="' + esc(p.img) + '" alt="Profile photo">'
+  const photos = profilePhotoUrls(p);
+  const photoKey = String(p.id);
+  const photoIndex = photos.length ? (discoveryPhotoIndexes.get(photoKey) || 0) % photos.length : 0;
+  const displayImage = photos[photoIndex] || p.img || "";
+  const image = displayImage
+    ? '<img src="' + esc(displayImage) + '" alt="Profile photo">'
     : '<div style="width:100%;height:100%;display:grid;place-items:center;font-size:72px;font-weight:800;color:#ffffffb8">' + esc(p.initial) + '</div>';
+  const photoControls = photos.length > 1
+    ? '<button class="photo-nav prev" aria-label="Previous photo" title="Previous photo" onclick="changeDiscoveryPhoto(\'' + esc(photoKey) + '\',-1)">‹</button>' +
+      '<button class="photo-nav next" aria-label="Next photo" title="Next photo" onclick="changeDiscoveryPhoto(\'' + esc(photoKey) + '\',1)">›</button>' +
+      '<div class="photo-indicator">' + (photoIndex + 1) + ' / ' + photos.length + '</div>'
+    : '';
   const badge = liveDiscoveryMode ? "✦ CONECT MEMBER" : "♥ " + p.match + "% match";
   const onlineIndicator = liveDiscoveryMode ? "" : ' <span class="online"></span>';
   const id = inlineProfileId(p.id);
-  $("hero").innerHTML = image +
+  $("hero").innerHTML = image + photoControls +
     '<div class="match">' + badge + '</div>' +
     '<div class="side-actions" aria-label="Profile actions">' +
     '<button class="side-action" aria-label="Super like" title="Super like" onclick="act(\'star\')">ϟ</button>' +
@@ -900,8 +933,11 @@ function showDetail(id) {
     showPage("detailPage");
     return;
   }
-  const image = p.img
-    ? '<img src="' + esc(p.img) + '" alt="Profile photo" style="width:100%;max-height:390px;object-fit:cover;border-radius:15px">'
+  const photos = profilePhotoUrls(p);
+  const image = photos.length
+    ? '<div class="detail-photo-gallery">' + photos.map((photo, i) =>
+        '<img loading="lazy" src="' + esc(photo) + '" alt="Profile photo ' + (i + 1) + '">'
+      ).join("") + '</div>'
     : '<div class="photo-gallery-tile" style="height:220px;font-size:64px;font-weight:800">' + esc(p.initial) + '</div>';
   const purposes = Array.isArray(p.purpose) ? p.purpose : [p.purpose].filter(Boolean);
   const idArg = inlineProfileId(p.id);
