@@ -173,6 +173,14 @@ const allowedPurposes = new Set([
   "friends",
 ]);
 
+const allowedLookingFor = new Set([
+  "younger",
+  "older",
+  "care_for_me",
+  "care_for",
+  "any",
+]);
+
 function cleanString(value: unknown, max: number): string {
   return typeof value === "string"
     ? value.trim().slice(0, max)
@@ -1002,7 +1010,7 @@ Deno.serve(async (req: Request) => {
           await Promise.all([
             admin
               .from("profiles")
-              .select("id, app_username, display_name, age, gender, country, city, bio, purpose, show_me, is_active, created_at")
+              .select("id, app_username, display_name, age, gender, country, city, bio, purpose, show_me, looking_for, is_active, created_at")
               .eq("is_active", true)
               .neq("id", viewer.id)
               .order("created_at", { ascending: false })
@@ -1088,6 +1096,7 @@ Deno.serve(async (req: Request) => {
             location: [candidate.city, candidate.country].filter(Boolean).join(", "),
             bio: candidate.bio,
             purpose: candidate.purpose,
+            looking_for: candidate.looking_for || "any",
             interests: interestsByUser.get(candidate.id) || [],
             photos,
             photo: primary?.public_url || null,
@@ -1645,7 +1654,7 @@ Deno.serve(async (req: Request) => {
       const { data: profile, error } = await admin
         .from("profiles")
         .select(
-          "id, app_username, display_name, age, gender, interested_in, show_me, country, city, bio, purpose, email",
+          "id, app_username, display_name, age, gender, interested_in, show_me, looking_for, country, city, bio, purpose, email",
         )
         .eq("telegram_user_id", String(telegramUser.id))
         .maybeSingle();
@@ -1731,6 +1740,7 @@ Deno.serve(async (req: Request) => {
     const interestedIn =
       cleanString(input.interested_in, 40) || "Any";
     const showMe = cleanString(input.show_me, 40) || "Any";
+    const lookingFor = cleanString(input.looking_for, 40) || "any";
     const country = cleanString(input.country, 100);
     const city = cleanString(input.city, 100);
     const bio = cleanString(input.bio, 500);
@@ -1786,6 +1796,10 @@ Deno.serve(async (req: Request) => {
       }, 400);
     }
 
+    if (!allowedLookingFor.has(lookingFor)) {
+      return jsonResponse({ error: "Choose a valid Looking for option" }, 400);
+    }
+
     if (!country || !city) {
       return jsonResponse({
         error: "Country and city are required",
@@ -1823,6 +1837,7 @@ Deno.serve(async (req: Request) => {
       gender,
       interested_in: interestedIn,
       show_me: showMe,
+      looking_for: lookingFor,
       country,
       city,
       bio,
@@ -1836,7 +1851,7 @@ Deno.serve(async (req: Request) => {
       .from("profiles")
       .upsert(row, { onConflict: "telegram_user_id" })
       .select(
-        "id, app_username, display_name, age, gender, interested_in, show_me, country, city, bio, purpose",
+        "id, app_username, display_name, age, gender, interested_in, show_me, looking_for, country, city, bio, purpose",
       )
       .single();
 
