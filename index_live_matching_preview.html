@@ -206,7 +206,10 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
  .profile-management-note{font-size:11px;color:var(--muted);margin:8px 0 0}
  .profile-management-status{font-size:12px;color:#f1c2d3;min-height:0;margin:6px 0}
  @media(max-width:380px){.profile-management-panel{padding:12px}.profile-management-row{gap:8px}.profile-management-row button{padding:7px 8px;font-size:11px}}
-.photo-gallery-title{font-size:14px;color:var(--muted);text-align:center;margin:0 0 14px}.photo-gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.photo-gallery-tile{position:relative;aspect-ratio:1/1;border:1px dashed #454851;border-radius:14px;overflow:hidden;background:#191a20;display:flex;align-items:center;justify-content:center;min-width:0}.photo-gallery-tile img{width:100%;height:100%;object-fit:cover;display:block}.photo-gallery-add{font-size:32px;font-weight:300;color:#c2c2c9;width:100%;height:100%;background:transparent;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer}.photo-gallery-remove{position:absolute;right:5px;top:5px;border:0;border-radius:50%;width:25px;height:25px;background:#000b;color:#fff;font-size:17px;line-height:1;cursor:pointer}.photo-gallery-drop.dragging{border-color:var(--orange);background:#33211f}.photo-gallery-help{text-align:center;font-size:12px;color:var(--muted);margin:12px 0 0}
+.photo-gallery-title{font-size:14px;color:var(--muted);text-align:center;margin:0 0 14px}
+.photo-gallery-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 7px}
+.photo-gallery-head .photo-gallery-title{text-align:left;margin:0;font-weight:750;color:var(--text)}
+.change-main-photo-btn{font-size:12px;padding:8px 10px;white-space:nowrap}.photo-gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.photo-gallery-tile{position:relative;aspect-ratio:1/1;border:1px dashed #454851;border-radius:14px;overflow:hidden;background:#191a20;display:flex;align-items:center;justify-content:center;min-width:0}.photo-gallery-tile img{width:100%;height:100%;object-fit:cover;display:block}.photo-gallery-add{font-size:32px;font-weight:300;color:#c2c2c9;width:100%;height:100%;background:transparent;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer}.photo-gallery-remove{position:absolute;right:5px;top:5px;border:0;border-radius:50%;width:25px;height:25px;background:#000b;color:#fff;font-size:17px;line-height:1;cursor:pointer}.photo-gallery-drop.dragging{border-color:var(--orange);background:#33211f}.photo-gallery-help{text-align:center;font-size:12px;color:var(--muted);margin:12px 0 0}
 
 /* Feed breathing room: prioritize the photo and profile details over floating controls. */
 #discoverPage>h1{font-size:27px;line-height:1.12;margin:2px 0 5px;letter-spacing:-.8px}
@@ -479,7 +482,7 @@ body:has(#portfolioPage:not(.hidden)){overflow:hidden}
 <button type="button" class="profile-hero" id="openBasicsBtn" aria-label="Edit basic profile details">
 <img id="profilePagePhoto" class="profile-hero-photo" alt="Your profile picture">
 <div class="profile-hero-meta"><strong id="profileHeroName">Your name</strong><span id="profileHeroDetails">@username · Add your details</span><span style="color:#ff805b;margin-top:4px">Tap photo to edit basics ✎</span></div><span style="font-size:22px;color:var(--muted)">›</span></button>
-<section class="photo-gallery-panel" aria-label="Profile photos"><p class="photo-gallery-title">Profiles with photos get more likes</p><div id="profilePhotoGallery" class="photo-gallery-grid photo-gallery-drop"><button type="button" class="photo-gallery-tile photo-gallery-add" id="addProfilePhotosBtn" aria-label="Add profile photos">+</button></div><input id="profileGalleryInput" type="file" accept="image/*" multiple hidden><p class="photo-gallery-help" id="profileGalleryHelp">Drag photos here or tap + · 0/6</p></section><div class="panel"><label>Username</label><input id="myUsername" class="field" disabled><p style="font-size:12px">Your username is set at sign-in in this prototype.</p>
+<section class="photo-gallery-panel" aria-label="Profile photos"><div class="photo-gallery-head"><p class="photo-gallery-title">Your profile photos</p><button type="button" class="secondary change-main-photo-btn" id="changeMainPhotoBtn">Change main photo</button></div><p class="photo-gallery-help" style="margin:0 0 12px">Your main photo appears first in the Feed.</p><div id="profilePhotoGallery" class="photo-gallery-grid photo-gallery-drop"><button type="button" class="photo-gallery-tile photo-gallery-add" id="addProfilePhotosBtn" aria-label="Add profile photos">+</button></div><input id="profileGalleryInput" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden><input id="mainPhotoCropInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><p class="photo-gallery-help" id="profileGalleryHelp">Tap + to add gallery photos · 0/6</p></section><div class="panel"><label>Username</label><input id="myUsername" class="field" disabled><p style="font-size:12px">Your username is set at sign-in in this prototype.</p>
 <label>Interests</label><div id="profileInterestSummary" class="chips" style="margin:7px 0 12px"></div><button type="button" class="secondary" id="editInterestsBtn">Edit interests</button>
 <label style="display:block;margin-top:14px">Short bio</label><textarea id="myBio" class="field" rows="3" maxlength="180" placeholder="Tell people a little about yourself"></textarea>
 <label>Looking for</label><select id="myPurpose" class="field"><option value="both">Dating and friendship</option><option value="dating">Dating</option><option value="friends">Friendship</option></select>
@@ -1149,19 +1152,21 @@ function renderInterestChoices(){
 }
 function updateInterestCount(){$("interestCount").textContent=`${selectedInterests.size} / 10 selected`}
 let photoCropState = null;
-function cropImageReady(image, fileName) {
+function cropImageReady(image, fileName, purpose = "setup") {
   const modal = $("photoCropModal");
   const img = $("photoCropImage");
   $("photoCropError").textContent = "";
   $("photoCropZoom").value = "1";
   $("photoCropZoomValue").textContent = "1.0×";
-  photoCropState = { image, fileName: fileName || "profile-photo.jpg", zoom: 1, panX: 0, panY: 0, dragging: false, lastX: 0, lastY: 0 };
+  photoCropState = { image, fileName: fileName || "profile-photo.jpg", purpose, zoom: 1, panX: 0, panY: 0, dragging: false, lastX: 0, lastY: 0 };
+  $("photoCropTitle").textContent = purpose === "replace-main" ? "Crop your new main photo" : "Crop your main photo";
+  $("applyPhotoCropBtn").textContent = purpose === "replace-main" ? "Save main photo" : "Use photo";
   img.src = image.src;
   modal.classList.remove("hidden");
   document.body.style.overflow = "hidden";
   requestAnimationFrame(renderPhotoCrop);
 }
-function openPhotoCropFromFile(file) {
+function openPhotoCropFromFile(file, purpose = "setup") {
   if (!file) return;
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
     $("photoError").textContent = "Choose a JPEG, PNG, or WebP photo.";
@@ -1177,7 +1182,7 @@ function openPhotoCropFromFile(file) {
   reader.onload = () => {
     const image = new Image();
     image.onerror = () => { $("photoError").textContent = "Could not open that image. Try another photo."; };
-    image.onload = () => cropImageReady(image, file.name);
+    image.onload = () => cropImageReady(image, file.name, purpose);
     image.src = String(reader.result || "");
   };
   reader.readAsDataURL(file);
@@ -1208,8 +1213,9 @@ function cancelPhotoCrop() {
   $("photoCropImage").removeAttribute("src");
   document.body.style.overflow = "";
 }
-function applyPhotoCrop() {
+async function applyPhotoCrop() {
   if (!photoCropState) return;
+  const purpose = photoCropState.purpose || "setup";
   const stage = $("photoCropStage");
   const image = photoCropState.image;
   const w = stage.clientWidth, h = stage.clientHeight;
@@ -1243,21 +1249,50 @@ function applyPhotoCrop() {
     $("photoCropError").textContent = "Could not export this photo. Please try another image.";
     return;
   }
-  if (profilePhotos.length) profilePhotos[0] = cropped;
-  else profilePhotos = [cropped];
-  profilePhotoData = cropped;
-  myProfile = { ...myProfile, photo: cropped, photos: profilePhotos };
-  try { localStorage.setItem("mm2_profile", JSON.stringify(myProfile)); }
-  catch (_) {
-    $("photoError").textContent = "Your browser storage is full. Try a smaller photo.";
+
+  const applyButton = $("applyPhotoCropBtn");
+  const oldLabel = applyButton.textContent;
+  applyButton.disabled = true;
+  applyButton.textContent = "Saving…";
+  try {
+    if (purpose === "replace-main" && liveDiscoveryMode && verifiedTelegramUser) {
+      const result = await conectBackendRequest("replace_primary_photo", undefined, { photoDataUrl: cropped });
+      if (!Array.isArray(result.photos) || !result.photos.length) {
+        throw new Error("The server did not return the updated photo gallery.");
+      }
+      profilePhotos = result.photos;
+      profilePhotoData = photoSource(profilePhotos[0]) || "";
+    } else {
+      if (purpose === "replace-main") {
+        if (!profilePhotos.length) profilePhotos = [cropped];
+        else profilePhotos[0] = cropped;
+      } else {
+        if (profilePhotos.length) profilePhotos[0] = cropped;
+        else profilePhotos = [cropped];
+      }
+      profilePhotoData = cropped;
+    }
+
+    myProfile = { ...myProfile, photo: profilePhotoData, photos: profilePhotos };
+    try { localStorage.setItem("mm2_profile", JSON.stringify(myProfile)); }
+    catch (_) { throw new Error("Your browser storage is full. Try removing a gallery photo."); }
+
+    if ($("profilePhotoPreview")) $("profilePhotoPreview").src = profilePhotoData || cropped;
+    if ($("profilePagePhoto")) $("profilePagePhoto").src = profilePhotoData || cropped;
+    $("photoError").textContent = "";
+    saveProfilePhotos();
+    renderProfilePhotos();
+    const status = $("profileSaved");
+    if (status) status.textContent = purpose === "replace-main" ? "Main photo updated and saved." : "Main photo crop saved. Finish setup to sync it to Conect.";
     cancelPhotoCrop();
-    return;
+  } catch (error) {
+    $("photoCropError").textContent = "Could not save the cropped photo: " + (error.message || "request failed");
+  } finally {
+    if ($("applyPhotoCropBtn")) {
+      $("applyPhotoCropBtn").disabled = false;
+      $("applyPhotoCropBtn").textContent = oldLabel;
+    }
   }
-  $("profilePhotoPreview").src = cropped;
-  $("photoError").textContent = "";
-  saveProfilePhotos();
-  renderProfilePhotos();
-  cancelPhotoCrop();
 }
 const photoCropStage = $("photoCropStage");
 photoCropStage.addEventListener("pointerdown", event => {
@@ -1290,6 +1325,12 @@ $("profilePhotoInput").onchange = e => {
   e.target.value = "";
   if (file) openPhotoCropFromFile(file);
 };
+$("changeMainPhotoBtn").onclick = () => $("mainPhotoCropInput").click();
+$("mainPhotoCropInput").addEventListener("change", event => {
+  const file = event.target.files?.[0];
+  event.target.value = "";
+  if (file) openPhotoCropFromFile(file, "replace-main");
+});
 $("finishSetupBtn").onclick = async () => {
   if (!profilePhotoData) {
     $("photoError").textContent = "Please add a profile picture before continuing.";
