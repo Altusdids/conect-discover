@@ -580,6 +580,10 @@ async function syncLocalPhotosToServer() {
     throw new Error("Your Telegram account has not been verified. Close and reopen Conect inside Telegram.");
   }
   const working = [...profilePhotos].slice(0, 6);
+  // Only request a server-side primary-photo reorder when the first item
+  // was local-only. Existing server-backed galleries are already ordered;
+  // reapplying the same primary photo on every add can block photo uploads.
+  const firstPhotoWasLocal = Boolean(working.length && !isStoragePhoto(working[0]));
   for (let i = 0; i < working.length; i++) {
     const item = working[i];
     if (isStoragePhoto(item)) continue;
@@ -592,7 +596,7 @@ async function syncLocalPhotosToServer() {
     renderProfilePhotos();
   }
   profilePhotos = working.filter(photo => Boolean(photoSource(photo)));
-  if (profilePhotos.length && isStoragePhoto(profilePhotos[0])) {
+  if (profilePhotos.length && firstPhotoWasLocal && isStoragePhoto(profilePhotos[0])) {
     const primaryResult = await conectBackendRequest("set_primary_photo", undefined, { photoId: String(profilePhotos[0].id) });
     if (Array.isArray(primaryResult.photos)) profilePhotos = primaryResult.photos;
   }
