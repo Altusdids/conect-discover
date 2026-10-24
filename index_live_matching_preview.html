@@ -207,6 +207,36 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
  .profile-management-status{font-size:12px;color:#f1c2d3;min-height:0;margin:6px 0}
  @media(max-width:380px){.profile-management-panel{padding:12px}.profile-management-row{gap:8px}.profile-management-row button{padding:7px 8px;font-size:11px}}
 .photo-gallery-title{font-size:14px;color:var(--muted);text-align:center;margin:0 0 14px}.photo-gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.photo-gallery-tile{position:relative;aspect-ratio:1/1;border:1px dashed #454851;border-radius:14px;overflow:hidden;background:#191a20;display:flex;align-items:center;justify-content:center;min-width:0}.photo-gallery-tile img{width:100%;height:100%;object-fit:cover;display:block}.photo-gallery-add{font-size:32px;font-weight:300;color:#c2c2c9;width:100%;height:100%;background:transparent;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer}.photo-gallery-remove{position:absolute;right:5px;top:5px;border:0;border-radius:50%;width:25px;height:25px;background:#000b;color:#fff;font-size:17px;line-height:1;cursor:pointer}.photo-gallery-drop.dragging{border-color:var(--orange);background:#33211f}.photo-gallery-help{text-align:center;font-size:12px;color:var(--muted);margin:12px 0 0}
+
+/* Feed breathing room: prioritize the photo and profile details over floating controls. */
+#discoverPage>h1{font-size:27px;line-height:1.12;margin:2px 0 5px;letter-spacing:-.8px}
+#discoverPage>p{font-size:13px;margin:0 0 10px}
+#discoverPage .toolbar{margin:10px 0}
+#discoverPage .toolbar .seg button{padding:8px 10px}
+#discoverPage .toolbar .smallbtn{padding:9px 11px}
+#discoverPage .toolbar+.toolbar{margin-top:0;margin-bottom:11px}
+#discoverPage .hero{height:min(66svh,650px);min-height:390px;border-radius:20px}
+#discoverPage .hero .side-actions{display:none!important}
+#discoverPage .hero .onphoto{left:16px;right:16px;bottom:16px}
+#discoverPage .hero .onphoto h2{font-size:27px;line-height:1.15;margin-bottom:4px}
+#discoverPage .hero .location{font-size:12px}
+#discoverPage .hero .bio{font-size:13px;line-height:1.35;margin:7px 0 8px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-width:100%}
+#discoverPage .hero .chips{gap:5px;max-width:100%}
+#discoverPage .hero .chip{font-size:11px;padding:5px 8px}
+#discoverPage .hero .chip-more{background:#ffffff20;border-style:dashed;color:#fff}
+#discoverPage .hero .photo-nav.next{right:10px}
+#discoverPage .hero .photo-nav.prev{left:10px}
+#discoverPage .feed-actions{display:flex;justify-content:center;align-items:center;gap:24px;padding:13px 8px 4px;margin:0}
+#discoverPage .feed-actions .action{width:56px;height:56px;font-size:25px;flex:0 0 56px}
+#discoverPage .feed-actions #starBtn{display:none!important}
+#discoverPage #counter{font-size:11px;margin:5px 0 4px}
+@media(max-width:380px){
+  #discoverPage .hero{height:min(64svh,590px);min-height:370px}
+  #discoverPage .hero .onphoto{left:13px;right:13px;bottom:13px}
+  #discoverPage .hero .onphoto h2{font-size:25px}
+  #discoverPage .feed-actions{gap:20px;padding-top:11px}
+}
+
 </style></head>
 <body><div class="app">
 <header><div class="logo">Conect<em>.</em></div><span class="tag">DISCOVER BETA</span></header>
@@ -246,7 +276,7 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
 <div class="toolbar"><div class="seg"><button class="active" id="swipeMode">Swipe</button><button id="gridMode">Grid</button></div><button class="smallbtn" id="filterBtn">⚙ Filters</button></div>
 <div class="toolbar" style="margin-top:0"><div class="seg" id="purposeSeg"><button class="active" data-purpose="both">Everyone</button><button data-purpose="dating">Dating</button><button data-purpose="friends">Friends</button></div><span style="font-size:11px;color:var(--muted)">🌍 Worldwide</span></div>
 <div id="swipeView"><div class="card"><div class="hero" id="hero"><img id="heroImg" alt="Profile photo"><div class="match" id="match">♥ 92% match</div><div class="onphoto"><h2 id="personName">Maya, 25 <span class="online"></span></h2><div class="location" id="personLocation">⌖ Kampala, Uganda</div><div class="bio" id="personBio"></div><div class="chips" id="personChips"></div></div></div></div>
-<div class="actions hidden"><button class="action pass" id="passBtn" aria-label="Pass">×</button><button class="action star" id="starBtn" aria-label="Super like">★</button><button class="action like" id="likeBtn" aria-label="Like">♥</button></div><div class="subtext" id="counter">Profile 1 of 6 · Like to connect</div></div>
+<div class="actions feed-actions"><button class="action pass" id="passBtn" aria-label="Pass" title="Pass">×</button><button class="action star" id="starBtn" aria-label="Super like" title="Super like" aria-hidden="true" tabindex="-1" style="display:none">★</button><button class="action like" id="likeBtn" aria-label="Like" title="Like">♥</button></div><div class="subtext" id="counter">Profile 1 of 6 · Like to connect</div></div>
 <div id="gridView" class="grid hidden"></div>
 </section>
 <section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="liked" role="tab" aria-selected="true"><span>Liked</span><span class="likes-tab-badge" data-likes-count="liked">0</span></button><button data-likes-tab="matches" role="tab" aria-selected="false"><span>Matches</span><span class="likes-tab-badge" data-likes-count="matches">0</span></button><button data-likes-tab="likes" role="tab" aria-selected="false"><span>Likes</span><span class="likes-tab-badge" data-likes-count="likes">0</span></button></div><div class="likes-view-toolbar"><span id="likesResultsLabel">People</span><div class="likes-view-toggle" role="group" aria-label="Change profile layout"><button type="button" id="likesListMode" class="active" aria-pressed="true" onclick="setLikesView('list')" title="List view" aria-label="List view">☰</button><button type="button" id="likesGridMode" aria-pressed="false" onclick="setLikesView('grid')" title="Grid view" aria-label="Grid view">▦</button></div></div><div id="likesList"></div></section>
@@ -993,18 +1023,17 @@ function renderSwipe() {
   const badge = liveDiscoveryMode ? "✦ CONECT MEMBER" : "♥ " + p.match + "% match";
   const onlineIndicator = liveDiscoveryMode ? "" : ' <span class="online"></span>';
   const id = inlineProfileId(p.id);
+  const allInterests = Array.isArray(p.interests) ? p.interests : [];
+  const visibleInterestTags = chips(allInterests.slice(0, 3));
+  const extraInterestCount = Math.max(0, allInterests.length - 3);
+  const interestMarkup = visibleInterestTags +
+    (extraInterestCount ? '<span class="chip chip-more">+' + extraInterestCount + ' more</span>' : '');
   $("hero").innerHTML = image + photoControls +
     '<div class="match">' + badge + '</div>' +
-    '<div class="side-actions" aria-label="Profile actions">' +
-    '<button class="side-action" aria-label="Super like" title="Super like" onclick="act(\'star\')">ϟ</button>' +
-    '<button class="side-action" aria-label="Filters" title="Filters" onclick="document.getElementById(\'filterBtn\').click()">⌕</button>' +
-    '<button class="side-action primary-like" aria-label="Like profile" title="Like" onclick="act(\'like\')">♥</button>' +
-    '<button class="side-action" aria-label="Chats" title="Chats" onclick="showPage(\'chatsPage\')">▣</button>' +
-    '<button class="side-action" aria-label="Pass profile" title="Pass" onclick="act(\'pass\')">×</button>' +
-    '</div><div class="onphoto"><h2>' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
+    '<div class="onphoto"><h2>' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
     onlineIndicator + '</h2><div class="location">⌖ ' + esc(p.loc) +
-    '</div><div class="bio">' + esc(p.bio) + '</div><div class="chips">' + chips(p) +
-    '</div><button class="smallbtn" style="margin-top:12px" onclick="showDetail(' + id + ')">View full profile ↗</button></div>';
+    '</div><div class="bio">' + esc(p.bio) + '</div><div class="chips">' + interestMarkup +
+    '</div><button class="smallbtn" style="margin-top:10px" onclick="showDetail(' + id + ')">View full profile ↗</button></div>';
   $("counter").textContent = liveDiscoveryMode
     ? list.length + " compatible Conect profiles available"
     : list.length + " profiles to explore · demo mode";
