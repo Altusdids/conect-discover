@@ -25,6 +25,25 @@ h1{font-size:29px;line-height:1.1;letter-spacing:-1px;margin:7px 0}p{color:var(-
 .chat-composer textarea{flex:1;min-width:0;min-height:46px;max-height:130px;resize:vertical;background:var(--panel2);border:1px solid var(--line);border-radius:12px;color:#fff;padding:12px;font:inherit}
 .chat-composer button{min-height:46px}
 .chat-empty{margin:auto;text-align:center;color:var(--muted);padding:28px 12px}
+ /* Chat polish: clearer bubbles, safer mobile spacing, and a focused composer. */
+ .chat-thread{scroll-behavior:smooth;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#454650 transparent}
+ .chat-message{max-width:min(84%,440px);padding:11px 13px;line-height:1.42;box-shadow:0 2px 5px #0002;animation:chat-pop .14s ease-out}
+ .chat-message.mine{border-bottom-right-radius:5px}
+ .chat-message.theirs{border-bottom-left-radius:5px}
+ .chat-message-time{display:flex;justify-content:flex-end;gap:5px;align-items:center;font-size:10px;opacity:.82}
+ .chat-message-receipt{color:#ffc1d8;font-size:10px;margin-left:2px}
+ .chat-composer{position:relative;gap:7px;margin:10px 0 8px;align-items:flex-end}
+ .chat-composer textarea{min-height:48px;max-height:120px;resize:none;line-height:1.4;padding:13px 14px;transition:border-color .15s,box-shadow .15s}
+ .chat-composer textarea:focus{outline:none;border-color:#a34f7b;box-shadow:0 0 0 3px #e83d721c}
+ .chat-composer textarea:disabled{opacity:.65}
+ .chat-composer button{min-width:64px;min-height:48px;transition:transform .12s,opacity .12s}
+ .chat-composer button:active{transform:scale(.97)}
+ .chat-composer button:disabled{opacity:.65;cursor:wait}
+ #chatStatus{min-height:0;margin:5px 0 8px}
+ #chatStatus:empty{display:none}
+ @keyframes chat-pop{from{opacity:.65;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+ @media(prefers-reduced-motion:reduce){.chat-thread{scroll-behavior:auto}.chat-message{animation:none}}
+ @media(max-width:380px){.chat-message{max-width:90%;padding:10px 11px}.chat-composer button{min-width:58px;padding-left:11px;padding-right:11px}}
 
 @media(max-width:380px){.hero .photo-nav.next{right:49px}.detail-photo-gallery img{height:170px}}
 .subtext{text-align:center;font-size:12px;color:var(--muted);margin:5px 0 16px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.person{background:var(--panel);border:1px solid var(--line);border-radius:17px;overflow:hidden;cursor:pointer}.thumb{height:205px;background:linear-gradient(140deg,#a62c25,#fb702a);position:relative}.thumb img{width:100%;height:100%;object-fit:cover}.thumb:after{content:"";position:absolute;inset:50% 0 0;background:linear-gradient(transparent,#000b)}.thumbname{position:absolute;bottom:9px;left:10px;z-index:1;font-weight:750}.personinfo{padding:10px}.personinfo p{font-size:12px;margin:5px 0;color:#d0ced6}.personinfo button{width:100%;padding:9px;border-radius:10px;background:#332a31;color:#ff9c7d;font-weight:700}
@@ -943,9 +962,21 @@ function renderLiveChatShell() {
     '<button id="chatSendBtn" type="submit" class="primary">Send</button></form>' +
     '<p id="chatStatus" role="status" style="font-size:12px;color:var(--muted)"></p>' +
     '<p style="font-size:11px;color:var(--muted)">Only you and your matched partner can access this conversation.</p>';
-  $("chatComposer").addEventListener("submit", event => {
+  const composer = $("chatComposer");
+  const input = $("chatMessageInput");
+  composer.addEventListener("submit", event => {
     event.preventDefault();
     void sendLiveMessage();
+  });
+  input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 120) + "px";
+  });
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      if (input.value.trim()) void sendLiveMessage();
+    }
   });
 }
 function renderLiveMessages(messages, forceScroll = false) {
@@ -964,8 +995,9 @@ function renderLiveMessages(messages, forceScroll = false) {
           time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         }
       }
+      const receipt = mine && message.read_at ? '<span class="chat-message-receipt" aria-label="Seen">✓✓ Seen</span>' : '';
       return '<div class="chat-message ' + (mine ? "mine" : "theirs") + '">' +
-        esc(message.body) + (time ? '<span class="chat-message-time">' + esc(time) + '</span>' : '') + '</div>';
+        esc(message.body) + (time || receipt ? '<span class="chat-message-time">' + esc(time) + receipt + '</span>' : '') + '</div>';
     }).join("");
   }
   if (forceScroll || wasNearBottom) thread.scrollTop = thread.scrollHeight;
@@ -1025,6 +1057,7 @@ async function sendLiveMessage() {
   const button = $("chatSendBtn");
   liveChatSendBusy = true;
   if (button) { button.disabled = true; button.textContent = "Sending…"; }
+  input.disabled = true;
   try {
     await conectBackendRequest("send_message", undefined, { matchId, message });
     if (activeChatMatchId !== matchId) return;
@@ -1039,6 +1072,7 @@ async function sendLiveMessage() {
   } finally {
     liveChatSendBusy = false;
     if (button) { button.disabled = false; button.textContent = "Send"; }
+    if (input) input.disabled = false;
   }
 }
 function likePerson(id) {
