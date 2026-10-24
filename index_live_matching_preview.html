@@ -546,36 +546,86 @@ async function syncLocalPhotosToServer() {
   return { localOnly: false, photos: profilePhotos };
 }
 
+function clearActiveProfileCache() {
+  // The legacy mm2_profile key is shared by browser sessions on this origin.
+  // Only a profile loaded from the verified account's server row is trusted.
+  currentUsername = "";
+  myProfile = {};
+  selectedInterests = new Set();
+  profilePhotoData = "";
+  profilePhotos = [];
+  setupChoices = { gender: "", showMe: "Any", orientation: "Any" };
+  try {
+    localStorage.removeItem("conect_username");
+    localStorage.removeItem("mm2_profile");
+    localStorage.removeItem("conect_profile_owner_telegram_id");
+  } catch (_) {}
+  const fields = {
+    signInUsername: "",
+    setupName: "",
+    setupAge: "",
+    setupCountry: "",
+    setupCityManual: "",
+    myName: "",
+    myAge: "",
+    myGender: "",
+    myOrientation: "Any",
+    myShowMe: "Any",
+    myLocation: "",
+    myBio: "",
+    myPurpose: "both",
+    myEmail: ""
+  };
+  Object.entries(fields).forEach(([id, value]) => {
+    const element = $(id);
+    if (element) element.value = value;
+  });
+  ["profilePhotoPreview", "profilePagePhoto"].forEach(id => {
+    const element = $(id);
+    if (element) element.removeAttribute("src");
+  });
+  const heroName = $("profileHeroName");
+  if (heroName) heroName.textContent = "Your profile";
+  const heroDetails = $("profileHeroDetails");
+  if (heroDetails) heroDetails.textContent = "Complete your profile to get started";
+  if (typeof renderProfilePhotos === "function") renderProfilePhotos();
+  if (typeof renderInterestChoices === "function") renderInterestChoices();
+  if (typeof updateInterestCount === "function") updateInterestCount();
+}
+
 function applyServerProfile(result) {
   if (!result || !result.profile) return false;
   const p = result.profile;
   const interests = Array.isArray(result.interests) ? result.interests : [];
   const serverPhotos = Array.isArray(result.photos) ? result.photos.slice(0, 6) : [];
-  if (serverPhotos.length) {
-    profilePhotos = serverPhotos;
-    profilePhotoData = photoSource(serverPhotos[0]);
-  }
+  // Replace profile state completely. Never carry fields or photos over from
+  // another Telegram account's browser-local cache.
+  profilePhotos = serverPhotos;
+  profilePhotoData = serverPhotos.length ? photoSource(serverPhotos[0]) : "";
   myProfile = {
-    ...myProfile,
-    name: p.display_name,
-    age: p.age,
-    gender: p.gender,
-    orientation: p.interested_in,
-    showMe: p.show_me,
-    country: p.country,
-    city: p.city,
-    loc: `${p.city}, ${p.country}`,
+    name: p.display_name || "",
+    age: p.age || "",
+    gender: p.gender || "",
+    orientation: p.interested_in || "Any",
+    showMe: p.show_me || "Any",
+    country: p.country || "",
+    city: p.city || "",
+    loc: [p.city, p.country].filter(Boolean).join(", "),
     bio: p.bio || "",
     purpose: p.purpose || "both",
     email: p.email || "",
     interests,
-    ...(serverPhotos.length ? { photos: serverPhotos, photo: photoSource(serverPhotos[0]) } : {})
+    photos: serverPhotos,
+    photo: profilePhotoData
   };
-  currentUsername = p.app_username;
+  currentUsername = p.app_username || "";
   selectedInterests = new Set(interests);
   try {
     localStorage.setItem("conect_username", currentUsername);
     localStorage.setItem("mm2_profile", JSON.stringify(myProfile));
+    if (verifiedTelegramUser && verifiedTelegramUser.id != null) {
+      localStorage.setItem("conect_profile_owner_telegram_id", String(verifiedTelegramUser.id));
+    }
   } catch (_) {}
   $("signInUsername").value = currentUsername;
   $("setupName").value = myProfile.name || "";
@@ -592,10 +642,23 @@ function applyServerProfile(result) {
     void loadCities(myProfile.country, myProfile.city || "");
   }
   renderInterestChoices();
-  if (myProfile.photo) {
-    $("profilePhotoPreview").src = myProfile.photo;
-    $("profilePagePhoto").src = myProfile.photo;
+  const myName = $("myName"); if (myName) myName.value = myProfile.name || "";
+  const myAge = $("myAge"); if (myAge) myAge.value = myProfile.age || "";
+  const myGender = $("myGender"); if (myGender) myGender.value = myProfile.gender || "";
+  const myOrientation = $("myOrientation"); if (myOrientation) myOrientation.value = myProfile.orientation || "Any";
+  const myShowMe = $("myShowMe"); if (myShowMe) myShowMe.value = myProfile.showMe || "Any";
+  const myLocation = $("myLocation"); if (myLocation) myLocation.value = myProfile.loc || "";
+  const myBio = $("myBio"); if (myBio) myBio.value = myProfile.bio || "";
+  const myPurpose = $("myPurpose"); if (myPurpose) myPurpose.value = myProfile.purpose || "both";
+  const myEmail = $("myEmail"); if (myEmail) myEmail.value = myProfile.email || "";
+  if (profilePhotoData) {
+    $("profilePhotoPreview").src = profilePhotoData;
+    $("profilePagePhoto").src = profilePhotoData;
+  } else {
+    $("profilePhotoPreview").removeAttribute("src");
+    $("profilePagePhoto").removeAttribute("src");
   }
+  renderProfilePhotos();
   return true;
 }
 
@@ -610,6 +673,12 @@ async function verifyTelegramSession() {
       throw new Error("Telegram user data was not returned.");
     }
     verifiedTelegramUser = verified.telegramUser;
+    // Browser localStorage is shared by Telegram accounts using the same app
+    // origin. Clear it when ownership is unknown or belongs to another user.
+    const storedOwner = localStorage.getItem("conect_profile_owner_telegram_id");
+    if (storedOwner !== String(verifiedTelegramUser.id)) {
+      clearActiveProfileCache();
+    }
     status.style.background = "#153320";
     status.textContent = "Telegram account verified" +
       (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
@@ -619,8 +688,7 @@ async function verifyTelegramSession() {
       if (applyServerProfile(saved)) {
         status.textContent = "Telegram account verified" +
           (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
-          ". Your profile, interests, and saved photos were loaded from Conect’s database. Demo likes remain on this device.";
-        // If this profile has no device photo/interests yet, continue setup so the user can add them.
+          ". Your profile, interests, and saved photos were loaded from this Telegram account’s database profile. Demo likes remain on this device.";
         if (myProfile.photo && Array.isArray(myProfile.interests) && myProfile.interests.length >= 3) {
           showPage("discoverPage");
         } else {
@@ -628,28 +696,14 @@ async function verifyTelegramSession() {
           showPage("interestsSetupPage");
         }
       } else {
-        const hasCompleteLocalProfile = Boolean(
-          currentUsername && myProfile.name && Number(myProfile.age) >= 18 && myProfile.gender &&
-          myProfile.country && myProfile.city && myProfile.photo &&
-          Array.isArray(myProfile.interests) && myProfile.interests.length >= 3
-        );
-        if (hasCompleteLocalProfile) {
-          // Migrate a completed profile from this device into the database once.
-          try {
-            await syncCurrentProfile();
-            status.style.background = "#153320";
-            status.textContent = "Telegram account verified" +
-              (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
-              ". Your profile details and interests have synced. Finish setup to sync any remaining local photos.";
-          } catch (syncError) {
-            status.style.background = "#3a1c1c";
-            status.textContent = "Telegram account verified, but your profile could not be saved to the database: " + syncError.message;
-          }
-        } else {
-          status.textContent = "Telegram account verified" +
-            (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
-            ". Finish profile setup to save your details, interests, and profile photo to Conect.";
-        }
+        // Do not migrate a generic device cache: it may belong to another
+        // Telegram account sharing this browser. New accounts start clean.
+        clearActiveProfileCache();
+        status.textContent = "Telegram account verified" +
+          (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
+          ". No saved profile was found for this Telegram account. Complete setup to create your profile; profile data from another account will not be copied.";
+        renderInterestChoices();
+        showPage("signInPage");
       }
     } catch (dbError) {
       status.style.background = "#3a1c1c";
@@ -693,6 +747,25 @@ async function syncCurrentProfile() {
     interests
   };
   const saved = await conectBackendRequest("save_profile", profile);
+  try {
+    localStorage.setItem("conect_profile_owner_telegram_id", String(verifiedTelegramUser.id));
+    localStorage.setItem("conect_username", appUsername);
+    localStorage.setItem("mm2_profile", JSON.stringify({
+      ...myProfile,
+      name: displayName,
+      age,
+      gender,
+      orientation: interestedIn,
+      showMe,
+      country,
+      city,
+      loc: [city, country].filter(Boolean).join(", "),
+      bio,
+      purpose,
+      email,
+      interests
+    }));
+  } catch (_) {}
   return { localOnly: false, profile: saved.profile, interests: saved.interests || interests };
 }
 
