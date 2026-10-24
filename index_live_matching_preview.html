@@ -293,6 +293,27 @@ body:has(#discoverPage:not(.hidden)){overflow:hidden}
  .feed-profile-actions{gap:16px}
 }
 
+
+/* Final feed sizing: one full-height profile between Filters and the fixed bottom navigation. */
+.profile-scroll-card{height:100%;min-height:100%;padding:0;gap:0}
+.feed-profile-card{height:100%;flex:1 1 100%;min-height:0}
+.feed-profile-card .hero{height:100%;flex:1 1 100%;min-height:0}
+.feed-profile-card .onphoto{left:15px;right:66px;bottom:15px}
+.feed-profile-card .side-actions.feed-profile-side-actions{right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px;z-index:7}
+.feed-profile-card .feed-profile-side-actions .side-action{width:44px;height:44px;font-size:23px;border:1px solid #ffffff55;background:#1b1b24aa;box-shadow:0 5px 16px #0006;backdrop-filter:blur(9px)}
+.feed-profile-card .feed-profile-side-actions .feed-like-action{background:#e83d72;border-color:#f36b93}
+.feed-profile-card .feed-profile-side-actions .feed-pass-action{font-size:29px}
+.feed-profile-card .feed-profile-side-actions .side-action:active{transform:scale(.94)}
+.feed-profile-actions{display:none!important}
+.feed-profile-card .photo-nav.next{right:62px}
+.feed-profile-card .photo-nav.prev{left:10px}
+@media(max-width:380px){
+ .feed-profile-card .onphoto{left:12px;right:59px;bottom:12px}
+ .feed-profile-card .side-actions.feed-profile-side-actions{right:7px;gap:10px}
+ .feed-profile-card .feed-profile-side-actions .side-action{width:39px;height:39px;font-size:21px}
+ .feed-profile-card .photo-nav.next{right:52px}
+}
+
 </style></head>
 <body><div class="app">
 <header><div class="logo">Conect<em>.</em></div><span class="tag">DISCOVER BETA</span></header>
@@ -1144,12 +1165,11 @@ function renderSwipe() {
         '<div class="location">⌖ ' + esc(profile.loc || "Location not specified") + '</div>' +
         '<div class="bio">' + esc(profile.bio || "") + '</div><div class="chips">' + interestMarkup + '</div>' +
         '<button type="button" class="smallbtn feed-view-profile" onclick="showDetail(' + idArg + ')">View full profile ↗</button></div>' +
-      '</div></div>' +
-      '<div class="feed-profile-actions">' +
-        '<button type="button" class="action pass" aria-label="Pass on ' + esc(profile.name) + '" title="Pass" onclick="handleFeedProfileAction(' + idArg + ',\'pass\')">×</button>' +
-        '<span class="feed-profile-purpose">' + esc(purposeLabel) + '</span>' +
-        '<button type="button" class="action like" aria-label="Like ' + esc(profile.name) + '" title="Like" onclick="handleFeedProfileAction(' + idArg + ',\'like\')">♥</button>' +
-      '</div></article>';
+        '<div class="side-actions feed-profile-side-actions" aria-label="Profile actions">' +
+          '<button type="button" class="side-action feed-pass-action" aria-label="Pass on ' + esc(profile.name) + '" title="Pass" onclick="event.stopPropagation();handleFeedProfileAction(' + idArg + ',\'pass\')">×</button>' +
+          '<button type="button" class="side-action primary-like feed-like-action" aria-label="Like ' + esc(profile.name) + '" title="Like" onclick="event.stopPropagation();handleFeedProfileAction(' + idArg + ',\'like\')">♥</button>' +
+        '</div>' +
+      '</div></div></article>';
   }).join("");
   // Keep the same approximate feed position when a photo or page state re-renders.
   if (oldTop > 0) feed.scrollTop = Math.min(oldTop, feed.scrollHeight - feed.clientHeight);
