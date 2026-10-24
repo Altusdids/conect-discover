@@ -906,7 +906,9 @@ function showDetail(id) {
     '</h2><p>⌖ ' + esc(p.loc) + '</p><p>' + esc(p.bio) + '</p><div class="chips">' + chips(p) +
     '</div><p style="font-size:12px">Looking for: ' + esc(purposeText) + '</p>' +
     (liveDiscoveryMode
-      ? '<div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(' + idArg + ')">♥ Like</button><button class="secondary" onclick="recordLiveSwipe(' + idArg + ', \'pass\').then(function(){showPage(\'discoverPage\')})">Pass</button></div>'
+      ? (profiles.some(candidate => String(candidate.id) === String(p.id))
+          ? '<div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(' + idArg + ')">♥ Like</button><button class="secondary" onclick="recordLiveSwipe(' + idArg + ', \'pass\').then(function(){showPage(\'discoverPage\')})">Pass</button></div>'
+          : '')
       : '<div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(' + idArg + ')">♥ Like</button><button class="secondary" onclick="act(\'pass\')">Pass</button></div>');
   showPage("detailPage");
 }
