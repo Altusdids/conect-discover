@@ -15,6 +15,20 @@ h1{font-size:29px;line-height:1.1;letter-spacing:-1px;margin:7px 0}p{color:var(-
 .hero .photo-nav.prev{left:10px}.hero .photo-nav.next{right:55px}
 .hero .photo-indicator{position:absolute;z-index:6;top:15px;left:50%;transform:translateX(-50%);background:#111b;border:1px solid #ffffff35;padding:5px 9px;border-radius:20px;font-size:11px;color:#fff;white-space:nowrap}
 .detail-photo-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.detail-photo-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
+.detail-photo-tools-title{font-size:13px;font-weight:800}
+.detail-photo-tools-count{font-size:11px;color:var(--muted);margin-left:7px}
+.detail-photo-mode{display:flex;gap:5px;padding:3px;background:var(--panel2);border:1px solid var(--line);border-radius:11px}
+.detail-photo-mode button{border:0;border-radius:8px;padding:7px 10px;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.detail-photo-mode button.active{background:#e83d72;color:#fff}
+.detail-photo-tile{display:block;width:100%;padding:0;border:0;border-radius:12px;overflow:hidden;background:var(--panel2);cursor:pointer}
+.detail-photo-tile img{display:block;width:100%;height:220px;object-fit:cover}
+.detail-photo-slideshow{position:relative;width:100%;margin-bottom:14px;min-height:240px;background:#121319;border-radius:14px;overflow:hidden;display:grid;place-items:center}
+.detail-photo-slideshow img{display:block;width:100%;height:min(68vh,520px);min-height:240px;object-fit:contain;background:#121319}
+.detail-photo-slide-nav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border:1px solid #ffffff55;border-radius:50%;background:#111b;color:white;font-size:28px;line-height:1;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(8px)}
+.detail-photo-slide-nav.prev{left:10px}.detail-photo-slide-nav.next{right:10px}
+.detail-photo-slide-count{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);border:1px solid #ffffff35;border-radius:20px;background:#111c;padding:5px 10px;color:white;font-size:11px}
+@media(max-width:380px){.detail-photo-tile img{height:170px}.detail-photo-slideshow img{min-height:220px}}
  .detail-profile-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:8px 0 0}
  .detail-profile-heading h2{margin:0 0 5px;font-size:25px;line-height:1.15;letter-spacing:-.5px}
  .detail-profile-heading .detail-profile-location{font-size:13px;color:var(--muted);margin:0 0 10px}
@@ -1638,20 +1652,69 @@ async function unblockProfile(profileId) {
     if (status) status.textContent = "Could not unblock this user: " + (error.message || "request failed");
   }
 }
-function showDetail(id) {
-  const p = liveDiscoveryMode ? findConectProfile(id) : profiles.find(x => String(x.id) === String(id));
+let detailPhotoProfileId = null;
+let detailPhotoMode = "grid";
+let detailPhotoIndex = 0;
+
+function setDetailPhotoMode(mode, index) {
+  detailPhotoMode = mode === "slide" ? "slide" : "grid";
+  if (Number.isInteger(index)) detailPhotoIndex = index;
+  renderDetailPhotos();
+}
+
+function renderDetailPhotos() {
+  const root = $("detailPhotoGallery");
+  if (!root) return;
+  const p = liveDiscoveryMode
+    ? findConectProfile(detailPhotoProfileId)
+    : profiles.find(x => String(x.id) === String(detailPhotoProfileId));
   if (!p) {
-    $("detailContent").innerHTML = '<div class="empty">This profile is no longer available.</div>';
-    if (liveDiscoveryMode && verifiedTelegramUser) void recordProfileVisit(p.id);
-  showPage("detailPage");
+    root.innerHTML = '<div class="empty">This profile is no longer available.</div>';
     return;
   }
   const photos = profilePhotoUrls(p);
-  const image = photos.length
-    ? '<div class="detail-photo-gallery">' + photos.map((photo, i) =>
-        '<img loading="lazy" src="' + esc(photo) + '" alt="Profile photo ' + (i + 1) + '">'
-      ).join("") + '</div>'
-    : '<div class="photo-gallery-tile" style="height:220px;font-size:64px;font-weight:800">' + esc(p.initial) + '</div>';
+  if (!photos.length) {
+    root.innerHTML = '<div class="photo-gallery-tile" style="height:220px;font-size:22px">No photos added yet</div>';
+    return;
+  }
+  detailPhotoIndex = ((detailPhotoIndex % photos.length) + photos.length) % photos.length;
+  const toolbar =
+    '<div class="detail-photo-tools"><div><span class="detail-photo-tools-title">Photos</span><span class="detail-photo-tools-count">' + photos.length + (photos.length === 1 ? ' photo' : ' photos') + '</span></div>' +
+    '<div class="detail-photo-mode" role="group" aria-label="Photo display mode">' +
+      '<button type="button" class="' + (detailPhotoMode === "grid" ? 'active' : '') + '" aria-pressed="' + String(detailPhotoMode === "grid") + '" onclick="setDetailPhotoMode(\'grid\')">▦ Grid</button>' +
+      '<button type="button" class="' + (detailPhotoMode === "slide" ? 'active' : '') + '" aria-pressed="' + String(detailPhotoMode === "slide") + '" onclick="setDetailPhotoMode(\'slide\')">▣ Slideshow</button>' +
+    '</div></div>';
+  let view = "";
+  if (detailPhotoMode === "grid") {
+    view = '<div class="detail-photo-gallery">' + photos.map((photo, i) =>
+      '<button type="button" class="detail-photo-tile" aria-label="Open photo ' + (i + 1) + ' in slideshow" onclick="setDetailPhotoMode(\'slide\',' + i + ')"><img loading="lazy" src="' + esc(photo) + '" alt="Profile photo ' + (i + 1) + '"></button>'
+    ).join("") + '</div>';
+  } else {
+    view = '<div class="detail-photo-slideshow">' +
+      '<img src="' + esc(photos[detailPhotoIndex]) + '" alt="Profile photo ' + (detailPhotoIndex + 1) + ' of ' + photos.length + '">' +
+      (photos.length > 1
+        ? '<button type="button" class="detail-photo-slide-nav prev" aria-label="Previous photo" onclick="setDetailPhotoMode(\'slide\',' + (detailPhotoIndex - 1) + ')">‹</button>' +
+          '<button type="button" class="detail-photo-slide-nav next" aria-label="Next photo" onclick="setDetailPhotoMode(\'slide\',' + (detailPhotoIndex + 1) + ')">›</button>'
+        : '') +
+      '<div class="detail-photo-slide-count">' + (detailPhotoIndex + 1) + ' / ' + photos.length + '</div></div>';
+  }
+  root.innerHTML = toolbar + view;
+}
+
+function showDetail(id) {
+  const p = liveDiscoveryMode
+    ? findConectProfile(id)
+    : profiles.find(x => String(x.id) === String(id));
+  if (!p) {
+    $("detailContent").innerHTML = '<div class="empty">This profile is no longer available.</div>';
+    showPage("detailPage");
+    return;
+  }
+  if (liveDiscoveryMode && verifiedTelegramUser) void recordProfileVisit(p.id);
+  detailPhotoProfileId = String(p.id);
+  detailPhotoMode = "grid";
+  detailPhotoIndex = 0;
+  const image = '<div id="detailPhotoGallery"></div>';
   const purposes = Array.isArray(p.purpose) ? p.purpose : [p.purpose].filter(Boolean);
   const idArg = inlineProfileId(p.id);
   const purposeText = purposes.length ? purposes.join(" and ") : "not specified";
@@ -1693,6 +1756,7 @@ function showDetail(id) {
     '<p>' + esc(p.bio) + '</p><div class="chips">' + chips(p) +
     '</div><p style="font-size:12px;margin-top:12px">Looking for: ' + esc(purposeText) + '</p>' +
     reportForm + actionButtons;
+  renderDetailPhotos();
   const reportFormElement = $("profileReportForm");
   reportFormElement?.addEventListener("submit", event => {
     event.preventDefault();
