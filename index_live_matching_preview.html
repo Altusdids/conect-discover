@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#101116"><title>Conect — Discover</title><script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#101116;--panel:#1b1c23;--panel2:#252630;--line:#343540;--muted:#a7a7b2;--text:#f8f7fa;--orange:#ff4c1d;--red:#ff2f43;--purple:#7c35f5;--green:#2fb84d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{max-width:680px;margin:auto;min-height:100dvh;padding:18px 14px 92px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.logo{font-size:22px;font-weight:850;letter-spacing:-.7px}.logo em{font-style:normal;color:#ff5a24}.tag{font-size:11px;color:#ffad92;border:1px solid #6e382d;border-radius:20px;padding:5px 9px}
+h1{font-size:29px;line-height:1.1;letter-spacing:-1px;margin:7px 0}p{color:var(--muted);margin:7px 0 15px}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:16px 0}.seg{display:flex;gap:5px;background:var(--panel);border-radius:12px;padding:4px}.seg button{background:transparent;color:var(--muted);border-radius:9px;padding:9px 12px}.seg button.active{background:#39313a;color:white}.smallbtn{background:var(--panel2);border:1px solid var(--line);color:white;border-radius:12px;padding:10px 12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px;overflow:hidden}.hero{position:relative;height:min(62vh,570px);min-height:390px;background:linear-gradient(140deg,#6f1724,#ff4b16 52%,#201016);overflow:hidden}.hero img{width:100%;height:100%;object-fit:cover;display:block}.hero:after{content:"";position:absolute;inset:30% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.9));pointer-events:none}.match{position:absolute;top:15px;left:15px;z-index:2;border:1px solid #ff8a64;background:#240d0dbb;padding:7px 11px;border-radius:30px;font-size:12px}.onphoto{position:absolute;z-index:2;left:18px;right:18px;bottom:18px}.onphoto h2{font-size:28px;margin:0 0 4px;letter-spacing:-.6px}.online{display:inline-block;width:9px;height:9px;border-radius:50%;background:#46d45e;margin-left:4px}.location{color:#e3e0e5}.bio{font-size:14px;color:#e5e1e5;margin:12px 0}.chips{display:flex;flex-wrap:wrap;gap:7px}.chip{font-size:12px;padding:7px 10px;border:1px solid #ffffff30;background:#14131b99;border-radius:22px;color:#f1eaf0}.actions{display:flex;justify-content:center;gap:18px;padding:17px 8px 9px}.action{width:58px;height:58px;border-radius:50%;font-size:24px;color:white;box-shadow:0 5px 16px #0005}.pass{background:linear-gradient(145deg,#ff5d14,#e52519)}.star{background:linear-gradient(145deg,#974bff,#5a19d6)}.like{background:linear-gradient(145deg,#64d94b,#168a38)}
+/* Reference-inspired swipe controls: compact vertical action rail over the photo. */
+.hero{isolation:isolate}.hero .side-actions{position:absolute;z-index:5;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:9px;align-items:center}
+.hero .side-action{width:38px;height:38px;border:1px solid #ffffff28;border-radius:50%;display:grid;place-items:center;color:#fff;background:#ffffff32;backdrop-filter:blur(10px);box-shadow:0 3px 10px #0004;font-size:18px;line-height:1;padding:0;cursor:pointer}
+.hero .side-action.primary-like{background:#e83d72;border-color:#f36b93}.hero .side-action:active{transform:scale(.94)}
+.hero .onphoto{right:60px;bottom:15px}.hero .onphoto .chips{max-width:100%}
+.subtext{text-align:center;font-size:12px;color:var(--muted);margin:5px 0 16px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.person{background:var(--panel);border:1px solid var(--line);border-radius:17px;overflow:hidden;cursor:pointer}.thumb{height:205px;background:linear-gradient(140deg,#a62c25,#fb702a);position:relative}.thumb img{width:100%;height:100%;object-fit:cover}.thumb:after{content:"";position:absolute;inset:50% 0 0;background:linear-gradient(transparent,#000b)}.thumbname{position:absolute;bottom:9px;left:10px;z-index:1;font-weight:750}.personinfo{padding:10px}.personinfo p{font-size:12px;margin:5px 0;color:#d0ced6}.personinfo button{width:100%;padding:9px;border-radius:10px;background:#332a31;color:#ff9c7d;font-weight:700}
+.section{margin-top:15px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;margin:10px 0}.profiletop{display:flex;gap:12px;align-items:center}.avatar{width:52px;height:52px;border-radius:17px;background:linear-gradient(135deg,#ff4c1d,#7c35f5);display:grid;place-items:center;font-size:21px;font-weight:800}.field{width:100%;padding:12px;border:1px solid var(--line);background:var(--panel2);color:white;border-radius:11px;margin:5px 0 12px;font:inherit}label{font-size:12px;color:var(--muted)}.primary{background:linear-gradient(120deg,#ff5a1f,#ff3044);border:0;color:white;border-radius:12px;padding:12px 15px;font-weight:750}.secondary{background:var(--panel2);color:white;border:1px solid var(--line);border-radius:12px;padding:11px 13px}.empty{text-align:center;padding:25px 12px;color:var(--muted)}.likes-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:5px;margin:16px 0}.likes-tabs button{background:transparent;color:var(--muted);border-radius:10px;padding:11px 5px;font-weight:700}.likes-tabs button.active{background:#3a2529;color:#ff997d;border:1px solid #6e382d}nav{position:fixed;z-index:15;bottom:8px;left:10px;right:10px;max-width:680px;margin:auto;background:rgba(29,31,32,.96);border:1px solid #ffffff0b;border-radius:28px;display:flex;justify-content:space-between;gap:3px;padding:6px 7px calc(6px + env(safe-area-inset-bottom));backdrop-filter:blur(18px);box-shadow:0 7px 24px #0007}
+nav button{min-width:0;max-width:none;flex:1;background:transparent;color:#c4c4c8;padding:7px 2px 5px;border-radius:24px;font-size:10px;line-height:1.15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;white-space:nowrap}
+nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size:18px;line-height:1.05;font-weight:500}nav button .nav-badge{display:inline-grid;place-items:center;min-width:12px;height:12px;border-radius:9px;background:#e83d72;color:white;font-size:8px;line-height:1;padding:0 3px;margin-left:2px;vertical-align:top}
+@media(max-width:380px){nav{left:6px;right:6px;bottom:5px;padding-left:4px;padding-right:4px}nav button{font-size:9px}nav b{font-size:17px}.hero .side-actions{right:7px;gap:7px}.hero .side-action{width:35px;height:35px}.hero .onphoto{right:51px}}.notice{font-size:12px;color:#ffd4c6;background:#2c1b1a;border:1px solid #60352d;border-radius:12px;padding:10px 12px;margin:10px 0 14px}.progress{display:flex;gap:6px;margin:4px 0 18px}.progress span{height:4px;flex:1;border-radius:9px;background:#34363a}.progress span:first-child{background:#e94b70}.setup-card{background:var(--panel);border-radius:20px;padding:16px;margin:16px 0}.choice-row{display:flex;gap:8px;margin:7px 0 14px}.choice{flex:1;min-width:0;background:#101112;border:1px solid #303235;border-radius:14px;padding:13px 5px;color:#b8b8bd}.choice.active{border-color:#e94b70;background:#342027;color:white;box-shadow:inset 0 0 0 1px #e94b70}.choice:focus-visible{outline:2px solid #e94b70}.setup-title{font-size:25px!important;letter-spacing:-.5px!important}.continue-wide{width:100%;margin-top:4px;padding:16px}.helper{font-size:11px;color:#b6b6bc;margin:9px 5px}.photo-upload{border:1px dashed #555761;border-radius:18px;padding:16px;text-align:center;background:#121318}.photo-preview{width:124px;height:124px;border-radius:22px;object-fit:cover;display:block;margin:0 auto 12px;background:#252630;border:1px solid var(--line)}.interest-category{margin:17px 0}.interest-category h3{font-size:14px;margin:0 0 9px;color:#f3d2c9}.interest-tags{display:flex;flex-wrap:wrap;gap:8px}.interest-tag{background:#101112;border:1px solid #303235;border-radius:22px;color:#c6c6cd;padding:9px 11px;font-size:12px}.interest-tag.active{background:#342027;border-color:#e94b70;color:white}.interest-count{font-size:12px;color:var(--muted)}.hidden{display:none!important}
+
+.profile-hero{display:flex;align-items:center;gap:13px;padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:18px;margin:12px 0;cursor:pointer;text-align:left;width:100%;color:var(--text)}
+.profile-hero-photo{width:78px;height:78px;border-radius:50%;object-fit:cover;background:var(--panel2);border:2px solid #454650;flex-shrink:0;cursor:pointer}
+.profile-hero-meta{min-width:0;flex:1}.profile-hero-meta strong{font-size:19px;display:block}.profile-hero-meta span{font-size:12px;color:var(--muted);display:block}
+.sheet-backdrop{position:fixed;inset:0;background:#000a;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.basics-sheet{width:100%;max-width:680px;max-height:88dvh;overflow:auto;background:#1b1c23;border-radius:22px 22px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));border:1px solid var(--line);box-shadow:0 -10px 40px #0006}
+.sheet-handle{width:42px;height:4px;border-radius:5px;background:#555761;margin:0 auto 15px}.sheet-title{font-size:18px;font-weight:800;margin:0 0 14px}
+.profile-hero:focus-visible{outline:2px solid var(--orange)}.basics-actions{display:flex;gap:8px}.basics-actions button{flex:1}
+@media(min-width:560px){.hero{height:540px}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.thumb{height:240px}}
+
+.photo-gallery-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}.photo-gallery-title{font-size:14px;color:var(--muted);text-align:center;margin:0 0 14px}.photo-gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.photo-gallery-tile{position:relative;aspect-ratio:1/1;border:1px dashed #454851;border-radius:14px;overflow:hidden;background:#191a20;display:flex;align-items:center;justify-content:center;min-width:0}.photo-gallery-tile img{width:100%;height:100%;object-fit:cover;display:block}.photo-gallery-add{font-size:32px;font-weight:300;color:#c2c2c9;width:100%;height:100%;background:transparent;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer}.photo-gallery-remove{position:absolute;right:5px;top:5px;border:0;border-radius:50%;width:25px;height:25px;background:#000b;color:#fff;font-size:17px;line-height:1;cursor:pointer}.photo-gallery-drop.dragging{border-color:var(--orange);background:#33211f}.photo-gallery-help{text-align:center;font-size:12px;color:var(--muted);margin:12px 0 0}
+</style></head>
+<body><div class="app">
+<header><div class="logo">Conect<em>.</em></div><span class="tag">DISCOVER BETA</span></header>
+<div class="notice" id="demoNotice">Conect is in test mode. Demo discovery profiles, likes, and photos are still local to this device. Your verified profile details and interests can sync to Conect’s database; real matching and messaging are coming next.</div>
+<div class="notice hidden" id="telegramAuthStatus" role="status" aria-live="polite"></div>
+<section id="signInPage" style="max-width:460px;margin:10px auto 20px">
+<div class="progress"><span></span><span></span><span></span></div>
+<h1 class="setup-title">Create your Conect profile</h1><p>Tell us a little about yourself so we can help you meet the right people.</p>
+<div class="setup-card">
+<label for="signInUsername">Username (required)</label><input id="signInUsername" class="field" autocomplete="username" minlength="3" maxlength="20" placeholder="e.g. alex_25" aria-describedby="usernameHelp">
+<div id="usernameHelp" style="font-size:12px;color:var(--muted);margin:-7px 0 14px">3–20 characters: letters, numbers, and underscores only.</div>
+<label for="setupName">Name</label><input id="setupName" class="field" autocomplete="name" maxlength="50" placeholder="Your name">
+<label for="setupAge">Age (18+)</label><input id="setupAge" class="field" type="number" min="18" max="99" inputmode="numeric" placeholder="Your age">
+<label>Gender</label><div class="choice-row" id="genderChoices"><button type="button" class="choice" data-group="gender" data-value="Male">Male</button><button type="button" class="choice" data-group="gender" data-value="Female">Female</button><button type="button" class="choice" data-group="gender" data-value="Non-binary">Non-binary</button></div>
+<label>Show me</label><div class="choice-row" id="showChoices"><button type="button" class="choice" data-group="showMe" data-value="Male">Male</button><button type="button" class="choice" data-group="showMe" data-value="Female">Female</button><button type="button" class="choice active" data-group="showMe" data-value="Any">Any</button></div>
+<label>Who are you interested in?</label><div class="choice-row" id="orientationChoices"><button type="button" class="choice" data-group="orientation" data-value="Straight">Straight</button><button type="button" class="choice" data-group="orientation" data-value="Gay">Gay</button><button type="button" class="choice" data-group="orientation" data-value="Lesbian">Lesbian</button><button type="button" class="choice active" data-group="orientation" data-value="Any">Any</button></div>
+<label for="setupCountry">Country</label><select id="setupCountry" class="field" autocomplete="country-name"><option value="">Choose your country</option><option value="Afghanistan">Afghanistan</option><option value="Albania">Albania</option><option value="Algeria">Algeria</option><option value="American Samoa">American Samoa</option><option value="Andorra">Andorra</option><option value="Angola">Angola</option><option value="Anguilla">Anguilla</option><option value="Antarctica">Antarctica</option><option value="Antigua and Barbuda">Antigua and Barbuda</option><option value="Argentina">Argentina</option><option value="Armenia">Armenia</option><option value="Aruba">Aruba</option><option value="Australia">Australia</option><option value="Austria">Austria</option><option value="Azerbaijan">Azerbaijan</option><option value="Bahamas">Bahamas</option><option value="Bahrain">Bahrain</option><option value="Bangladesh">Bangladesh</option><option value="Barbados">Barbados</option><option value="Belarus">Belarus</option><option value="Belgium">Belgium</option><option value="Belize">Belize</option><option value="Benin">Benin</option><option value="Bermuda">Bermuda</option><option value="Bhutan">Bhutan</option><option value="Bolivia, Plurinational State of">Bolivia, Plurinational State of</option><option value="Bonaire, Sint Eustatius and Saba">Bonaire, Sint Eustatius and Saba</option><option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option><option value="Botswana">Botswana</option><option value="Bouvet Island">Bouvet Island</option><option value="Brazil">Brazil</option><option value="British Indian Ocean Territory">British Indian Ocean Territory</option><option value="Brunei Darussalam">Brunei Darussalam</option><option value="Bulgaria">Bulgaria</option><option value="Burkina Faso">Burkina Faso</option><option value="Burundi">Burundi</option><option value="Cabo Verde">Cabo Verde</option><option value="Cambodia">Cambodia</option><option value="Cameroon">Cameroon</option><option value="Canada">Canada</option><option value="Cayman Islands">Cayman Islands</option><option value="Central African Republic">Central African Republic</option><option value="Chad">Chad</option><option value="Chile">Chile</option><option value="China">China</option><option value="Christmas Island">Christmas Island</option><option value="Cocos (Keeling) Islands">Cocos (Keeling) Islands</option><option value="Colombia">Colombia</option><option value="Comoros">Comoros</option><option value="Congo">Congo</option><option value="Congo, The Democratic Republic of the">Congo, The Democratic Republic of the</option><option value="Cook Islands">Cook Islands</option><option value="Costa Rica">Costa Rica</option><option value="Croatia">Croatia</option><option value="Cuba">Cuba</option><option value="Curaçao">Curaçao</option><option value="Cyprus">Cyprus</option><option value="Czechia">Czechia</option><option value="Côte d&#x27;Ivoire">Côte d&#x27;Ivoire</option><option value="Denmark">Denmark</option><option value="Djibouti">Djibouti</option><option value="Dominica">Dominica</option><option value="Dominican Republic">Dominican Republic</option><option value="Ecuador">Ecuador</option><option value="Egypt">Egypt</option><option value="El Salvador">El Salvador</option><option value="Equatorial Guinea">Equatorial Guinea</option><option value="Eritrea">Eritrea</option><option value="Estonia">Estonia</option><option value="Eswatini">Eswatini</option><option value="Ethiopia">Ethiopia</option><option value="Falkland Islands (Malvinas)">Falkland Islands (Malvinas)</option><option value="Faroe Islands">Faroe Islands</option><option value="Fiji">Fiji</option><option value="Finland">Finland</option><option value="France">France</option><option value="French Guiana">French Guiana</option><option value="French Polynesia">French Polynesia</option><option value="French Southern Territories">French Southern Territories</option><option value="Gabon">Gabon</option><option value="Gambia">Gambia</option><option value="Georgia">Georgia</option><option value="Germany">Germany</option><option value="Ghana">Ghana</option><option value="Gibraltar">Gibraltar</option><option value="Greece">Greece</option><option value="Greenland">Greenland</option><option value="Grenada">Grenada</option><option value="Guadeloupe">Guadeloupe</option><option value="Guam">Guam</option><option value="Guatemala">Guatemala</option><option value="Guernsey">Guernsey</option><option value="Guinea">Guinea</option><option value="Guinea-Bissau">Guinea-Bissau</option><option value="Guyana">Guyana</option><option value="Haiti">Haiti</option><option value="Heard Island and McDonald Islands">Heard Island and McDonald Islands</option><option value="Holy See (Vatican City State)">Holy See (Vatican City State)</option><option value="Honduras">Honduras</option><option value="Hong Kong">Hong Kong</option><option value="Hungary">Hungary</option><option value="Iceland">Iceland</option><option value="India">India</option><option value="Indonesia">Indonesia</option><option value="Iran, Islamic Republic of">Iran, Islamic Republic of</option><option value="Iraq">Iraq</option><option value="Ireland">Ireland</option><option value="Isle of Man">Isle of Man</option><option value="Israel">Israel</option><option value="Italy">Italy</option><option value="Jamaica">Jamaica</option><option value="Japan">Japan</option><option value="Jersey">Jersey</option><option value="Jordan">Jordan</option><option value="Kazakhstan">Kazakhstan</option><option value="Kenya">Kenya</option><option value="Kiribati">Kiribati</option><option value="Korea, Democratic People&#x27;s Republic of">Korea, Democratic People&#x27;s Republic of</option><option value="Korea, Republic of">Korea, Republic of</option><option value="Kuwait">Kuwait</option><option value="Kyrgyzstan">Kyrgyzstan</option><option value="Lao People&#x27;s Democratic Republic">Lao People&#x27;s Democratic Republic</option><option value="Latvia">Latvia</option><option value="Lebanon">Lebanon</option><option value="Lesotho">Lesotho</option><option value="Liberia">Liberia</option><option value="Libya">Libya</option><option value="Liechtenstein">Liechtenstein</option><option value="Lithuania">Lithuania</option><option value="Luxembourg">Luxembourg</option><option value="Macao">Macao</option><option value="Madagascar">Madagascar</option><option value="Malawi">Malawi</option><option value="Malaysia">Malaysia</option><option value="Maldives">Maldives</option><option value="Mali">Mali</option><option value="Malta">Malta</option><option value="Marshall Islands">Marshall Islands</option><option value="Martinique">Martinique</option><option value="Mauritania">Mauritania</option><option value="Mauritius">Mauritius</option><option value="Mayotte">Mayotte</option><option value="Mexico">Mexico</option><option value="Micronesia, Federated States of">Micronesia, Federated States of</option><option value="Moldova, Republic of">Moldova, Republic of</option><option value="Monaco">Monaco</option><option value="Mongolia">Mongolia</option><option value="Montenegro">Montenegro</option><option value="Montserrat">Montserrat</option><option value="Morocco">Morocco</option><option value="Mozambique">Mozambique</option><option value="Myanmar">Myanmar</option><option value="Namibia">Namibia</option><option value="Nauru">Nauru</option><option value="Nepal">Nepal</option><option value="Netherlands">Netherlands</option><option value="New Caledonia">New Caledonia</option><option value="New Zealand">New Zealand</option><option value="Nicaragua">Nicaragua</option><option value="Niger">Niger</option><option value="Nigeria">Nigeria</option><option value="Niue">Niue</option><option value="Norfolk Island">Norfolk Island</option><option value="North Macedonia">North Macedonia</option><option value="Northern Mariana Islands">Northern Mariana Islands</option><option value="Norway">Norway</option><option value="Oman">Oman</option><option value="Pakistan">Pakistan</option><option value="Palau">Palau</option><option value="Palestine, State of">Palestine, State of</option><option value="Panama">Panama</option><option value="Papua New Guinea">Papua New Guinea</option><option value="Paraguay">Paraguay</option><option value="Peru">Peru</option><option value="Philippines">Philippines</option><option value="Pitcairn">Pitcairn</option><option value="Poland">Poland</option><option value="Portugal">Portugal</option><option value="Puerto Rico">Puerto Rico</option><option value="Qatar">Qatar</option><option value="Romania">Romania</option><option value="Russian Federation">Russian Federation</option><option value="Rwanda">Rwanda</option><option value="Réunion">Réunion</option><option value="Saint Barthélemy">Saint Barthélemy</option><option value="Saint Helena, Ascension and Tristan da Cunha">Saint Helena, Ascension and Tristan da Cunha</option><option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option><option value="Saint Lucia">Saint Lucia</option><option value="Saint Martin (French part)">Saint Martin (French part)</option><option value="Saint Pierre and Miquelon">Saint Pierre and Miquelon</option><option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option><option value="Samoa">Samoa</option><option value="San Marino">San Marino</option><option value="Sao Tome and Principe">Sao Tome and Principe</option><option value="Saudi Arabia">Saudi Arabia</option><option value="Senegal">Senegal</option><option value="Serbia">Serbia</option><option value="Seychelles">Seychelles</option><option value="Sierra Leone">Sierra Leone</option><option value="Singapore">Singapore</option><option value="Sint Maarten (Dutch part)">Sint Maarten (Dutch part)</option><option value="Slovakia">Slovakia</option><option value="Slovenia">Slovenia</option><option value="Solomon Islands">Solomon Islands</option><option value="Somalia">Somalia</option><option value="South Africa">South Africa</option><option value="South Georgia and the South Sandwich Islands">South Georgia and the South Sandwich Islands</option><option value="South Sudan">South Sudan</option><option value="Spain">Spain</option><option value="Sri Lanka">Sri Lanka</option><option value="Sudan">Sudan</option><option value="Suriname">Suriname</option><option value="Svalbard and Jan Mayen">Svalbard and Jan Mayen</option><option value="Sweden">Sweden</option><option value="Switzerland">Switzerland</option><option value="Syrian Arab Republic">Syrian Arab Republic</option><option value="Taiwan, Province of China">Taiwan, Province of China</option><option value="Tajikistan">Tajikistan</option><option value="Tanzania, United Republic of">Tanzania, United Republic of</option><option value="Thailand">Thailand</option><option value="Timor-Leste">Timor-Leste</option><option value="Togo">Togo</option><option value="Tokelau">Tokelau</option><option value="Tonga">Tonga</option><option value="Trinidad and Tobago">Trinidad and Tobago</option><option value="Tunisia">Tunisia</option><option value="Turkmenistan">Turkmenistan</option><option value="Turks and Caicos Islands">Turks and Caicos Islands</option><option value="Tuvalu">Tuvalu</option><option value="Türkiye">Türkiye</option><option value="Uganda">Uganda</option><option value="Ukraine">Ukraine</option><option value="United Arab Emirates">United Arab Emirates</option><option value="United Kingdom">United Kingdom</option><option value="United States">United States</option><option value="United States Minor Outlying Islands">United States Minor Outlying Islands</option><option value="Uruguay">Uruguay</option><option value="Uzbekistan">Uzbekistan</option><option value="Vanuatu">Vanuatu</option><option value="Venezuela, Bolivarian Republic of">Venezuela, Bolivarian Republic of</option><option value="Viet Nam">Viet Nam</option><option value="Virgin Islands, British">Virgin Islands, British</option><option value="Virgin Islands, U.S.">Virgin Islands, U.S.</option><option value="Wallis and Futuna">Wallis and Futuna</option><option value="Western Sahara">Western Sahara</option><option value="Yemen">Yemen</option><option value="Zambia">Zambia</option><option value="Zimbabwe">Zimbabwe</option><option value="Åland Islands">Åland Islands</option></select>
+<label for="setupCity">City</label><select id="setupCity" class="field" autocomplete="address-level2" disabled><option value="">Choose a country first</option></select><input id="setupCityManual" class="field hidden" autocomplete="address-level2" placeholder="Type your city if the list is unavailable"><div id="cityHelp" class="helper" style="margin-top:-7px">Choose a country to load its cities.</div>
+</div>
+<button class="primary continue-wide" id="signInBtn">✅ Continue</button><p id="signInError" role="alert" style="font-size:12px;color:#ff8c8c"></p><p class="helper">By continuing, you confirm that you agree to the Conect Privacy Policy and User Agreement.</p>
+</section>
+<section id="interestsSetupPage" class="hidden" style="max-width:520px;margin:10px auto 20px">
+<div class="progress"><span style="background:#e94b70"></span><span style="background:#e94b70"></span><span></span></div>
+<h1 class="setup-title">Add your photo & interests</h1><p>Help people get to know you. Add a profile picture and choose at least 3 interests (up to 10).</p>
+<div class="setup-card">
+<label for="profilePhotoInput">Profile picture (required)</label>
+<div class="photo-upload" style="margin-top:8px"><img id="profilePhotoPreview" class="photo-preview" alt="Your profile photo preview"><input id="profilePhotoInput" type="file" accept="image/*" class="field" style="margin-bottom:0"><div class="helper">Choose a clear JPEG, PNG, or WebP photo. When opened inside Telegram, your photo can sync to Conect.</div></div>
+<p id="photoError" role="alert" style="font-size:12px;color:#ff8c8c"></p>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px"><b>Choose your interests</b><span class="interest-count" id="interestCount">0 / 10 selected</span></div>
+<div id="interestCategories"></div>
+<p id="interestError" role="alert" style="font-size:12px;color:#ff8c8c"></p>
+</div>
+<button class="primary continue-wide" id="finishSetupBtn">Continue to Conect →</button><button class="secondary continue-wide" id="backToBasicsBtn" style="margin-top:8px">← Back to profile details</button>
+</section>
+<section id="discoverPage" class="hidden">
+<h1>Discover people.</h1><p>Meet someone new, anywhere in the world.</p>
+<div class="toolbar"><div class="seg"><button class="active" id="swipeMode">Swipe</button><button id="gridMode">Grid</button></div><button class="smallbtn" id="filterBtn">⚙ Filters</button></div>
+<div class="toolbar" style="margin-top:0"><div class="seg" id="purposeSeg"><button class="active" data-purpose="both">Everyone</button><button data-purpose="dating">Dating</button><button data-purpose="friends">Friends</button></div><span style="font-size:11px;color:var(--muted)">🌍 Worldwide</span></div>
+<div id="swipeView"><div class="card"><div class="hero" id="hero"><img id="heroImg" alt="Profile photo"><div class="match" id="match">♥ 92% match</div><div class="onphoto"><h2 id="personName">Maya, 25 <span class="online"></span></h2><div class="location" id="personLocation">⌖ Kampala, Uganda</div><div class="bio" id="personBio"></div><div class="chips" id="personChips"></div></div></div></div>
+<div class="actions hidden"><button class="action pass" id="passBtn" aria-label="Pass">×</button><button class="action star" id="starBtn" aria-label="Super like">★</button><button class="action like" id="likeBtn" aria-label="Like">♥</button></div><div class="subtext" id="counter">Profile 1 of 6 · Like to connect</div></div>
+<div id="gridView" class="grid hidden"></div>
+</section>
+<section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="liked" role="tab" aria-selected="true">Liked</button><button data-likes-tab="matches" role="tab" aria-selected="false">Matches</button><button data-likes-tab="likes" role="tab" aria-selected="false">Likes</button></div><div id="likesList"></div></section>
+<section id="chatsPage" class="hidden"><h1>Chats</h1><p>Messaging unlocks after a mutual like. Your username will identify you in chat requests.</p><div id="chatList"></div></section>
+<section id="morePage" class="hidden"><h1>More</h1><p>More ways to manage your Conect experience.</p><div class="panel"><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('profilePage')">♙  Edit my profile</button><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('likesPage')">♡  My likes and matches</button><button class="secondary" style="width:100%" onclick="alert('Settings and help will be available in a future version.')">⚙  Settings & help</button></div></section>
+<section id="profilePage" class="hidden"><h1>Your profile</h1><p>Tap your profile picture to edit your basic details.</p>
+<button type="button" class="profile-hero" id="openBasicsBtn" aria-label="Edit basic profile details">
+<img id="profilePagePhoto" class="profile-hero-photo" alt="Your profile picture">
+<div class="profile-hero-meta"><strong id="profileHeroName">Your name</strong><span id="profileHeroDetails">@username · Add your details</span><span style="color:#ff805b;margin-top:4px">Tap photo to edit basics ✎</span></div><span style="font-size:22px;color:var(--muted)">›</span></button>
+<section class="photo-gallery-panel" aria-label="Profile photos"><p class="photo-gallery-title">Profiles with photos get more likes</p><div id="profilePhotoGallery" class="photo-gallery-grid photo-gallery-drop"><button type="button" class="photo-gallery-tile photo-gallery-add" id="addProfilePhotosBtn" aria-label="Add profile photos">+</button></div><input id="profileGalleryInput" type="file" accept="image/*" multiple hidden><p class="photo-gallery-help" id="profileGalleryHelp">Drag photos here or tap + · 0/6</p></section><div class="panel"><label>Username</label><input id="myUsername" class="field" disabled><p style="font-size:12px">Your username is set at sign-in in this prototype.</p>
+<label>Interests</label><div id="profileInterestSummary" class="chips" style="margin:7px 0 12px"></div><button type="button" class="secondary" id="editInterestsBtn">Edit interests</button>
+<label style="display:block;margin-top:14px">Short bio</label><textarea id="myBio" class="field" rows="3" maxlength="180" placeholder="Tell people a little about yourself"></textarea>
+<label>Looking for</label><select id="myPurpose" class="field"><option value="both">Dating and friendship</option><option value="dating">Dating</option><option value="friends">Friendship</option></select>
+<button class="primary" id="saveProfile">Save profile</button><p id="profileSaved" style="font-size:12px"></p></div></section>
+<div id="basicsBackdrop" class="sheet-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="basicsTitle"><div class="basics-sheet"><div class="sheet-handle"></div><h2 class="sheet-title" id="basicsTitle">Basics</h2>
+<label for="myName">Display name</label><input id="myName" class="field" placeholder="Your name" maxlength="40">
+<label for="myAge">Age (18+)</label><input id="myAge" class="field" type="number" min="18" max="99" placeholder="18 or older">
+<label for="myGender">Gender</label><select id="myGender" class="field"><option value="">Choose gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Non-binary">Non-binary</option></select>
+<label for="myOrientation">Interested in</label><select id="myOrientation" class="field"><option value="Any">Any</option><option value="Straight">Straight</option><option value="Gay">Gay</option><option value="Lesbian">Lesbian</option><option value="Bisexual">Bisexual</option><option value="Other">Other</option></select>
+<label for="myShowMe">Show me</label><select id="myShowMe" class="field"><option value="Any">Any</option><option value="Male">Male</option><option value="Female">Female</option><option value="Non-binary">Non-binary</option></select>
+<label for="myLocation">Location (city, country)</label><input id="myLocation" class="field" placeholder="City, country">
+<div class="basics-actions"><button type="button" class="secondary" id="cancelBasicsBtn">Cancel</button><button type="button" class="primary" id="saveBasicsBtn">Save</button></div></div></div>
+<section id="detailPage" class="hidden"><button class="secondary" id="backDiscover">← Back to discover</button><div id="detailContent" class="panel"></div></section>
+</div>
+<nav aria-label="Main navigation"><button class="active" data-page="discoverPage"><b>✥</b>Feed</button><button data-page="likesPage"><b>♥<span class="nav-badge hidden" id="likesBadge">4</span></b>Likes</button><button data-page="chatsPage"><b>▣</b>Chats</button><button data-page="morePage"><b>♣</b>More</button><button data-page="profilePage"><b>♟</b>Profile</button></nav>
+<script>
+const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#101116');tg.setBackgroundColor('#101116')}catch(e){}}
+let profiles=[
+{id:1,name:"Maya",age:25,loc:"Kampala, Uganda",bio:"Music, travel, and good conversations. Always up for discovering somewhere new.",interests:["Music","Travel","Art"],purpose:["dating","friends"],match:92,img:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=900&q=85",initial:"M"},
+{id:2,name:"Daniel",age:27,loc:"Nairobi, Kenya",bio:"Tech lover, coffee explorer, and weekend hiker.",interests:["Technology","Coffee","Hiking"],purpose:["friends"],match:88,img:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=900&q=85",initial:"D"},
+{id:3,name:"Amina",age:24,loc:"Kigali, Rwanda",bio:"Books, galleries, and finding the best local food.",interests:["Books","Food","Art"],purpose:["dating","friends"],match:95,img:"https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=85",initial:"A"},
+{id:4,name:"Leo",age:26,loc:"London, UK",bio:"Photographer, music fan, and curious about the world.",interests:["Photography","Music","Travel"],purpose:["friends"],match:84,img:"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85",initial:"L"},
+{id:5,name:"Irene",age:23,loc:"Dar es Salaam, Tanzania",bio:"Beach walks, cooking experiments, and spontaneous plans.",interests:["Cooking","Beach","Fitness"],purpose:["dating"],match:90,img:"https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=85",initial:"I"},
+{id:6,name:"Noah",age:29,loc:"Toronto, Canada",bio:"Design-minded, easygoing, and always learning something.",interests:["Design","Films","Food"],purpose:["dating","friends"],match:81,img:"https://images.unsplash.com/photo-1504257432389-52343af06ae3?auto=format&fit=crop&w=900&q=85",initial:"N"}
+];
+const $=id=>document.getElementById(id);const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// Verify Telegram Mini App initData and sync basic profile data through the secured Edge Function.
+const TELEGRAM_SESSION_URL = "https://bixsxizzcgqfimpzbvwk.supabase.co/functions/v1/telegram-session";
+let verifiedTelegramUser = null;
+
+async function conectBackendRequest(action = "verify", profile = undefined, extra = {}) {
+  if (!tg || typeof tg.initData !== "string" || !tg.initData.trim()) {
+    throw new Error("Open Conect from your Telegram bot to sync data.");
+  }
+  const response = await fetch(TELEGRAM_SESSION_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      initData: tg.initData,
+      action,
+      ...(profile ? { profile } : {}),
+      ...(extra && typeof extra === "object" ? extra : {})
+    })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.ok !== true) {
+    throw new Error(result.error || `Request failed (${response.status})`);
+  }
+  return result;
+}
+
+function photoSource(photo) {
+  if (typeof photo === "string") return photo;
+  if (photo && typeof photo === "object") return photo.public_url || photo.url || "";
+  return "";
+}
+
+function isStoragePhoto(photo) {
+  return Boolean(photo && typeof photo === "object" && photo.storage_path);
+}
+
+async function uploadPhotoDataUrl(photoDataUrl) {
+  const result = await conectBackendRequest("upload_photo", undefined, { photoDataUrl });
+  if (!result.photo || !result.photo.storage_path || !result.photo.public_url) {
+    throw new Error("The server did not return the uploaded photo details.");
+  }
+  return result.photo;
+}
+
+async function syncLocalPhotosToServer() {
+  if (!tg || typeof tg.initData !== "string" || !tg.initData.trim()) {
+    return { localOnly: true };
+  }
+  if (!verifiedTelegramUser) {
+    throw new Error("Your Telegram account has not been verified. Close and reopen Conect inside Telegram.");
+  }
+  const working = [...profilePhotos].slice(0, 6);
+  for (let i = 0; i < working.length; i++) {
+    const item = working[i];
+    if (isStoragePhoto(item)) continue;
+    const dataUrl = typeof item === "string" && item.startsWith("data:image/jpeg;base64,") ? item : "";
+    if (!dataUrl) continue;
+    const uploaded = await uploadPhotoDataUrl(dataUrl);
+    working[i] = uploaded;
+    profilePhotos = [...working];
+    saveProfilePhotos();
+    renderProfilePhotos();
+  }
+  profilePhotos = working.filter(photo => Boolean(photoSource(photo)));
+  saveProfilePhotos();
+  renderProfilePhotos();
+  return { localOnly: false, photos: profilePhotos };
+}
+
+function applyServerProfile(result) {
+  if (!result || !result.profile) return false;
+  const p = result.profile;
+  const interests = Array.isArray(result.interests) ? result.interests : [];
+  const serverPhotos = Array.isArray(result.photos) ? result.photos.slice(0, 6) : [];
+  if (serverPhotos.length) {
+    profilePhotos = serverPhotos;
+    profilePhotoData = photoSource(serverPhotos[0]);
+  }
+  myProfile = {
+    ...myProfile,
+    name: p.display_name,
+    age: p.age,
+    gender: p.gender,
+    orientation: p.interested_in,
+    showMe: p.show_me,
+    country: p.country,
+    city: p.city,
+    loc: `${p.city}, ${p.country}`,
+    bio: p.bio || "",
+    purpose: p.purpose || "both",
+    interests,
+    ...(serverPhotos.length ? { photos: serverPhotos, photo: photoSource(serverPhotos[0]) } : {})
+  };
+  currentUsername = p.app_username;
+  selectedInterests = new Set(interests);
+  try {
+    localStorage.setItem("conect_username", currentUsername);
+    localStorage.setItem("mm2_profile", JSON.stringify(myProfile));
+  } catch (_) {}
+  $("signInUsername").value = currentUsername;
+  $("setupName").value = myProfile.name || "";
+  $("setupAge").value = myProfile.age || "";
+  $("setupCountry").value = myProfile.country || "";
+  $("setupCityManual").value = myProfile.city || "";
+  setupChoices.gender = myProfile.gender || "";
+  setupChoices.showMe = myProfile.showMe || "Any";
+  setupChoices.orientation = myProfile.orientation || "Any";
+  document.querySelectorAll("[data-group]").forEach(btn =>
+    btn.classList.toggle("active", setupChoices[btn.dataset.group] === btn.dataset.value)
+  );
+  if (myProfile.country && typeof loadCities === "function") {
+    void loadCities(myProfile.country, myProfile.city || "");
+  }
+  renderInterestChoices();
+  if (myProfile.photo) {
+    $("profilePhotoPreview").src = myProfile.photo;
+    $("profilePagePhoto").src = myProfile.photo;
+  }
+  return true;
+}
+
+async function verifyTelegramSession() {
+  const status = $("telegramAuthStatus");
+  if (!tg || typeof tg.initData !== "string" || !tg.initData.trim()) return;
+  status.classList.remove("hidden");
+  status.textContent = "Verifying your Telegram account…";
+  try {
+    const verified = await conectBackendRequest("verify");
+    if (!verified.telegramUser || !verified.telegramUser.id) {
+      throw new Error("Telegram user data was not returned.");
+    }
+    verifiedTelegramUser = verified.telegramUser;
+    status.style.background = "#153320";
+    status.textContent = "Telegram account verified" +
+      (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
+      ". Checking for your saved Conect profile…";
+    try {
+      const saved = await conectBackendRequest("load_profile");
+      if (applyServerProfile(saved)) {
+        status.textContent = "Telegram account verified" +
+          (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
+          ". Your profile, interests, and saved photos were loaded from Conect’s database. Demo likes remain on this device.";
+        // If this profile has no device photo/interests yet, continue setup so the user can add them.
+        if (myProfile.photo && Array.isArray(myProfile.interests) && myProfile.interests.length >= 3) {
+          showPage("discoverPage");
+        } else {
+          renderInterestChoices();
+          showPage("interestsSetupPage");
+        }
+      } else {
+        const hasCompleteLocalProfile = Boolean(
+          currentUsername && myProfile.name && Number(myProfile.age) >= 18 && myProfile.gender &&
+          myProfile.country && myProfile.city && myProfile.photo &&
+          Array.isArray(myProfile.interests) && myProfile.interests.length >= 3
+        );
+        if (hasCompleteLocalProfile) {
+          // Migrate a completed profile from this device into the database once.
+          try {
+            await syncCurrentProfile();
+            status.style.background = "#153320";
+            status.textContent = "Telegram account verified" +
+              (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
+              ". Your profile details and interests have synced. Finish setup to sync any remaining local photos.";
+          } catch (syncError) {
+            status.style.background = "#3a1c1c";
+            status.textContent = "Telegram account verified, but your profile could not be saved to the database: " + syncError.message;
+          }
+        } else {
+          status.textContent = "Telegram account verified" +
+            (verifiedTelegramUser.username ? " as @" + verifiedTelegramUser.username : "") +
+            ". Finish profile setup to save your details, interests, and profile photo to Conect.";
+        }
+      }
+    } catch (dbError) {
+      status.style.background = "#3a1c1c";
+      status.textContent = "Telegram account verified, but database sync could not be reached: " + dbError.message;
+    }
+  } catch (error) {
+    status.style.background = "#3a1c1c";
+    status.textContent = "Telegram verification failed: " + error.message + ". Close and reopen Conect from Telegram, then try again.";
+  }
+}
+
+async function syncCurrentProfile() {
+  if (!tg || typeof tg.initData !== "string" || !tg.initData.trim()) {
+    return { localOnly: true };
+  }
+  if (!verifiedTelegramUser) throw new Error("Your Telegram account has not been verified yet. Close and reopen Conect, then try again.");
+  const location = String(myProfile.loc || "").trim();
+  let city = String(myProfile.city || "").trim();
+  let country = String(myProfile.country || "").trim();
+  if ((!city || !country) && location.includes(",")) {
+    const parts = location.split(",");
+    if (!city) city = parts.shift().trim();
+    if (!country) country = parts.join(",").trim();
+  } else if (!city && location) {
+    city = location;
+  }
+  if (!country && city) throw new Error("Please set your country on the registration page before syncing your profile.");
+  const interests = [...new Set(Array.from(selectedInterests || []).map(x => String(x).trim()).filter(Boolean))].slice(0, 10);
+  const profile = {
+    app_username: String(currentUsername || "").trim().toLowerCase(),
+    display_name: String(myProfile.name || "").trim(),
+    age: Number(myProfile.age),
+    gender: String(myProfile.gender || ""),
+    interested_in: String(myProfile.orientation || "Any"),
+    show_me: String(myProfile.showMe || "Any"),
+    country,
+    city,
+    bio: String(myProfile.bio || "").trim(),
+    purpose: String(myProfile.purpose || "both"),
+    interests
+  };
+  const saved = await conectBackendRequest("save_profile", profile);
+  return { localOnly: false, profile: saved.profile, interests: saved.interests || interests };
+}
+
+let index=0,mode="swipe",purpose="both",likesTab="liked",currentUsername=localStorage.getItem("conect_username")||"",setupChoices={gender:"",showMe:"Any",orientation:"Any"},liked=new Set(JSON.parse(localStorage.getItem("mm2_liked")||"[]")),passed=new Set(JSON.parse(localStorage.getItem("mm2_passed")||"[]")),matches=new Set(JSON.parse(localStorage.getItem("mm2_matches")||"[]")),myProfile=JSON.parse(localStorage.getItem("mm2_profile")||"{}");
+const interestGroups=[
+["🎨 Creative & Arts",["Live Music / Concerts","Photography","Painting / Sketching","Writing / Poetry","Dancing","Museums & Galleries"]],
+["👟 Fitness & Wellness",["Working out / Gym","Yoga / Pilates","Running","Swimming","Martial Arts","Meditation / Mindfulness"]],
+["🍔 Food & Drink",["Coffee / Cafes","Cooking / Baking","Brunch","Trying New Restaurants","Street Food","Wine / Craft Beer"]],
+["🧭 Travel & Adventure",["Hiking / Trekking","Camping","Road Trips","Backpacking / Budget Travel","Exploring New Cities","Beach Days"]],
+["🕹️ Entertainment & Gaming",["PC / Console Gaming","Sci-Fi & Fantasy","Anime / Manga","Binge-Watching Series","Cinema / Movie Nights","Board Games"]],
+["🐾 Pets & Animals",["Dog Lover","Cat Lover","Wildlife / Nature"]],
+["🌱 Lifestyle & Values",["Environmentalism","Volunteering / Charity","Feminism","Astrology","Thrifting / Vintage Style","Self-Care"]],
+["📚 Social & Leisure",["Reading / Book Clubs","Deep Conversations","Pub Trivia / Quiz Nights","Live Comedy","Gardening / Houseplants","Podcasts"]],
+["📊 Sports & Action",["Football / Soccer","Basketball","Tennis","Cycling","Extreme Sports"]]
+];
+let selectedInterests=new Set(Array.isArray(myProfile.interests)?myProfile.interests:[]),profilePhotoData=myProfile.photo||"";
+let profilePhotos=Array.isArray(myProfile.photos)?myProfile.photos.slice(0,6):(myProfile.photo?[myProfile.photo]:[]);
+
+
+let liveDiscoveryMode = false;
+let liveDiscoveryLoaded = false;
+let liveProfilesLoading = false;
+let liveSwipeBusy = false;
+let liveLikedProfiles = [];
+let liveIncomingLikes = [];
+let liveMatches = [];
+
+function filtered(){return profiles.filter(p=>(purpose==="both"||p.purpose.includes(purpose))&&!passed.has(p.id)&&!liked.has(p.id))}
+function chips(p){return p.interests.map(i=>`<span class="chip">${esc(i)}</span>`).join("")}
+function renderSwipe(){let list=filtered();if(!list.length){$("hero").innerHTML='<div class="empty" style="padding-top:120px">You have seen everyone in this demo.<br>Switch to Grid or reset the demo to browse again.</div>';$("counter").textContent="No more demo profiles";return}let p=list[index%list.length];$("hero").innerHTML=`<img src="${p.img}" alt="Demo profile photo"><div class="match">♥ ${p.match}% match</div><div class="side-actions" aria-label="Profile actions"><button class="side-action" aria-label="Boost profile" title="Boost" onclick="act('star')">ϟ</button><button class="side-action" aria-label="Filters" title="Filters" onclick="document.getElementById('filterBtn').click()">⌕</button><button class="side-action primary-like" aria-label="Like profile" title="Like" onclick="act('like')">♥</button><button class="side-action" aria-label="Chats" title="Chats" onclick="showPage('chatsPage')">▣</button><button class="side-action" aria-label="Pass profile" title="Pass" onclick="act('pass')">×</button></div><div class="onphoto"><h2>${esc(p.name)}, ${p.age} <span class="online"></span></h2><div class="location">⌖ ${esc(p.loc)}</div><div class="bio">${esc(p.bio)}</div><div class="chips">${chips(p)}</div><button class="smallbtn" style="margin-top:12px" onclick="showDetail(${p.id})">View full profile ↗</button></div>`;$("counter").textContent=`${list.length} profiles to explore · demo mode`}
+function renderGrid(){let list=profiles.filter(p=>purpose==="both"||p.purpose.includes(purpose));$("gridView").innerHTML=list.map(p=>`<div class="person"><div class="thumb" onclick="showDetail(${p.id})"><img loading="lazy" src="${p.img}" alt=""><div class="thumbname">${esc(p.name)}, ${p.age}</div></div><div class="personinfo"><p>⌖ ${esc(p.loc)}</p><p>${esc(p.interests.slice(0,2).join(" · "))}</p><button onclick="likePerson(${p.id})">${liked.has(p.id)?"♥ Liked":"♥ Like"}</button><button style="margin-top:6px;background:#252630;color:white" onclick="showDetail(${p.id})">View profile</button></div></div>`).join("")}
+function renderLikes(){
+ document.querySelectorAll("[data-likes-tab]").forEach(b=>{const active=b.dataset.likesTab===likesTab;b.classList.toggle("active",active);b.setAttribute("aria-selected",String(active))});
+ let ids=[],empty="";
+ if(likesTab==="liked"){ids=[...liked];empty="You haven’t liked anyone yet. Explore Discover and tap ♥ on profiles you like."}
+ else if(likesTab==="matches"){ids=[...matches];empty="No matches yet. Matches appear when you and another person like each other."}
+ else {ids=[];empty="No incoming likes to show yet. In the live app, this tab will show people who have liked your profile."}
+ const people=ids.map(id=>profiles.find(p=>p.id===id)).filter(Boolean);
+ $("likesList").innerHTML=people.map(p=>`<div class="panel profiletop"><div class="avatar">${p.initial}</div><div style="flex:1"><b>${esc(p.name)}, ${p.age}</b><div style="font-size:12px;color:var(--muted)">${esc(p.loc)}</div></div><button class="secondary" onclick="showDetail(${p.id})">View</button></div>`).join("")||`<div class="panel empty">${empty}</div>`;
+}
+function renderChats(){$("chatList").innerHTML=[...matches].map(id=>profiles.find(p=>p.id===id)).filter(Boolean).map(p=>`<div class="panel profiletop"><div class="avatar">${p.initial}</div><div style="flex:1"><b>${esc(p.name)}</b><div style="font-size:12px;color:var(--muted)">You matched in the demo</div></div><button class="secondary" onclick="alert('Demo only: real messaging requires a secure backend and a mutual like from the other account.')">Open chat</button></div>`).join("")||'<div class="panel empty">No matches yet. In the real app, chat unlocks only when both people like each other. Demo likes do not create real matches.</div>'}
+function persist(){localStorage.setItem("mm2_liked",JSON.stringify([...liked]));localStorage.setItem("mm2_passed",JSON.stringify([...passed]));localStorage.setItem("mm2_matches",JSON.stringify([...matches]))}
+function likePerson(id){liked.add(id);persist();renderAll();showPage("likesPage")}
+function act(action){let list=filtered();if(!list.length)return;let p=list[index%list.length];if(action==="like")liked.add(p.id);if(action==="pass")passed.add(p.id);if(action==="star")liked.add(p.id);persist();index=0;renderAll()}
+function renderProfilePhotos() {
+  const root = $("profilePhotoGallery");
+  if (!root) return;
+  root.innerHTML = profilePhotos.map((photo, i) => {
+    const src = photoSource(photo);
+    return `<div class="photo-gallery-tile"><img src="${esc(src)}" alt="Profile photo ${i + 1}"><button type="button" class="photo-gallery-remove" data-remove-photo="${i}" aria-label="Remove photo ${i + 1}">×</button></div>`;
+  }).join("");
+  if (profilePhotos.length < 6) {
+    root.insertAdjacentHTML("beforeend", '<button type="button" class="photo-gallery-tile photo-gallery-add" id="addProfilePhotosBtn" aria-label="Add profile photos">+</button>');
+  }
+  $("profileGalleryHelp").textContent = `Tap + to add photos · ${profilePhotos.length}/6`;
+  const add = $("addProfilePhotosBtn");
+  if (add) add.onclick = () => $("profileGalleryInput").click();
+  root.querySelectorAll("[data-remove-photo]").forEach(btn => {
+    btn.onclick = () => removeProfilePhoto(Number(btn.dataset.removePhoto));
+  });
+}
+
+function saveProfilePhotos() {
+  profilePhotoData = photoSource(profilePhotos[0]) || "";
+  myProfile = { ...myProfile, photos: profilePhotos, photo: profilePhotoData };
+  try {
+    localStorage.setItem("mm2_profile", JSON.stringify(myProfile));
+    if (profilePhotoData) {
+      $("profilePagePhoto").src = profilePhotoData;
+      $("profilePhotoPreview").src = profilePhotoData;
+    } else {
+      $("profilePagePhoto").removeAttribute("src");
+      $("profilePhotoPreview").removeAttribute("src");
+    }
+  } catch (e) {
+    alert("Your browser storage is full. Remove an image or try a smaller photo.");
+  }
+}
+
+async function removeProfilePhoto(index) {
+  const photo = profilePhotos[index];
+  if (!photo) return;
+  try {
+    if (isStoragePhoto(photo)) {
+      if (!tg || !tg.initData || !verifiedTelegramUser) {
+        throw new Error("Open Conect inside Telegram to remove a saved photo.");
+      }
+      const result = await conectBackendRequest("delete_photo", undefined, { storagePath: photo.storage_path });
+      profilePhotos = Array.isArray(result.photos) ? result.photos : [];
+    } else {
+      profilePhotos.splice(index, 1);
+    }
+    saveProfilePhotos();
+    renderProfilePhotos();
+  } catch (error) {
+    alert(error.message || "Could not remove the photo.");
+  }
+}
+
+function compressGalleryImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      reject(new Error("Choose a JPEG, PNG, or WebP image."));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read an image."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Could not open an image."));
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(1, 700 / Math.max(img.width, img.height));
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const context = canvas.getContext("2d");
+        if (!context) {
+          reject(new Error("Could not process this image."));
+          return;
+        }
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.68));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function addProfilePhotos(files) {
+  const incoming = Array.from(files || []).filter(f =>
+    ["image/jpeg", "image/png", "image/webp"].includes(f.type)
+  );
+  if (!incoming.length) {
+    alert("Choose JPEG, PNG, or WebP images.");
+    return;
+  }
+  let available = 6 - profilePhotos.length;
+  if (available <= 0) {
+    alert("You can add up to 6 profile photos. Remove a photo first.");
+    return;
+  }
+  const chosen = incoming.slice(0, available);
+  try {
+    const compressed = [];
+    for (const file of chosen) compressed.push(await compressGalleryImage(file));
+
+    const online = Boolean(tg && tg.initData && verifiedTelegramUser);
+    if (online) {
+      await syncCurrentProfile();
+      await syncLocalPhotosToServer();
+      available = 6 - profilePhotos.length;
+      if (available <= 0) throw new Error("You can have up to 6 profile photos. Remove one first.");
+    }
+
+    const accepted = compressed.slice(0, available);
+    if (online) {
+      for (const dataUrl of accepted) {
+        const uploaded = await uploadPhotoDataUrl(dataUrl);
+        profilePhotos.push(uploaded);
+        saveProfilePhotos();
+        renderProfilePhotos();
+      }
+    } else {
+      profilePhotos.push(...accepted);
+      saveProfilePhotos();
+      renderProfilePhotos();
+    }
+  } catch (error) {
+    alert(error.message || "Could not add the selected photos.");
+  }
+}
+$("profileGalleryInput").addEventListener("change",e=>{addProfilePhotos(e.target.files);e.target.value=""});
+const galleryDrop=$("profilePhotoGallery");galleryDrop.addEventListener("dragover",e=>{e.preventDefault();galleryDrop.classList.add("dragging")});galleryDrop.addEventListener("dragleave",()=>galleryDrop.classList.remove("dragging"));galleryDrop.addEventListener("drop",e=>{e.preventDefault();galleryDrop.classList.remove("dragging");addProfilePhotos(e.dataTransfer.files)});
+function showPage(id){["signInPage","interestsSetupPage","discoverPage","likesPage","chatsPage","morePage","profilePage","detailPage"].forEach(x=>$(x).classList.toggle("hidden",x!==id));document.querySelector("nav").classList.toggle("hidden",id==="signInPage"||id==="interestsSetupPage");document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));if(id==="likesPage")renderLikes();if(id==="chatsPage")renderChats();if(id==="profilePage"){ $("myUsername").value=currentUsername;$("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("myBio").value=myProfile.bio||"";$("myPurpose").value=myProfile.purpose||"both";$("profilePagePhoto").src=myProfile.photo||"";$("profileHeroName").textContent=(myProfile.name||"Your name")+(myProfile.age?", "+myProfile.age:"");$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+(myProfile.loc||"Add your location");renderProfilePhotos();$("profileInterestSummary").innerHTML=(myProfile.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join("")||"No interests selected yet."}}
+function showDetail(id){let p=profiles.find(x=>x.id===id);$("detailContent").innerHTML=`<img src="${p.img}" style="width:100%;max-height:390px;object-fit:cover;border-radius:15px"><h2>${esc(p.name)}, ${p.age}</h2><p>⌖ ${esc(p.loc)}</p><p>${esc(p.bio)}</p><div class="chips">${chips(p)}</div><p style="font-size:12px">Looking for: ${p.purpose.join(" and ")}</p><div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(${p.id})">♥ Like</button><button class="secondary" onclick="act('pass')">Pass</button></div>`;showPage("detailPage")}
+function renderAll(){renderSwipe();renderGrid();renderLikes();renderChats()}
+$("swipeMode").onclick=()=>{mode="swipe";$("swipeMode").classList.add("active");$("gridMode").classList.remove("active");$("swipeView").classList.remove("hidden");$("gridView").classList.add("hidden")};
+$("gridMode").onclick=()=>{mode="grid";$("gridMode").classList.add("active");$("swipeMode").classList.remove("active");$("swipeView").classList.add("hidden");$("gridView").classList.remove("hidden");renderGrid()};
+$("passBtn").onclick=()=>act("pass");$("likeBtn").onclick=()=>act("like");$("starBtn").onclick=()=>act("star");
+document.querySelectorAll("[data-purpose]").forEach(b=>b.onclick=()=>{purpose=b.dataset.purpose;document.querySelectorAll("[data-purpose]").forEach(x=>x.classList.toggle("active",x===b));index=0;renderAll()});
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{if(!currentUsername){showPage("signInPage");return}showPage(b.dataset.page);if(b.dataset.page==="discoverPage"&&verifiedTelegramUser)void loadLiveExperience({force:true})});
+document.querySelectorAll("[data-likes-tab]").forEach(b=>b.onclick=()=>{likesTab=b.dataset.likesTab;renderLikes()});
+document.querySelectorAll("[data-group]").forEach(btn=>btn.onclick=()=>{const group=btn.dataset.group;setupChoices[group]=btn.dataset.value;document.querySelectorAll(`[data-group="${group}"]`).forEach(x=>x.classList.toggle("active",x===btn))});
+async function loadCities(country, preferredCity=""){
+ const select=$("setupCity"),manual=$("setupCityManual"),help=$("cityHelp");
+ select.innerHTML='<option value="">Loading cities…</option>';select.disabled=true;manual.classList.add("hidden");help.textContent="Loading cities for "+country+"…";
+ try{
+  const response=await fetch("https://countriesnow.space/api/v0.1/countries/cities",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({country})});
+  if(!response.ok)throw new Error("City lookup failed");
+  const result=await response.json();if(result.error||!Array.isArray(result.data)||!result.data.length)throw new Error("No city list returned");
+  const cities=[...new Set(result.data)].sort((a,b)=>a.localeCompare(b));
+  select.innerHTML='<option value="">Choose your city</option>'+cities.map(city=>`<option value="${esc(city)}">${esc(city)}</option>`).join("");select.disabled=false;
+  if(preferredCity&&cities.includes(preferredCity))select.value=preferredCity;
+  help.textContent=cities.length+" cities available for "+country+". If your city is missing, type it below.";
+  manual.classList.remove("hidden");manual.placeholder="Your city (if not listed)";
+ }catch(error){select.innerHTML='<option value="">City list unavailable</option>';select.disabled=true;manual.classList.remove("hidden");help.textContent="Couldn't load the city list. You can type your city instead.";}
+}
+$("setupCountry").addEventListener("change",()=>{const country=$("setupCountry").value;$("setupCityManual").value="";if(country)loadCities(country);else{$("setupCity").innerHTML='<option value="">Choose a country first</option>';$("setupCity").disabled=true;$("cityHelp").textContent="Choose a country to load its cities.";$("setupCityManual").classList.add("hidden");}});
+$("setupCity").addEventListener("change",()=>{if($("setupCity").value)$("setupCityManual").value="";});
+$("signInBtn").onclick=()=>{const username=$("signInUsername").value.trim().toLowerCase(),name=$("setupName").value.trim(),age=Number($("setupAge").value),country=$("setupCountry").value.trim(),city=($("setupCityManual").value.trim()||$("setupCity").value.trim());if(!/^[A-Za-z0-9_]{3,20}$/.test(username)){$("signInError").textContent="Enter a username with 3–20 letters, numbers, and underscores.";return}if(!name){$("signInError").textContent="Please enter your name.";return}if(!Number.isInteger(age)||age<18||age>99){$("signInError").textContent="Conect is for adults aged 18 and older. Enter a valid age.";return}if(!setupChoices.gender){$("signInError").textContent="Please choose your gender.";return}if(!country||!city){$("signInError").textContent="Please enter your country and city.";return}currentUsername=username;localStorage.setItem("conect_username",username);myProfile={...myProfile,name,age,gender:setupChoices.gender,showMe:setupChoices.showMe,orientation:setupChoices.orientation,country,city,loc:`${city}, ${country}`};localStorage.setItem("mm2_profile",JSON.stringify(myProfile));$("signInError").textContent="";renderInterestChoices();if(profilePhotoData){$("profilePhotoPreview").src=profilePhotoData}else{$("profilePhotoPreview").removeAttribute("src")}showPage("interestsSetupPage")};
+$("signInUsername").value=currentUsername;
+if(myProfile.name){$("setupName").value=myProfile.name}if(myProfile.age){$("setupAge").value=myProfile.age}if(myProfile.gender){setupChoices.gender=myProfile.gender}if(myProfile.showMe){setupChoices.showMe=myProfile.showMe}if(myProfile.orientation){setupChoices.orientation=myProfile.orientation}if(myProfile.country){$("setupCountry").value=myProfile.country;if(myProfile.country)loadCities(myProfile.country,myProfile.city||"")}if(myProfile.city){$("setupCityManual").value=myProfile.city}document.querySelectorAll("[data-group]").forEach(btn=>btn.classList.toggle("active",setupChoices[btn.dataset.group]===btn.dataset.value));
+
+function renderInterestChoices(){
+ const root=$("interestCategories");root.innerHTML=interestGroups.map(([category,items])=>`<div class="interest-category"><h3>${category}</h3><div class="interest-tags">${items.map(item=>`<button type="button" class="interest-tag ${selectedInterests.has(item)?"active":""}" data-interest="${esc(item)}" aria-pressed="${selectedInterests.has(item)}">${esc(item)}</button>`).join("")}</div></div>`).join("");
+ root.querySelectorAll("[data-interest]").forEach(btn=>btn.onclick=()=>{const item=btn.dataset.interest;if(selectedInterests.has(item)){selectedInterests.delete(item)}else{if(selectedInterests.size>=10){$("interestError").textContent="Choose up to 10 interests. Remove one before adding another.";return}selectedInterests.add(item)}$("interestError").textContent="";renderInterestChoices();updateInterestCount()});updateInterestCount();
+}
+function updateInterestCount(){$("interestCount").textContent=`${selectedInterests.size} / 10 selected`}
+$("profilePhotoInput").onchange = async e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    $("photoError").textContent = "Choose a JPEG, PNG, or WebP image.";
+    e.target.value = "";
+    return;
+  }
+  if (file.size > 12 * 1024 * 1024) {
+    $("photoError").textContent = "Choose an image smaller than 12 MB.";
+    e.target.value = "";
+    return;
+  }
+  if (isStoragePhoto(profilePhotos[0])) {
+    $("photoError").textContent = "Your main photo is already saved online. Use the Profile photo gallery to add or remove photos.";
+    e.target.value = "";
+    return;
+  }
+  try {
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(1, 600 / Math.max(img.width, img.height));
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      const context = canvas.getContext("2d");
+      if (!context) {
+        $("photoError").textContent = "Could not process this image.";
+        return;
+      }
+      context.drawImage(img, 0, 0, canvas.width, canvas.height);
+      profilePhotoData = canvas.toDataURL("image/jpeg", 0.78);
+      if (profilePhotos.length) profilePhotos[0] = profilePhotoData;
+      else profilePhotos = [profilePhotoData];
+      myProfile = { ...myProfile, photo: profilePhotoData, photos: profilePhotos };
+      try { localStorage.setItem("mm2_profile", JSON.stringify(myProfile)); } catch (_) {}
+      $("profilePhotoPreview").src = profilePhotoData;
+      $("photoError").textContent = "";
+      renderProfilePhotos();
+    };
+    img.onerror = () => {
+      $("photoError").textContent = "Could not read that image. Try another photo.";
+    };
+    img.src = dataUrl;
+  } catch (_) {
+    $("photoError").textContent = "Could not load that image. Try another photo.";
+  }
+};
+$("finishSetupBtn").onclick = async () => {
+  if (!profilePhotoData) {
+    $("photoError").textContent = "Please add a profile picture before continuing.";
+    return;
+  }
+  if (selectedInterests.size < 3) {
+    $("interestError").textContent = "Choose at least 3 interests to continue.";
+    return;
+  }
+
+  myProfile = { ...myProfile, photo: profilePhotoData, photos: profilePhotos, interests: [...selectedInterests] };
+  try {
+    localStorage.setItem("mm2_profile", JSON.stringify(myProfile));
+  } catch (_) {
+    $("interestError").textContent = "Your photo could not be saved. Try a smaller image.";
+    return;
+  }
+
+  $("photoError").textContent = "";
+  $("interestError").textContent = "";
+  const btn = $("finishSetupBtn");
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Saving profile…";
+  try {
+    const sync = await syncCurrentProfile();
+    if (sync.localOnly) {
+      $("telegramAuthStatus").classList.remove("hidden");
+      $("telegramAuthStatus").textContent = "Saved on this device. Open Conect inside Telegram to sync your profile and photos.";
+    } else {
+      await syncLocalPhotosToServer();
+      $("telegramAuthStatus").classList.remove("hidden");
+      $("telegramAuthStatus").style.background = "#153320";
+      $("telegramAuthStatus").textContent = "Your profile, interests, and photos have synced to Conect. Demo likes remain on this device.";
+    }
+    await loadLiveExperience();
+    showPage("discoverPage");
+  } catch (err) {
+    $("interestError").textContent = "Profile saving or photo upload failed: " + err.message + ". Your local profile is preserved; try again after checking your connection.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = old;
+  }
+};
+$("backToBasicsBtn").onclick=()=>showPage("signInPage");
+$("filterBtn").onclick=()=>alert("Demo filters: choose Everyone, Dating, or Friends above. Distance filters will be added after backend/location permissions are designed.");
+$("backDiscover").onclick=()=>showPage("discoverPage");
+function openBasics(){ $("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("basicsBackdrop").classList.remove("hidden") }
+function closeBasics(){ $("basicsBackdrop").classList.add("hidden") }
+$("openBasicsBtn").onclick=openBasics;$("profilePagePhoto").onclick=openBasics;$("cancelBasicsBtn").onclick=closeBasics;$("basicsBackdrop").onclick=e=>{if(e.target===$("basicsBackdrop"))closeBasics()};
+$("saveBasicsBtn").onclick=async()=>{const name=$("myName").value.trim(),age=Number($("myAge").value),gender=$("myGender").value,orientation=$("myOrientation").value,showMe=$("myShowMe").value,loc=$("myLocation").value.trim();if(!name){alert("Please enter your display name.");return}if(!Number.isInteger(age)||age<18||age>99){alert("Please enter a valid age from 18 to 99.");return}if(!gender){alert("Please choose your gender.");return}if(!loc){alert("Please enter your location.");return}let city=myProfile.city||"",country=myProfile.country||"";if(loc.includes(",")){const parts=loc.split(",");city=parts.shift().trim();country=parts.join(",").trim()}else{city=loc}myProfile={...myProfile,name,age,gender,orientation,showMe,loc,city,country};localStorage.setItem("mm2_profile",JSON.stringify(myProfile));$("profileHeroName").textContent=name+", "+age;$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+loc;const btn=$("saveBasicsBtn"),old=btn.textContent;btn.disabled=true;btn.textContent="Saving…";try{const sync=await syncCurrentProfile();closeBasics();$("profileSaved").textContent=sync.localOnly?"Saved on this device only; open inside Telegram to sync.":"Basic details synced to Conect’s database."}catch(err){$("profileSaved").textContent="Saved locally, but database sync failed: "+err.message}finally{btn.disabled=false;btn.textContent=old}};
+$("editInterestsBtn").onclick=()=>{renderInterestChoices();$("profilePhotoPreview").src=myProfile.photo||"";showPage("interestsSetupPage")};
+$("saveProfile").onclick=async()=>{myProfile={...myProfile,bio:$("myBio").value.trim(),purpose:$("myPurpose").value};localStorage.setItem("mm2_profile",JSON.stringify(myProfile));const btn=$("saveProfile"),old=btn.textContent;btn.disabled=true;btn.textContent="Saving…";try{const sync=await syncCurrentProfile();$("profileSaved").textContent=sync.localOnly?"Saved on this device only; open inside Telegram to sync.":"Profile details and interests synced to Conect’s database. Photos remain on this device."}catch(err){$("profileSaved").textContent="Saved locally, but database sync failed: "+err.message}finally{btn.disabled=false;btn.textContent=old}};
+
+function mapConectProfile(raw) {
+  const purposeValues = raw && raw.purpose === "both"
+    ? ["dating", "friends"]
+    : [raw && raw.purpose].filter(Boolean);
+  const photos = Array.isArray(raw && raw.photos) ? raw.photos : [];
+  const primary = photos.find(photo => photo && photo.is_primary) || photos[0] || null;
+  const photo = raw && raw.photo ? raw.photo : (primary && primary.public_url ? primary.public_url : "");
+  const name = String((raw && (raw.name || raw.username)) || "Conect member");
+  return {
+    ...raw,
+    id: String(raw.id),
+    name,
+    age: Number(raw.age || 0),
+    loc: String(raw.location || "Location not specified"),
+    bio: String(raw.bio || ""),
+    interests: Array.isArray(raw.interests) ? raw.interests : [],
+    purpose: purposeValues,
+    img: String(photo || ""),
+    initial: name.trim().charAt(0).toUpperCase() || "C",
+    match: null
+  };
+}
+function currentProfileList() {
+  return profiles.filter(p => purpose === "both" || (Array.isArray(p.purpose) && p.purpose.includes(purpose)));
+}
+function allLiveRelationshipProfiles() {
+  return [...profiles, ...liveLikedProfiles, ...liveIncomingLikes, ...liveMatches.map(item => item.profile).filter(Boolean)];
+}
+function findConectProfile(id) {
+  const key = String(id);
+  return allLiveRelationshipProfiles().find(p => String(p.id) === key) || profiles.find(p => String(p.id) === key);
+}
+function inlineProfileId(id) {
+  return liveDiscoveryMode ? "'" + String(id) + "'" : String(id);
+}
+async function loadLiveRelationships() {
+  const result = await conectBackendRequest("load_relationships");
+  liveLikedProfiles = (Array.isArray(result.likedProfiles) ? result.likedProfiles : []).map(mapConectProfile);
+  liveIncomingLikes = (Array.isArray(result.incomingLikes) ? result.incomingLikes : []).map(mapConectProfile);
+  liveMatches = (Array.isArray(result.matches) ? result.matches : []).map(item => ({
+    id: item.id, created_at: item.created_at, profile: item.profile ? mapConectProfile(item.profile) : null
+  })).filter(item => item.profile);
+  liked = new Set(liveLikedProfiles.map(p => p.id));
+  matches = new Set(liveMatches.map(item => item.profile.id));
+}
+async function loadLiveExperience(options = {}) {
+  if (!verifiedTelegramUser || !tg || !tg.initData) return false;
+  if (liveProfilesLoading) return false;
+  if (liveDiscoveryLoaded && !options.force) return true;
+  liveDiscoveryMode = true;
+  liveProfilesLoading = true;
+  $("demoNotice").textContent = "Live Conect mode: discovery profiles and likes are connected to your account. Messaging is the next stage.";
+  renderAll();
+  try {
+    const discovery = await conectBackendRequest("load_discovery");
+    if (!discovery || !Array.isArray(discovery.profiles)) throw new Error("The server did not return discovery profiles.");
+    profiles = discovery.profiles.map(mapConectProfile);
+    liveDiscoveryLoaded = true;
+    await loadLiveRelationships();
+    $("telegramAuthStatus").classList.remove("hidden");
+    $("telegramAuthStatus").style.background = "#153320";
+    $("telegramAuthStatus").textContent = "Your profile is connected. Discovery, likes, and mutual matches are synced with Conect.";
+    return true;
+  } catch (error) {
+    profiles = [];
+    liveDiscoveryLoaded = false;
+    $("telegramAuthStatus").classList.remove("hidden");
+    $("telegramAuthStatus").style.background = "#3a1c1c";
+    $("telegramAuthStatus").textContent = "Could not load live Conect profiles or relationships: " + (error.message || "request failed") + ". Close and reopen Conect, then try again.";
+    return false;
+  } finally {
+    liveProfilesLoading = false;
+    renderAll();
+  }
+}
+async function recordLiveSwipe(profileId, action, openLikesAfter = false) {
+  if (liveSwipeBusy) return null;
+  const profile = findConectProfile(profileId);
+  if (!profile) {
+    alert("That profile is no longer available. Refresh Discover and try again.");
+    return null;
+  }
+  liveSwipeBusy = true;
+  $("counter").textContent = "Saving your choice…";
+  try {
+    const result = await conectBackendRequest("record_swipe", undefined, {
+      targetUserId: String(profile.id),
+      swipeAction: action === "star" ? "super_like" : action
+    });
+    profiles = profiles.filter(p => String(p.id) !== String(profile.id));
+    await loadLiveRelationships();
+    renderAll();
+    if (openLikesAfter) showPage("likesPage");
+    if (result.matched) {
+      $("telegramAuthStatus").classList.remove("hidden");
+      $("telegramAuthStatus").style.background = "#153320";
+      $("telegramAuthStatus").textContent = "It’s a match! You and " + profile.name + " liked each other. Messaging is the next stage.";
+    }
+    return result;
+  } catch (error) {
+    alert("Could not save your choice: " + (error.message || "request failed"));
+    return null;
+  } finally {
+    liveSwipeBusy = false;
+    renderAll();
+  }
+}
+function filtered() {
+  if (liveDiscoveryMode) return currentProfileList();
+  return profiles.filter(p => (purpose === "both" || p.purpose.includes(purpose)) && !passed.has(p.id) && !liked.has(p.id));
+}
+function chips(p) {
+  return (Array.isArray(p.interests) ? p.interests : []).map(i => '<span class="chip">' + esc(i) + '</span>').join("");
+}
+function renderSwipe() {
+  const list = filtered();
+  if (liveProfilesLoading) {
+    $("hero").innerHTML = '<div class="empty" style="padding-top:120px">Loading real Conect profiles…</div>';
+    $("counter").textContent = "Connecting to Conect";
+    return;
+  }
+  if (!list.length) {
+    $("hero").innerHTML = liveDiscoveryMode
+      ? '<div class="empty" style="padding-top:120px">' + (liveDiscoveryLoaded ? "You’re all caught up for now. New compatible members will appear here." : "Live discovery is not available yet. Reopen Conect to try again.") + '</div>'
+      : '<div class="empty" style="padding-top:120px">You have seen everyone in this demo.<br>Switch to Grid or reset the demo to browse again.</div>';
+    $("counter").textContent = liveDiscoveryMode ? "No new profiles right now" : "No more demo profiles";
+    return;
+  }
+  const p = list[index % list.length];
+  const image = p.img
+    ? '<img src="' + esc(p.img) + '" alt="Profile photo">'
+    : '<div style="width:100%;height:100%;display:grid;place-items:center;font-size:72px;font-weight:800;color:#ffffffb8">' + esc(p.initial) + '</div>';
+  const badge = liveDiscoveryMode ? "✦ CONECT MEMBER" : "♥ " + p.match + "% match";
+  const id = inlineProfileId(p.id);
+  $("hero").innerHTML = image +
+    '<div class="match">' + badge + '</div>' +
+    '<div class="side-actions" aria-label="Profile actions">' +
+    '<button class="side-action" aria-label="Super like" title="Super like" onclick="act(\'star\')">ϟ</button>' +
+    '<button class="side-action" aria-label="Filters" title="Filters" onclick="document.getElementById(\'filterBtn\').click()">⌕</button>' +
+    '<button class="side-action primary-like" aria-label="Like profile" title="Like" onclick="act(\'like\')">♥</button>' +
+    '<button class="side-action" aria-label="Chats" title="Chats" onclick="showPage(\'chatsPage\')">▣</button>' +
+    '<button class="side-action" aria-label="Pass profile" title="Pass" onclick="act(\'pass\')">×</button>' +
+    '</div><div class="onphoto"><h2>' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
+    ' <span class="online"></span></h2><div class="location">⌖ ' + esc(p.loc) +
+    '</div><div class="bio">' + esc(p.bio) + '</div><div class="chips">' + chips(p) +
+    '</div><button class="smallbtn" style="margin-top:12px" onclick="showDetail(' + id + ')">View full profile ↗</button></div>';
+  $("counter").textContent = liveDiscoveryMode
+    ? list.length + " compatible Conect profiles available"
+    : list.length + " profiles to explore · demo mode";
+}
+function renderGrid() {
+  const list = liveDiscoveryMode ? currentProfileList() : profiles.filter(p => purpose === "both" || p.purpose.includes(purpose));
+  if (!list.length) {
+    $("gridView").innerHTML = '<div class="panel empty">' + (liveDiscoveryMode ? "No new compatible profiles right now." : "No demo profiles available for this filter.") + '</div>';
+    return;
+  }
+  $("gridView").innerHTML = list.map(p => {
+    const id = inlineProfileId(p.id);
+    const image = p.img
+      ? '<img loading="lazy" src="' + esc(p.img) + '" alt="Profile photo">'
+      : '<div style="height:100%;display:grid;place-items:center;font-size:46px;font-weight:800;color:#ffffffb8">' + esc(p.initial) + '</div>';
+    return '<div class="person"><div class="thumb" onclick="showDetail(' + id + ')">' + image +
+      '<div class="thumbname">' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') + '</div></div>' +
+      '<div class="personinfo"><p>⌖ ' + esc(p.loc) + '</p><p>' + esc(p.interests.slice(0, 2).join(" · ")) +
+      '</p><button onclick="likePerson(' + id + ')">♥ Like</button>' +
+      '<button style="margin-top:6px;background:#252630;color:white" onclick="showDetail(' + id + ')">View profile</button></div></div>';
+  }).join("");
+}
+function renderLikes() {
+  document.querySelectorAll("[data-likes-tab]").forEach(b => {
+    const active = b.dataset.likesTab === likesTab;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-selected", String(active));
+  });
+  if (liveDiscoveryMode) {
+    let people = [];
+    let empty = "";
+    if (likesTab === "liked") {
+      people = liveLikedProfiles;
+      empty = "You haven’t liked anyone yet. Explore Discover and tap ♥ on profiles you like.";
+    } else if (likesTab === "matches") {
+      people = liveMatches.map(item => item.profile).filter(Boolean);
+      empty = "No mutual matches yet. A match appears when both people like each other.";
+    } else {
+      people = liveIncomingLikes;
+      empty = "No incoming likes to show yet.";
+    }
+    $("likesList").innerHTML = people.map(p => {
+      const id = inlineProfileId(p.id);
+      return '<div class="panel profiletop"><div class="avatar">' + esc(p.initial) +
+        '</div><div style="flex:1"><b>' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
+        '</b><div style="font-size:12px;color:var(--muted)">' + esc(p.loc) +
+        '</div></div><button class="secondary" onclick="showDetail(' + id + ')">View</button></div>';
+    }).join("") || '<div class="panel empty">' + empty + '</div>';
+    return;
+  }
+  let ids = [], empty = "";
+  if (likesTab === "liked") {
+    ids = [...liked];
+    empty = "You haven’t liked anyone yet. Explore Discover and tap ♥ on profiles you like.";
+  } else if (likesTab === "matches") {
+    ids = [...matches];
+    empty = "No matches yet. Matches appear when you and another person like each other.";
+  } else {
+    ids = [];
+    empty = "No incoming likes to show yet. In the live app, this tab will show people who have liked your profile.";
+  }
+  const people = ids.map(id => profiles.find(p => p.id === id)).filter(Boolean);
+  $("likesList").innerHTML = people.map(p => '<div class="panel profiletop"><div class="avatar">' + esc(p.initial) +
+    '</div><div style="flex:1"><b>' + esc(p.name) + ', ' + esc(p.age) + '</b><div style="font-size:12px;color:var(--muted)">' +
+    esc(p.loc) + '</div></div><button class="secondary" onclick="showDetail(' + p.id + ')">View</button></div>').join("") ||
+    '<div class="panel empty">' + empty + '</div>';
+}
+function renderChats() {
+  if (liveDiscoveryMode) {
+    $("chatList").innerHTML = liveMatches.map(item => {
+      const p = item.profile;
+      return '<div class="panel profiletop"><div class="avatar">' + esc(p.initial) +
+        '</div><div style="flex:1"><b>' + esc(p.name) + '</b><div style="font-size:12px;color:var(--muted)">You matched on Conect</div></div>' +
+        '<button class="secondary" disabled title="Messaging is the next stage">Chat next</button></div>';
+    }).join("") || '<div class="panel empty">No matches yet. When you and another member both like each other, the match will appear here. Messaging is the next stage.</div>';
+    return;
+  }
+  $("chatList").innerHTML = [...matches].map(id => profiles.find(p => p.id === id)).filter(Boolean).map(p =>
+    '<div class="panel profiletop"><div class="avatar">' + esc(p.initial) +
+    '</div><div style="flex:1"><b>' + esc(p.name) + '</b><div style="font-size:12px;color:var(--muted)">You matched in the demo</div></div>' +
+    '<button class="secondary" onclick="alert(\'Demo only: real messaging requires a secure backend and a mutual like from the other account.\')">Open chat</button></div>'
+  ).join("") || '<div class="panel empty">No matches yet. In the real app, chat unlocks only when both people like each other. Demo likes do not create real matches.</div>';
+}
+function likePerson(id) {
+  if (liveDiscoveryMode) {
+    void recordLiveSwipe(id, "like", true);
+    return;
+  }
+  liked.add(id);
+  persist();
+  renderAll();
+  showPage("likesPage");
+}
+function act(action) {
+  if (liveSwipeBusy) return;
+  const list = filtered();
+  if (!list.length) return;
+  const p = list[index % list.length];
+  if (liveDiscoveryMode) {
+    void recordLiveSwipe(p.id, action === "star" ? "super_like" : action, false);
+    return;
+  }
+  if (action === "like" || action === "star") liked.add(p.id);
+  if (action === "pass") passed.add(p.id);
+  persist();
+  index = 0;
+  renderAll();
+}
+function showDetail(id) {
+  const p = liveDiscoveryMode ? findConectProfile(id) : profiles.find(x => String(x.id) === String(id));
+  if (!p) {
+    $("detailContent").innerHTML = '<div class="empty">This profile is no longer available.</div>';
+    showPage("detailPage");
+    return;
+  }
+  const image = p.img
+    ? '<img src="' + esc(p.img) + '" alt="Profile photo" style="width:100%;max-height:390px;object-fit:cover;border-radius:15px">'
+    : '<div class="photo-gallery-tile" style="height:220px;font-size:64px;font-weight:800">' + esc(p.initial) + '</div>';
+  const purposes = Array.isArray(p.purpose) ? p.purpose : [p.purpose].filter(Boolean);
+  const idArg = inlineProfileId(p.id);
+  const purposeText = purposes.length ? purposes.join(" and ") : "not specified";
+  $("detailContent").innerHTML = image + '<h2>' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
+    '</h2><p>⌖ ' + esc(p.loc) + '</p><p>' + esc(p.bio) + '</p><div class="chips">' + chips(p) +
+    '</div><p style="font-size:12px">Looking for: ' + esc(purposeText) + '</p>' +
+    (liveDiscoveryMode
+      ? '<div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(' + idArg + ')">♥ Like</button><button class="secondary" onclick="recordLiveSwipe(' + idArg + ', \'pass\').then(function(){showPage(\'discoverPage\')})">Pass</button></div>'
+      : '<div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(' + idArg + ')">♥ Like</button><button class="secondary" onclick="act(\'pass\')">Pass</button></div>');
+  showPage("detailPage");
+}
+function renderAll() {
+  renderSwipe();
+  renderGrid();
+  renderLikes();
+  renderChats();
+}
+
+
+renderAll();
+void verifyTelegramSession().then(() => {
+  const completeProfile = Boolean(currentUsername && myProfile.name && Number(myProfile.age) >= 18 && myProfile.gender && myProfile.country && myProfile.city && myProfile.photo && Array.isArray(myProfile.interests) && myProfile.interests.length >= 3);
+  if (verifiedTelegramUser && completeProfile) void loadLiveExperience();
+});
+if(currentUsername&&myProfile.name&&myProfile.age&&myProfile.gender&&myProfile.country&&myProfile.city){if(myProfile.photo&&Array.isArray(myProfile.interests)&&myProfile.interests.length>=3){showPage("discoverPage")}else{renderInterestChoices();if(profilePhotoData){$("profilePhotoPreview").src=profilePhotoData}showPage("interestsSetupPage")}}else{showPage("signInPage")} 
+</script></body></html>
