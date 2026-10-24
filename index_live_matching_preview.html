@@ -565,6 +565,64 @@ let profiles=[
 {id:6,name:"Noah",age:29,loc:"Toronto, Canada",bio:"Design-minded, easygoing, and always learning something.",interests:["Design","Films","Food"],purpose:["dating","friends"],match:81,img:"https://images.unsplash.com/photo-1504257432389-52343af06ae3?auto=format&fit=crop&w=900&q=85",initial:"N"}
 ];
 const $=id=>document.getElementById(id);const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const APP_I18N = {
+en:{
+"language.title":"Choose your language","language.help":"Select the language you want to use in Conect.","language.label":"App language","language.saved":"Language updated.",
+"settings.title":"Settings & help","settings.intro":"Manage your account and important privacy actions.","settings.account":"Account","settings.accountDescription":"Your profile and preferences are managed in Profile.","settings.editProfile":"Edit my profile","settings.privacy":"Privacy & safety","settings.privacyDescription":"Learn what information Conect uses, how to stay safe, and what happens when you delete your account.","settings.privacyPolicy":"Privacy policy","settings.communityGuidelines":"Community guidelines","settings.deletionGuide":"How account deletion works","settings.deleteAccount":"Delete your account","settings.deleteAccountButton":"Delete account permanently",
+"common.backMore":"‹ Back to More","common.reset":"Reset","nav.feed":"Feed","nav.likes":"Likes","nav.chats":"Chats","nav.more":"More","nav.profile":"Profile","more.intro":"More ways to manage your Conect experience.","more.likesMatches":"My likes and matches","discover.title":"Discover people.","discover.subtitle":"Scroll up to explore profiles.",
+"filter.button":"⚙ Filters","filter.title":"Discovery filters","filter.subtitle":"Choose the kind of connections you want to see.","filter.purpose":"I'm here for","filter.everyone":"Everyone","filter.dating":"Dating","filter.friends":"Friends","filter.minAge":"Minimum age","filter.maxAge":"Maximum age","filter.location":"Location","filter.anywhere":"Anywhere","filter.sameCity":"Same city","filter.sameCountry":"Same country","filter.preferences":"Profile preferences","filter.sharedInterest":"Share at least one interest","filter.sharedInterestHelp":"Only show people who share an interest from your profile.","filter.withPhotos":"Only profiles with photos","filter.withPhotosHelp":"Hide profiles without an uploaded profile picture.","filter.showProfiles":"Show profiles"
+},
+ru:{
+"language.title":"Выберите язык","language.help":"Выберите язык интерфейса Conect.","language.label":"Язык приложения","language.saved":"Язык обновлён.",
+"settings.title":"Настройки и помощь","settings.intro":"Управляйте аккаунтом и настройками конфиденциальности.","settings.account":"Аккаунт","settings.accountDescription":"Профиль и предпочтения находятся в разделе «Профиль».","settings.editProfile":"Редактировать профиль","settings.privacy":"Конфиденциальность и безопасность","settings.privacyDescription":"Узнайте, какие данные использует Conect, как оставаться в безопасности и что происходит при удалении аккаунта.","settings.privacyPolicy":"Политика конфиденциальности","settings.communityGuidelines":"Правила сообщества","settings.deletionGuide":"Как удалить аккаунт","settings.deleteAccount":"Удаление аккаунта","settings.deleteAccountButton":"Удалить аккаунт навсегда",
+"common.backMore":"‹ Назад в раздел «Ещё»","common.reset":"Сбросить","nav.feed":"Лента","nav.likes":"Лайки","nav.chats":"Чаты","nav.more":"Ещё","nav.profile":"Профиль","more.intro":"Другие способы управления Conect.","more.likesMatches":"Мои лайки и совпадения","discover.title":"Знакомьтесь с людьми.","discover.subtitle":"Прокручивайте вверх, чтобы смотреть анкеты.",
+"filter.button":"⚙ Фильтры","filter.title":"Фильтры поиска","filter.subtitle":"Выберите, с кем хотите познакомиться.","filter.purpose":"Я ищу","filter.everyone":"Все","filter.dating":"Отношения","filter.friends":"Дружбу","filter.minAge":"Минимальный возраст","filter.maxAge":"Максимальный возраст","filter.location":"Местоположение","filter.anywhere":"Где угодно","filter.sameCity":"В том же городе","filter.sameCountry":"В той же стране","filter.preferences":"Предпочтения профиля","filter.sharedInterest":"Есть общие интересы","filter.sharedInterestHelp":"Показывать людей хотя бы с одним общим интересом.","filter.withPhotos":"Только с фотографиями","filter.withPhotosHelp":"Скрывать профили без фотографии.","filter.showProfiles":"Показать анкеты"
+},
+uz:{
+"language.title":"Tilni tanlang","language.help":"Conect ilovasida foydalanmoqchi bo‘lgan tilni tanlang.","language.label":"Ilova tili","language.saved":"Til yangilandi.",
+"settings.title":"Sozlamalar va yordam","settings.intro":"Hisobingiz va maxfiylik sozlamalarini boshqaring.","settings.account":"Hisob","settings.accountDescription":"Profilingiz va afzalliklaringiz Profil bo‘limida boshqariladi.","settings.editProfile":"Profilimni tahrirlash","settings.privacy":"Maxfiylik va xavfsizlik","settings.privacyDescription":"Conect qanday ma’lumotlardan foydalanishi, xavfsiz qolish va hisobni o‘chirish haqida bilib oling.","settings.privacyPolicy":"Maxfiylik siyosati","settings.communityGuidelines":"Hamjamiyat qoidalari","settings.deletionGuide":"Hisobni qanday o‘chirish mumkin","settings.deleteAccount":"Hisobni o‘chirish","settings.deleteAccountButton":"Hisobni butunlay o‘chirish",
+"common.backMore":"‹ Orqaga","common.reset":"Tiklash","nav.feed":"Lenta","nav.likes":"Yoqtirishlar","nav.chats":"Chatlar","nav.more":"Yana","nav.profile":"Profil","more.intro":"Conect tajribangizni boshqarishning boshqa usullari.","more.likesMatches":"Yoqtirishlarim va mosliklar","discover.title":"Yangi odamlar bilan tanishing.","discover.subtitle":"Profillarni ko‘rish uchun yuqoriga suring.",
+"filter.button":"⚙ Filtrlar","filter.title":"Qidiruv filtrlari","filter.subtitle":"Qanday tanishuvlarni ko‘rishni tanlang.","filter.purpose":"Men izlayapman","filter.everyone":"Hammasi","filter.dating":"Romantik tanishuv","filter.friends":"Do‘stlik","filter.minAge":"Eng kichik yosh","filter.maxAge":"Eng katta yosh","filter.location":"Joylashuv","filter.anywhere":"Istalgan joy","filter.sameCity":"Shu shaharda","filter.sameCountry":"Shu mamlakatda","filter.preferences":"Profil afzalliklari","filter.sharedInterest":"Kamida bitta umumiy qiziqish","filter.sharedInterestHelp":"Siz bilan kamida bitta qiziqishi bir xil odamlarni ko‘rsatish.","filter.withPhotos":"Faqat suratli profillar","filter.withPhotosHelp":"Surati yo‘q profillarni yashirish.","filter.showProfiles":"Profillarni ko‘rsatish"
+},
+es:{
+"language.title":"Elige tu idioma","language.help":"Selecciona el idioma que quieres usar en Conect.","language.label":"Idioma de la aplicación","language.saved":"Idioma actualizado.",
+"settings.title":"Ajustes y ayuda","settings.intro":"Gestiona tu cuenta y las opciones importantes de privacidad.","settings.account":"Cuenta","settings.accountDescription":"Tu perfil y tus preferencias se gestionan en Perfil.","settings.editProfile":"Editar mi perfil","settings.privacy":"Privacidad y seguridad","settings.privacyDescription":"Descubre qué información usa Conect, cómo mantenerte seguro y qué ocurre al eliminar tu cuenta.","settings.privacyPolicy":"Política de privacidad","settings.communityGuidelines":"Normas de la comunidad","settings.deletionGuide":"Cómo eliminar la cuenta","settings.deleteAccount":"Eliminar tu cuenta","settings.deleteAccountButton":"Eliminar cuenta permanentemente",
+"common.backMore":"‹ Volver a Más","common.reset":"Restablecer","nav.feed":"Descubrir","nav.likes":"Me gusta","nav.chats":"Chats","nav.more":"Más","nav.profile":"Perfil","more.intro":"Más formas de gestionar tu experiencia en Conect.","more.likesMatches":"Mis me gusta y coincidencias","discover.title":"Descubre personas.","discover.subtitle":"Desliza hacia arriba para explorar perfiles.",
+"filter.button":"⚙ Filtros","filter.title":"Filtros de descubrimiento","filter.subtitle":"Elige qué tipo de conexiones quieres ver.","filter.purpose":"Busco","filter.everyone":"Todos","filter.dating":"Citas","filter.friends":"Amistad","filter.minAge":"Edad mínima","filter.maxAge":"Edad máxima","filter.location":"Ubicación","filter.anywhere":"Cualquier lugar","filter.sameCity":"Misma ciudad","filter.sameCountry":"Mismo país","filter.preferences":"Preferencias del perfil","filter.sharedInterest":"Compartir al menos un interés","filter.sharedInterestHelp":"Mostrar personas que compartan algún interés contigo.","filter.withPhotos":"Solo perfiles con fotos","filter.withPhotosHelp":"Ocultar perfiles sin foto de perfil.","filter.showProfiles":"Mostrar perfiles"
+},
+tr:{
+"language.title":"Dilinizi seçin","language.help":"Conect'te kullanmak istediğiniz dili seçin.","language.label":"Uygulama dili","language.saved":"Dil güncellendi.",
+"settings.title":"Ayarlar ve yardım","settings.intro":"Hesabınızı ve önemli gizlilik ayarlarını yönetin.","settings.account":"Hesap","settings.accountDescription":"Profiliniz ve tercihleriniz Profil bölümünden yönetilir.","settings.editProfile":"Profilimi düzenle","settings.privacy":"Gizlilik ve güvenlik","settings.privacyDescription":"Conect'in hangi bilgileri kullandığını, güvende kalmayı ve hesabınızı sildiğinizde ne olacağını öğrenin.","settings.privacyPolicy":"Gizlilik politikası","settings.communityGuidelines":"Topluluk kuralları","settings.deletionGuide":"Hesap silme hakkında","settings.deleteAccount":"Hesabınızı silin","settings.deleteAccountButton":"Hesabı kalıcı olarak sil",
+"common.backMore":"‹ Geri","common.reset":"Sıfırla","nav.feed":"Keşfet","nav.likes":"Beğeniler","nav.chats":"Sohbetler","nav.more":"Daha fazla","nav.profile":"Profil","more.intro":"Conect deneyiminizi yönetmenin diğer yolları.","more.likesMatches":"Beğenilerim ve eşleşmelerim","discover.title":"Yeni insanlarla tanışın.","discover.subtitle":"Profilleri keşfetmek için yukarı kaydırın.",
+"filter.button":"⚙ Filtreler","filter.title":"Keşif filtreleri","filter.subtitle":"Görmek istediğiniz bağlantı türünü seçin.","filter.purpose":"Aradığım","filter.everyone":"Herkes","filter.dating":"Flört","filter.friends":"Arkadaşlık","filter.minAge":"Minimum yaş","filter.maxAge":"Maksimum yaş","filter.location":"Konum","filter.anywhere":"Her yer","filter.sameCity":"Aynı şehir","filter.sameCountry":"Aynı ülke","filter.preferences":"Profil tercihleri","filter.sharedInterest":"En az bir ortak ilgi alanı","filter.sharedInterestHelp":"Profilinizle ortak ilgi alanı olan kişileri göster.","filter.withPhotos":"Yalnızca fotoğraflı profiller","filter.withPhotosHelp":"Profil fotoğrafı olmayanları gizle.","filter.showProfiles":"Profilleri göster"
+},
+id:{
+"language.title":"Pilih bahasa Anda","language.help":"Pilih bahasa yang ingin Anda gunakan di Conect.","language.label":"Bahasa aplikasi","language.saved":"Bahasa diperbarui.",
+"settings.title":"Pengaturan & bantuan","settings.intro":"Kelola akun dan pengaturan privasi penting Anda.","settings.account":"Akun","settings.accountDescription":"Profil dan preferensi Anda dikelola di bagian Profil.","settings.editProfile":"Edit profil saya","settings.privacy":"Privasi & keamanan","settings.privacyDescription":"Pelajari informasi yang digunakan Conect, cara tetap aman, dan apa yang terjadi saat akun dihapus.","settings.privacyPolicy":"Kebijakan privasi","settings.communityGuidelines":"Pedoman komunitas","settings.deletionGuide":"Cara menghapus akun","settings.deleteAccount":"Hapus akun Anda","settings.deleteAccountButton":"Hapus akun secara permanen",
+"common.backMore":"‹ Kembali ke Lainnya","common.reset":"Atur ulang","nav.feed":"Jelajahi","nav.likes":"Suka","nav.chats":"Obrolan","nav.more":"Lainnya","nav.profile":"Profil","more.intro":"Cara lain untuk mengelola pengalaman Conect Anda.","more.likesMatches":"Suka dan kecocokan saya","discover.title":"Temukan orang baru.","discover.subtitle":"Geser ke atas untuk menjelajahi profil.",
+"filter.button":"⚙ Filter","filter.title":"Filter penemuan","filter.subtitle":"Pilih jenis koneksi yang ingin Anda lihat.","filter.purpose":"Saya mencari","filter.everyone":"Semua","filter.dating":"Kencan","filter.friends":"Pertemanan","filter.minAge":"Usia minimum","filter.maxAge":"Usia maksimum","filter.location":"Lokasi","filter.anywhere":"Di mana saja","filter.sameCity":"Kota yang sama","filter.sameCountry":"Negara yang sama","filter.preferences":"Preferensi profil","filter.sharedInterest":"Memiliki setidaknya satu minat yang sama","filter.sharedInterestHelp":"Tampilkan orang yang memiliki minat yang sama dengan Anda.","filter.withPhotos":"Hanya profil dengan foto","filter.withPhotosHelp":"Sembunyikan profil tanpa foto profil.","filter.showProfiles":"Tampilkan profil"
+},
+zh:{
+"language.title":"选择你的语言","language.help":"选择你希望在 Conect 中使用的语言。","language.label":"应用语言","language.saved":"语言已更新。",
+"settings.title":"设置与帮助","settings.intro":"管理你的账户和重要的隐私选项。","settings.account":"账户","settings.accountDescription":"请在个人资料中管理你的资料和偏好。","settings.editProfile":"编辑我的资料","settings.privacy":"隐私与安全","settings.privacyDescription":"了解 Conect 使用哪些信息、如何保持安全，以及删除账户后会发生什么。","settings.privacyPolicy":"隐私政策","settings.communityGuidelines":"社区准则","settings.deletionGuide":"如何删除账户","settings.deleteAccount":"删除账户","settings.deleteAccountButton":"永久删除账户",
+"common.backMore":"‹ 返回更多","common.reset":"重置","nav.feed":"发现","nav.likes":"喜欢","nav.chats":"聊天","nav.more":"更多","nav.profile":"个人资料","more.intro":"管理 Conect 体验的更多方式。","more.likesMatches":"我的喜欢和匹配","discover.title":"发现新朋友。","discover.subtitle":"向上滑动浏览个人资料。",
+"filter.button":"⚙ 筛选","filter.title":"发现筛选","filter.subtitle":"选择你想认识的对象类型。","filter.purpose":"我想寻找","filter.everyone":"所有人","filter.dating":"约会","filter.friends":"交友","filter.minAge":"最小年龄","filter.maxAge":"最大年龄","filter.location":"位置","filter.anywhere":"不限地点","filter.sameCity":"同一城市","filter.sameCountry":"同一国家","filter.preferences":"个人资料偏好","filter.sharedInterest":"至少有一个共同兴趣","filter.sharedInterestHelp":"只显示与你至少有一个共同兴趣的人。","filter.withPhotos":"只看有照片的资料","filter.withPhotosHelp":"隐藏没有头像的资料。","filter.showProfiles":"显示资料"
+}};
+function applyAppLanguage(language) {
+  const lang = Object.prototype.hasOwnProperty.call(APP_I18N, language) ? language : "en";
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-i18n]").forEach(element => {
+    const key = element.getAttribute("data-i18n");
+    const translated = APP_I18N[lang][key] ?? APP_I18N.en[key];
+    if (typeof translated === "string") element.textContent = translated;
+  });
+  const picker = $("appLanguageSelect");
+  if (picker && picker.value !== lang) picker.value = lang;
+  const status = $("languageSaveStatus");
+  if (status) status.textContent = lang === "en" ? "" : APP_I18N[lang]["language.saved"];
+  try { localStorage.setItem("conect_language", lang); } catch (_) {}
+}
+function setAppLanguage(language) { applyAppLanguage(language); }
 
 // Verify Telegram Mini App initData and sync basic profile data through the secured Edge Function.
 const TELEGRAM_SESSION_URL = "https://bixsxizzcgqfimpzbvwk.supabase.co/functions/v1/telegram-session";
@@ -1594,7 +1652,8 @@ function changeDiscoveryPhoto(profileId, delta) {
 function updateFeedFilterButtonLabel() {
   const label = $("activePurposeLabel");
   if (!label) return;
-  const purposeLabel = purpose === "dating" ? "Dating" : purpose === "friends" ? "Friends" : "Everyone";
+  const lang = APP_I18N[localStorage.getItem("conect_language") || "en"] || APP_I18N.en;
+  const purposeLabel = purpose === "dating" ? lang["filter.dating"] : purpose === "friends" ? lang["filter.friends"] : lang["filter.everyone"];
   const activeCount = Number(discoveryFilters.minAge !== 18 || discoveryFilters.maxAge !== 99) +
     Number(discoveryFilters.location !== "any") +
     Number(discoveryFilters.sharedInterests) +
@@ -2722,6 +2781,13 @@ function renderAll() {
 }
 
 
+const languagePicker = $("appLanguageSelect");
+if (languagePicker) {
+  const storedLanguage = localStorage.getItem("conect_language") || "en";
+  languagePicker.value = Object.prototype.hasOwnProperty.call(APP_I18N, storedLanguage) ? storedLanguage : "en";
+  languagePicker.addEventListener("change", () => setAppLanguage(languagePicker.value));
+}
+applyAppLanguage(localStorage.getItem("conect_language") || "en");
 renderAll();
 void verifyTelegramSession().then(() => {
   const completeProfile = Boolean(currentUsername && myProfile.name && Number(myProfile.age) >= 18 && myProfile.gender && myProfile.country && myProfile.city && myProfile.photo && Array.isArray(myProfile.interests) && myProfile.interests.length >= 3);
