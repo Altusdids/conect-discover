@@ -311,7 +311,9 @@ Deno.serve(async (req: Request) => {
       action !== "record_swipe" &&
       action !== "load_messages" &&
       action !== "send_message" &&
-      action !== "load_chat_updates"
+      action !== "load_chat_updates" &&
+      action !== "block_user" &&
+      action !== "report_user"
     ) {
       return jsonResponse({ error: "Unsupported action" }, 400);
     }
@@ -341,7 +343,9 @@ Deno.serve(async (req: Request) => {
       action === "record_swipe" ||
       action === "load_messages" ||
       action === "send_message" ||
-      action === "load_chat_updates"
+      action === "load_chat_updates" ||
+      action === "block_user" ||
+      action === "report_user"
     ) {
       const { data: viewer, error: viewerError } = await admin
         .from("profiles")
@@ -358,6 +362,79 @@ Deno.serve(async (req: Request) => {
       }
       if (!viewer.is_active) {
         return jsonResponse({ error: "Your profile is not active" }, 403);
+      }
+
+      // TRUST & SAFETY: all target IDs are checked server-side and the caller is derived from verified Telegram initData.
+      if (action === "block_user" || action === "report_user") {
+        const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId.trim() : "";
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUserId)) {
+          return jsonResponse({ error: "Invalid profile" }, 400);
+        }
+        if (targetUserId === viewer.id) {
+          return jsonResponse({ error: "You cannot perform this action on your own profile" }, 400);
+        }
+
+        const { data: targetProfile, error: targetError } = await admin
+          .from("profiles")
+          .select("id")
+          .eq("id", targetUserId)
+          .maybeSingle();
+
+        if (targetError) {
+          console.error("Trust and safety target lookup error", targetError.message);
+          return jsonResponse({ error: "Could not verify this profile" }, 500);
+        }
+        if (!targetProfile) {
+          return jsonResponse({ error: "This profile is no longer available" }, 404);
+        }
+
+        if (action === "block_user") {
+          const { error: blockInsertError } = await admin
+            .from("blocks")
+            .upsert(
+              { blocker_user_id: viewer.id, blocked_user_id: targetUserId },
+              { onConflict: "blocker_user_id,blocked_user_id", ignoreDuplicates: true }
+            );
+
+          if (blockInsertError) {
+            console.error("Block profile insert error", blockInsertError.message);
+            return jsonResponse({ error: "Could not block this profile" }, 500);
+          }
+
+          return jsonResponse({ ok: true, blockedUserId: targetUserId });
+        }
+
+        const allowedReasons = new Set([
+          "fake_profile",
+          "harassment",
+          "spam",
+          "inappropriate_content",
+          "underage_suspicion",
+          "other",
+        ]);
+        const reason = typeof body.reason === "string" ? body.reason : "";
+        const details = typeof body.details === "string" ? body.details.trim().slice(0, 2000) : "";
+        if (!allowedReasons.has(reason)) {
+          return jsonResponse({ error: "Choose a valid report reason" }, 400);
+        }
+
+        const { data: report, error: reportError } = await admin
+          .from("reports")
+          .insert({
+            reporter_user_id: viewer.id,
+            reported_user_id: targetUserId,
+            reason,
+            details,
+          })
+          .select("id, status, created_at")
+          .single();
+
+        if (reportError || !report) {
+          console.error("Report profile insert error", reportError?.message);
+          return jsonResponse({ error: "Could not submit this report" }, 500);
+        }
+
+        return jsonResponse({ ok: true, report: { id: report.id, status: report.status, created_at: report.created_at } });
       }
 
       // CHAT INBOX UPDATES: returns unread counts and latest previews without marking messages read.
