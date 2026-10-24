@@ -310,7 +310,8 @@ Deno.serve(async (req: Request) => {
       action !== "load_relationships" &&
       action !== "record_swipe" &&
       action !== "load_messages" &&
-      action !== "send_message"
+      action !== "send_message" &&
+      action !== "load_chat_updates"
     ) {
       return jsonResponse({ error: "Unsupported action" }, 400);
     }
@@ -339,7 +340,8 @@ Deno.serve(async (req: Request) => {
       action === "load_relationships" ||
       action === "record_swipe" ||
       action === "load_messages" ||
-      action === "send_message"
+      action === "send_message" ||
+      action === "load_chat_updates"
     ) {
       const { data: viewer, error: viewerError } = await admin
         .from("profiles")
@@ -356,6 +358,87 @@ Deno.serve(async (req: Request) => {
       }
       if (!viewer.is_active) {
         return jsonResponse({ error: "Your profile is not active" }, 403);
+      }
+
+      // CHAT INBOX UPDATES: returns unread counts and latest previews without marking messages read.
+      if (action === "load_chat_updates") {
+        const [matchesResult, blockedByViewerResult, blockedViewerResult] = await Promise.all([
+          admin
+            .from("matches")
+            .select("id, user_a, user_b, created_at")
+            .or(`user_a.eq.${viewer.id},user_b.eq.${viewer.id}`)
+            .order("created_at", { ascending: false }),
+          admin
+            .from("blocks")
+            .select("blocked_user_id")
+            .eq("blocker_user_id", viewer.id),
+          admin
+            .from("blocks")
+            .select("blocker_user_id")
+            .eq("blocked_user_id", viewer.id),
+        ]);
+
+        if (matchesResult.error || blockedByViewerResult.error || blockedViewerResult.error) {
+          console.error("Chat inbox lookup error", {
+            matches: matchesResult.error?.message,
+            blockedByViewer: blockedByViewerResult.error?.message,
+            blockedViewer: blockedViewerResult.error?.message,
+          });
+          return jsonResponse({ error: "Could not load chat updates" }, 500);
+        }
+
+        const blockedIds = new Set<string>([
+          ...(blockedByViewerResult.data || []).map((row: any) => row.blocked_user_id),
+          ...(blockedViewerResult.data || []).map((row: any) => row.blocker_user_id),
+        ]);
+        const matchRows = (matchesResult.data || []).filter((row: any) => {
+          const peerId = row.user_a === viewer.id ? row.user_b : row.user_a;
+          return !blockedIds.has(peerId);
+        });
+        const matchIds = matchRows.map((row: any) => row.id);
+        const messageResult = matchIds.length
+          ? await admin
+              .from("messages")
+              .select("id, match_id, sender_user_id, body, created_at, read_at")
+              .in("match_id", matchIds)
+              .order("created_at", { ascending: false })
+              .limit(1000)
+          : { data: [], error: null };
+
+        if (messageResult.error) {
+          console.error("Chat inbox message lookup error", messageResult.error.message);
+          return jsonResponse({ error: "Could not load chat updates" }, 500);
+        }
+
+        const updatesByMatch = new Map<string, any>();
+        for (const row of matchRows) {
+          updatesByMatch.set(row.id, {
+            match_id: row.id,
+            created_at: row.created_at,
+            latest: null,
+            unread_count: 0,
+          });
+        }
+        for (const message of messageResult.data || []) {
+          const update = updatesByMatch.get(message.match_id);
+          if (!update) continue;
+          if (!update.latest) {
+            update.latest = {
+              body: message.body,
+              sender_user_id: message.sender_user_id,
+              created_at: message.created_at,
+              is_mine: message.sender_user_id === viewer.id,
+            };
+          }
+          if (message.sender_user_id !== viewer.id && !message.read_at) {
+            update.unread_count += 1;
+          }
+        }
+
+        return jsonResponse({
+          ok: true,
+          updates: matchRows.map((row: any) => updatesByMatch.get(row.id)),
+        });
       }
 
       // PRIVATE MESSAGING: only participants in a real, active match can read/send.
