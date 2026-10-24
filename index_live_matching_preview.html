@@ -221,7 +221,7 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
 <div class="basics-actions"><button type="button" class="secondary" id="cancelBasicsBtn">Cancel</button><button type="button" class="primary" id="saveBasicsBtn">Save</button></div></div></div>
 <section id="detailPage" class="hidden"><button class="secondary" id="backDiscover">← Back to discover</button><div id="detailContent" class="panel"></div></section>
 </div>
-<nav aria-label="Main navigation"><button class="active" data-page="discoverPage"><b>✥</b>Feed</button><button data-page="likesPage"><b>♥<span class="nav-badge hidden" id="likesBadge">4</span></b>Likes</button><button data-page="chatsPage"><b>▣<span class="nav-badge hidden" id="chatsBadge">0</span></b>Chats</button><button data-page="morePage"><b>♣</b>More</button><button data-page="profilePage"><b>♟</b>Profile</button></nav>
+<nav aria-label="Main navigation"><button class="active" data-page="discoverPage"><b>✥</b>Feed</button><button data-page="likesPage"><b>♥<span class="nav-badge hidden" id="likesBadge">0</span></b>Likes</button><button data-page="chatsPage"><b>▣<span class="nav-badge hidden" id="chatsBadge">0</span></b>Chats</button><button data-page="morePage"><b>♣</b>More</button><button data-page="profilePage"><b>♟</b>Profile</button></nav>
 <script>
 const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#101116');tg.setBackgroundColor('#101116')}catch(e){}}
 let profiles=[
@@ -1015,7 +1015,7 @@ function renderLikes() {
   let empty = "";
   let counts = { liked: 0, matches: 0, likes: 0 };
   if (liveDiscoveryMode) {
-    counts = { liked: liveLikedProfiles.length, matches: liveMatches.length, likes: liveIncomingLikes.length };
+    counts = { liked: liveLikedProfiles.length, matches: liveMatches.length, likes: chatRequestProfiles().length };
     if (likesTab === "liked") {
       people = liveLikedProfiles;
       empty = "You haven’t liked anyone yet. Explore Discover and tap ♥ on profiles you like.";
@@ -1023,7 +1023,7 @@ function renderLikes() {
       people = liveMatches.map(item => item.profile).filter(Boolean);
       empty = "No mutual matches yet. A match appears when both people like each other.";
     } else {
-      people = liveIncomingLikes;
+      people = chatRequestProfiles();
       empty = "No incoming likes to show yet.";
     }
   } else {
