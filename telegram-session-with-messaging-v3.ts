@@ -307,6 +307,7 @@ Deno.serve(async (req: Request) => {
       action !== "upload_photo" &&
       action !== "delete_photo" &&
       action !== "set_primary_photo" &&
+      action !== "replace_primary_photo" &&
       action !== "load_discovery" &&
       action !== "load_relationships" &&
       action !== "record_swipe" &&
@@ -1206,7 +1207,7 @@ Deno.serve(async (req: Request) => {
 
     // PHOTO ACTIONS
     // Find the database profile using the verified Telegram user ID.
-    if (action === "upload_photo" || action === "delete_photo" || action === "set_primary_photo") {
+    if (action === "upload_photo" || action === "delete_photo" || action === "set_primary_photo" || action === "replace_primary_photo") {
       const { data: photoProfile, error: photoProfileError } =
         await admin
           .from("profiles")
@@ -1271,6 +1272,21 @@ Deno.serve(async (req: Request) => {
           return a.sort_order - b.sort_order;
         });
 
+        // Move rows into a temporary range first to avoid uniqueness conflicts
+        // when sort_order is constrained per user; clear is_primary before setting it.
+        for (let i = 0; i < orderedRows.length; i++) {
+          const row = orderedRows[i];
+          const { error: temporaryOrderError } = await admin
+            .from("profile_photos")
+            .update({ sort_order: 100 + i, is_primary: false })
+            .eq("id", row.id)
+            .eq("user_id", photoProfile.id);
+          if (temporaryOrderError) {
+            console.error("Main profile photo temporary reorder error", temporaryOrderError.message);
+            return jsonResponse({ error: "Could not prepare the main photo update. Please refresh and try again." }, 500);
+          }
+        }
+
         for (let i = 0; i < orderedRows.length; i++) {
           const row = orderedRows[i];
           const { error: orderError } = await admin
@@ -1279,7 +1295,7 @@ Deno.serve(async (req: Request) => {
             .eq("id", row.id)
             .eq("user_id", photoProfile.id);
           if (orderError) {
-            console.error("Main profile photo update error", orderError.message);
+            console.error("Main profile photo final reorder error", orderError.message);
             return jsonResponse({ error: "Could not update the main profile photo. Please refresh and try again." }, 500);
           }
         }
@@ -1287,6 +1303,88 @@ Deno.serve(async (req: Request) => {
         const photos = await normalizePhotoOrder(admin, photoProfile.id);
         if (!photos) return jsonResponse({ error: "Photo order could not be refreshed" }, 500);
         return jsonResponse({ ok: true, photos });
+      }
+
+      // REPLACE PRIMARY PHOTO with a cropped JPEG. Reuses the existing main-photo
+      // row so replacement still works when the gallery already contains six photos.
+      if (action === "replace_primary_photo") {
+        const photoDataUrl = body.photoDataUrl;
+        if (typeof photoDataUrl !== "string" || photoDataUrl.length > MAX_PHOTO_DATA_URL_CHARS) {
+          return jsonResponse({ error: "Invalid or oversized photo" }, 413);
+        }
+        const encodedMatch = /^data:image\/jpeg;base64,([A-Za-z0-9+/]+={0,2})$/.exec(photoDataUrl);
+        if (!encodedMatch) {
+          return jsonResponse({ error: "Please choose a photo that can be cropped to JPEG" }, 400);
+        }
+
+        let binary: string;
+        try {
+          binary = atob(encodedMatch[1]);
+        } catch {
+          return jsonResponse({ error: "Invalid photo data" }, 400);
+        }
+        const photoBytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) photoBytes[i] = binary.charCodeAt(i);
+        if (photoBytes.length < 3 || photoBytes.length > MAX_PHOTO_BYTES ||
+            photoBytes[0] !== 0xff || photoBytes[1] !== 0xd8 || photoBytes[2] !== 0xff) {
+          return jsonResponse({ error: "The cropped photo must be a valid JPEG no larger than 5 MB" }, 400);
+        }
+
+        const { data: mainRows, error: mainLookupError } = await admin
+          .from("profile_photos")
+          .select("id, storage_path, sort_order")
+          .eq("user_id", photoProfile.id)
+          .order("is_primary", { ascending: false })
+          .order("sort_order", { ascending: true })
+          .limit(1);
+
+        if (mainLookupError) {
+          console.error("Replace main photo lookup error", mainLookupError.message);
+          return jsonResponse({ error: "Could not find your current main photo" }, 500);
+        }
+        if (!mainRows || !mainRows.length) {
+          return jsonResponse({ error: "Add a photo to your gallery before replacing the main photo" }, 409);
+        }
+
+        const currentMain = mainRows[0];
+        const newStoragePath = `${photoProfile.id}/${crypto.randomUUID()}.jpg`;
+        const { error: uploadError } = await admin.storage
+          .from(PHOTO_BUCKET)
+          .upload(newStoragePath, photoBytes, {
+            contentType: "image/jpeg",
+            cacheControl: "3600",
+            upsert: false,
+          });
+        if (uploadError) {
+          console.error("Replace main photo upload error", uploadError.message);
+          return jsonResponse({ error: "Could not upload the cropped photo" }, 500);
+        }
+
+        const { error: rowUpdateError } = await admin
+          .from("profile_photos")
+          .update({ storage_path: newStoragePath, is_primary: true, sort_order: 1 })
+          .eq("id", currentMain.id)
+          .eq("user_id", photoProfile.id);
+
+        if (rowUpdateError) {
+          console.error("Replace main photo row update error", rowUpdateError.message);
+          const { error: rollbackError } = await admin.storage.from(PHOTO_BUCKET).remove([newStoragePath]);
+          if (rollbackError) console.error("Replace main photo rollback error", rollbackError.message);
+          return jsonResponse({ error: "Could not save the cropped main photo" }, 500);
+        }
+
+        const { error: oldPhotoDeleteError } = await admin.storage
+          .from(PHOTO_BUCKET)
+          .remove([currentMain.storage_path]);
+        if (oldPhotoDeleteError) {
+          // DB now references the new photo; report incomplete cleanup without
+          // rolling back the valid main image.
+          console.error("Old main photo cleanup error", oldPhotoDeleteError.message);
+        }
+
+        const photos = await normalizePhotoOrder(admin, photoProfile.id);
+        if (!photos) return jsonResponse({ error: "The new main photo was saved, but the gallery order could not be refreshed" }, 500);
+        return jsonResponse({ ok: true, photos, cleanupWarning: Boolean(oldPhotoDeleteError) });
       }
 
       // UPLOAD PHOTO
