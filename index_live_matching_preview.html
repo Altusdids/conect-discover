@@ -237,6 +237,62 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
   #discoverPage .feed-actions{gap:20px;padding-top:11px}
 }
 
+
+/* TikTok-style fixed discovery viewport: only profile cards scroll vertically. */
+body:has(#discoverPage:not(.hidden)){overflow:hidden}
+.app:has(#discoverPage:not(.hidden)){height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding-top:max(10px,env(safe-area-inset-top));padding-bottom:calc(91px + env(safe-area-inset-bottom))}
+.app:has(#discoverPage:not(.hidden))>header{flex:0 0 auto;margin-bottom:8px}
+.app:has(#discoverPage:not(.hidden)) #demoNotice{display:none!important}
+.app:has(#discoverPage:not(.hidden)) #discoverPage{display:flex;flex:1 1 auto;flex-direction:column;min-height:0;overflow:hidden;margin:0}
+.discover-fixed-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 0 10px;flex:0 0 auto}
+.discover-heading{min-width:0}
+.discover-heading h1{font-size:25px;line-height:1.1;letter-spacing:-.8px;margin:0 0 4px}
+.discover-heading p{font-size:12px;margin:0;color:var(--muted)}
+.feed-filter-button{display:flex;align-items:center;gap:8px;flex:0 0 auto;padding:9px 11px;font-size:12px}
+.feed-filter-button #activePurposeLabel{padding:3px 7px;border-radius:8px;background:#3a2529;color:#ffb4c8;font-size:11px}
+.profile-feed-wrap{flex:1 1 auto;min-height:0;overflow:hidden}
+.profile-scroll-feed{height:100%;width:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;scroll-snap-type:y mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.profile-scroll-feed::-webkit-scrollbar{display:none}
+.profile-scroll-card{height:100%;min-height:100%;width:100%;display:flex;flex-direction:column;gap:8px;padding:0 0 3px;scroll-snap-align:start;scroll-snap-stop:always}
+.feed-profile-card{display:flex;flex:1 1 auto;min-height:0;flex-direction:column;margin:0;border-radius:21px}
+.feed-profile-card .hero{height:auto;min-height:0;flex:1 1 auto;position:relative;border-radius:20px}
+.feed-profile-card .hero:after{z-index:1}
+.feed-profile-card .hero>img{position:absolute;inset:0}
+.feed-profile-card .onphoto{left:15px;right:15px;bottom:14px}
+.feed-profile-card .onphoto h2{font-size:27px;line-height:1.15;margin:0 0 4px}
+.feed-profile-card .location{font-size:12px}
+.feed-profile-card .bio{font-size:13px;line-height:1.32;margin:7px 0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.feed-profile-card .chips{gap:5px}
+.feed-profile-card .chip{font-size:11px;padding:5px 8px}
+.feed-profile-card .chip-more{background:#ffffff20;border-style:dashed;color:#fff}
+.feed-profile-card .feed-view-profile{margin-top:8px!important}
+.feed-profile-card .photo-nav.next{right:10px}
+.feed-profile-actions{flex:0 0 51px;min-height:51px;display:flex;align-items:center;justify-content:center;gap:22px;padding:0 0 2px}
+.feed-profile-actions .action{width:47px;height:47px;flex:0 0 47px;font-size:23px}
+.feed-profile-purpose{font-size:11px;color:var(--muted);text-align:center;min-width:90px}
+.profile-feed-empty{height:100%;display:grid;place-items:center;text-align:center;padding:25px;color:var(--muted);border:1px solid var(--line);border-radius:18px;background:var(--panel)}
+.feed-filter-overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:#000a;padding:16px 12px calc(12px + env(safe-area-inset-bottom))}
+.feed-filter-sheet{width:min(100%,560px);max-height:78dvh;overflow-y:auto;border:1px solid var(--line);border-radius:24px;background:#1b1c23;padding:21px 18px 18px;box-shadow:0 18px 55px #0008}
+.feed-filter-sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.feed-filter-sheet-head h2{font-size:22px;line-height:1.1;letter-spacing:-.5px;margin:0}
+.feed-filter-sheet-head p{font-size:12px;margin:6px 0 18px}
+.feed-filter-close{width:34px;height:34px;border:0;border-radius:50%;background:#30313a;color:#fff;font-size:25px;line-height:1;cursor:pointer}
+.feed-filter-sheet h3{font-size:14px;margin:0 0 10px}
+.feed-filter-purpose{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.feed-filter-purpose button{background:#252630;color:#c9c9d1;border:1px solid #3b3c47;border-radius:13px;padding:13px 7px;font:inherit;font-size:13px;font-weight:700}
+.feed-filter-purpose button.active{background:#3b202b;border-color:#e83d72;color:#fff;box-shadow:inset 0 0 0 1px #e83d72}
+.feed-filter-note{font-size:11px;line-height:1.45;margin:12px 0 18px}
+.feed-filter-actions{display:flex;gap:9px}
+.feed-filter-actions button{flex:1}
+@media(max-width:380px){
+ .discover-heading h1{font-size:23px}
+ .discover-fixed-header{gap:7px}
+ .feed-filter-button{padding:8px 8px;gap:5px}
+ .feed-profile-card .onphoto{left:12px;right:12px;bottom:12px}
+ .feed-profile-card .onphoto h2{font-size:24px}
+ .feed-profile-actions{gap:16px}
+}
+
 </style></head>
 <body><div class="app">
 <header><div class="logo">Conect<em>.</em></div><span class="tag">DISCOVER BETA</span></header>
@@ -272,13 +328,26 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
 <button class="primary continue-wide" id="finishSetupBtn">Continue to Conect →</button><button class="secondary continue-wide" id="backToBasicsBtn" style="margin-top:8px">← Back to profile details</button>
 </section>
 <section id="discoverPage" class="hidden">
-<h1>Discover people.</h1><p>Meet someone new, anywhere in the world.</p>
-<div class="toolbar"><div class="seg"><button class="active" id="swipeMode">Swipe</button><button id="gridMode">Grid</button></div><button class="smallbtn" id="filterBtn">⚙ Filters</button></div>
-<div class="toolbar" style="margin-top:0"><div class="seg" id="purposeSeg"><button class="active" data-purpose="both">Everyone</button><button data-purpose="dating">Dating</button><button data-purpose="friends">Friends</button></div><span style="font-size:11px;color:var(--muted)">🌍 Worldwide</span></div>
-<div id="swipeView"><div class="card"><div class="hero" id="hero"><img id="heroImg" alt="Profile photo"><div class="match" id="match">♥ 92% match</div><div class="onphoto"><h2 id="personName">Maya, 25 <span class="online"></span></h2><div class="location" id="personLocation">⌖ Kampala, Uganda</div><div class="bio" id="personBio"></div><div class="chips" id="personChips"></div></div></div></div>
-<div class="actions feed-actions"><button class="action pass" id="passBtn" aria-label="Pass" title="Pass">×</button><button class="action star" id="starBtn" aria-label="Super like" title="Super like" aria-hidden="true" tabindex="-1" style="display:none">★</button><button class="action like" id="likeBtn" aria-label="Like" title="Like">♥</button></div><div class="subtext" id="counter">Profile 1 of 6 · Like to connect</div></div>
-<div id="gridView" class="grid hidden"></div>
+<div class="discover-fixed-header">
+  <div class="discover-heading"><h1>Discover people.</h1><p>Scroll up to explore profiles.</p></div>
+  <button type="button" class="smallbtn feed-filter-button" id="filterBtn" aria-haspopup="dialog" aria-controls="feedFilterOverlay"><span>⚙ Filters</span><span id="activePurposeLabel">Everyone</span></button>
+</div>
+<div id="swipeView" class="profile-feed-wrap"><div id="profileScrollFeed" class="profile-scroll-feed" aria-label="Discover profiles"></div></div>
+<div id="gridView" class="hidden"></div>
 </section>
+<div id="feedFilterOverlay" class="feed-filter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="feedFilterTitle" onclick="if(event.target===this)closeFeedFilters()">
+  <div class="feed-filter-sheet">
+    <div class="feed-filter-sheet-head"><div><h2 id="feedFilterTitle">Discovery filters</h2><p>Choose the kind of connections you want to see.</p></div><button type="button" class="feed-filter-close" aria-label="Close filters" onclick="closeFeedFilters()">×</button></div>
+    <h3>I'm here for</h3>
+    <div class="feed-filter-purpose" role="group" aria-label="Discovery purpose">
+      <button type="button" data-purpose="both" class="active">Everyone</button>
+      <button type="button" data-purpose="dating">Dating</button>
+      <button type="button" data-purpose="friends">Friends</button>
+    </div>
+    <p class="feed-filter-note">Your choice updates the profiles in the feed. Other filters can be added here later.</p>
+    <div class="feed-filter-actions"><button type="button" class="secondary" onclick="resetFeedFilters()">Reset</button><button type="button" class="primary" onclick="closeFeedFilters()">Show profiles</button></div>
+  </div>
+</div>
 <section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="liked" role="tab" aria-selected="true"><span>Liked</span><span class="likes-tab-badge" data-likes-count="liked">0</span></button><button data-likes-tab="matches" role="tab" aria-selected="false"><span>Matches</span><span class="likes-tab-badge" data-likes-count="matches">0</span></button><button data-likes-tab="likes" role="tab" aria-selected="false"><span>Likes</span><span class="likes-tab-badge" data-likes-count="likes">0</span></button></div><div class="likes-view-toolbar"><span id="likesResultsLabel">People</span><div class="likes-view-toggle" role="group" aria-label="Change profile layout"><button type="button" id="likesListMode" class="active" aria-pressed="true" onclick="setLikesView('list')" title="List view" aria-label="List view">☰</button><button type="button" id="likesGridMode" aria-pressed="false" onclick="setLikesView('grid')" title="Grid view" aria-label="Grid view">▦</button></div></div><div id="likesList"></div></section>
 <section id="chatsPage" class="hidden"><div id="chatInboxControls"></div><div id="chatList"></div></section>
 <section id="morePage" class="hidden"><h1>More</h1><p>More ways to manage your Conect experience.</p><div class="panel"><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('profilePage')">♙  Edit my profile</button><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('likesPage')">♡  My likes and matches</button><button class="secondary" style="width:100%" onclick="alert('Settings and help will be available in a future version.')">⚙  Settings & help</button></div></section>
@@ -720,10 +789,12 @@ function likeDetailProfile(profileId){if(liveDiscoveryMode){void recordLiveSwipe
 function passDetailProfile(profileId){if(liveDiscoveryMode){void recordLiveSwipe(profileId,"pass",false);showPage("discoverPage");return}const p=profiles.find(x=>String(x.id)===String(profileId));if(!p)return;passed.add(p.id);persist();index=0;renderAll();showPage("discoverPage")}
 function showDetail(id){const p=liveDiscoveryMode?findConectProfile(id):profiles.find(x=>String(x.id)===String(id));if(!p){alert("That profile is no longer available. Refresh Discover and try again.");return}if(liveDiscoveryMode)void recordProfileVisit(p.id);$("detailContent").innerHTML=`<img src="${p.img}" style="width:100%;max-height:390px;object-fit:cover;border-radius:15px"><h2>${esc(p.name)}, ${p.age}</h2><p>⌖ ${esc(p.loc)}</p><p>${esc(p.bio)}</p><div class="chips">${chips(p)}</div><p style="font-size:12px">Looking for: ${p.purpose.join(" and ")}</p><div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likeDetailProfile('${p.id}')">♥ Like</button><button class="secondary" onclick="passDetailProfile('${p.id}')">Pass</button></div>`;showPage("detailPage")}
 function renderAll(){renderSwipe();renderGrid();renderLikes();renderChats()}
-$("swipeMode").onclick=()=>{mode="swipe";$("swipeMode").classList.add("active");$("gridMode").classList.remove("active");$("swipeView").classList.remove("hidden");$("gridView").classList.add("hidden")};
-$("gridMode").onclick=()=>{mode="grid";$("gridMode").classList.add("active");$("swipeMode").classList.remove("active");$("swipeView").classList.add("hidden");$("gridView").classList.remove("hidden");renderGrid()};
-$("passBtn").onclick=()=>act("pass");$("likeBtn").onclick=()=>act("like");$("starBtn").onclick=()=>act("star");
-document.querySelectorAll("[data-purpose]").forEach(b=>b.onclick=()=>{purpose=b.dataset.purpose;document.querySelectorAll("[data-purpose]").forEach(x=>x.classList.toggle("active",x===b));index=0;renderAll()});
+if ($("swipeMode")) $("swipeMode").onclick=()=>{mode="swipe";$("swipeMode").classList.add("active");if($("gridMode"))$("gridMode").classList.remove("active");$("swipeView").classList.remove("hidden");if($("gridView"))$("gridView").classList.add("hidden")};
+if ($("gridMode")) $("gridMode").onclick=()=>{mode="grid";$("gridMode").classList.add("active");if($("swipeMode"))$("swipeMode").classList.remove("active");$("swipeView").classList.add("hidden");$("gridView").classList.remove("hidden");renderGrid()};
+if ($("passBtn")) $("passBtn").onclick=()=>act("pass");
+if ($("likeBtn")) $("likeBtn").onclick=()=>act("like");
+if ($("starBtn")) $("starBtn").onclick=()=>act("star");
+document.querySelectorAll("[data-purpose]").forEach(b=>b.onclick=()=>{purpose=b.dataset.purpose;document.querySelectorAll("[data-purpose]").forEach(x=>x.classList.toggle("active",x.dataset.purpose===purpose));if($("activePurposeLabel"))$("activePurposeLabel").textContent=purpose==="both"?"Everyone":purpose==="dating"?"Dating":"Friends";index=0;renderAll()});
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{if(!currentUsername){showPage("signInPage");return}showPage(b.dataset.page);if(b.dataset.page==="discoverPage"&&verifiedTelegramUser)void loadLiveExperience({force:true})});
 document.querySelectorAll("[data-likes-tab]").forEach(b=>b.onclick=()=>{likesTab=b.dataset.likesTab;renderLikes()});
 document.querySelectorAll("[data-group]").forEach(btn=>btn.onclick=()=>{const group=btn.dataset.group;setupChoices[group]=btn.dataset.value;document.querySelectorAll(`[data-group="${group}"]`).forEach(x=>x.classList.toggle("active",x===btn))});
@@ -851,7 +922,7 @@ $("finishSetupBtn").onclick = async () => {
   }
 };
 $("backToBasicsBtn").onclick=()=>showPage("signInPage");
-$("filterBtn").onclick=()=>alert("Demo filters: choose Everyone, Dating, or Friends above. Distance filters will be added after backend/location permissions are designed.");
+$("filterBtn").onclick=openFeedFilters;
 $("backDiscover").onclick=()=>showPage("discoverPage");
 function openBasics(){ $("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("basicsBackdrop").classList.remove("hidden") }
 function closeBasics(){ $("basicsBackdrop").classList.add("hidden") }
@@ -984,59 +1055,104 @@ function profilePhotoUrls(p) {
   return [...new Set(gallery)];
 }
 function changeDiscoveryPhoto(profileId, delta) {
-  const p = findConectProfile(profileId);
+  const p = findConectProfile(profileId) || profiles.find(item => String(item.id) === String(profileId));
   if (!p) return;
   const photos = profilePhotoUrls(p);
   if (photos.length < 2) return;
   const key = String(p.id);
   const current = discoveryPhotoIndexes.get(key) || 0;
   discoveryPhotoIndexes.set(key, (current + delta + photos.length) % photos.length);
+  const feed = $("profileScrollFeed");
+  const top = feed ? feed.scrollTop : 0;
   renderSwipe();
+  if (feed) feed.scrollTop = top;
+}
+function openFeedFilters() {
+  const overlay = $("feedFilterOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("hidden");
+  document.querySelectorAll("[data-purpose]").forEach(button => {
+    button.classList.toggle("active", button.dataset.purpose === purpose);
+    button.setAttribute("aria-pressed", String(button.dataset.purpose === purpose));
+  });
+}
+function closeFeedFilters() {
+  $("feedFilterOverlay")?.classList.add("hidden");
+}
+function resetFeedFilters() {
+  purpose = "both";
+  document.querySelectorAll("[data-purpose]").forEach(button => {
+    button.classList.toggle("active", button.dataset.purpose === purpose);
+    button.setAttribute("aria-pressed", String(button.dataset.purpose === purpose));
+  });
+  if ($("activePurposeLabel")) $("activePurposeLabel").textContent = "Everyone";
+  index = 0;
+  renderAll();
+}
+function handleFeedProfileAction(profileId, action) {
+  if (liveDiscoveryMode) {
+    void recordLiveSwipe(String(profileId), action, false);
+    return;
+  }
+  const target = profiles.find(profile => String(profile.id) === String(profileId));
+  if (!target) return;
+  if (action === "like" || action === "star") liked.add(target.id);
+  if (action === "pass") passed.add(target.id);
+  persist();
+  renderAll();
 }
 function renderSwipe() {
+  const feed = $("profileScrollFeed");
+  if (!feed) return;
+  const oldTop = feed.scrollTop || 0;
   const list = filtered();
   if (liveProfilesLoading) {
-    $("hero").innerHTML = '<div class="empty" style="padding-top:120px">Loading real Conect profiles…</div>';
-    $("counter").textContent = "Connecting to Conect";
+    feed.innerHTML = '<div class="profile-feed-empty">Connecting to Conect profiles…</div>';
     return;
   }
   if (!list.length) {
-    $("hero").innerHTML = liveDiscoveryMode
-      ? '<div class="empty" style="padding-top:120px">' + (liveDiscoveryLoaded ? "You’re all caught up for now. New compatible members will appear here." : "Live discovery is not available yet. Reopen Conect to try again.") + '</div>'
-      : '<div class="empty" style="padding-top:120px">You have seen everyone in this demo.<br>Switch to Grid or reset the demo to browse again.</div>';
-    $("counter").textContent = liveDiscoveryMode ? "No new profiles right now" : "No more demo profiles";
+    const msg = liveDiscoveryMode
+      ? (liveDiscoveryLoaded ? "You’re all caught up for now. New compatible members will appear here." : "Live discovery is not available yet. Reopen Conect to try again.")
+      : "You’ve seen everyone in this demo. Change your filters or reset the demo to browse again.";
+    feed.innerHTML = '<div class="profile-feed-empty">' + msg + '</div>';
     return;
   }
-  const p = list[index % list.length];
-  const photos = profilePhotoUrls(p);
-  const photoKey = String(p.id);
-  const photoIndex = photos.length ? (discoveryPhotoIndexes.get(photoKey) || 0) % photos.length : 0;
-  const displayImage = photos[photoIndex] || p.img || "";
-  const image = displayImage
-    ? '<img src="' + esc(displayImage) + '" alt="Profile photo">'
-    : '<div style="width:100%;height:100%;display:grid;place-items:center;font-size:72px;font-weight:800;color:#ffffffb8">' + esc(p.initial) + '</div>';
-  const photoControls = photos.length > 1
-    ? '<button class="photo-nav prev" aria-label="Previous photo" title="Previous photo" onclick="changeDiscoveryPhoto(\'' + esc(photoKey) + '\',-1)">‹</button>' +
-      '<button class="photo-nav next" aria-label="Next photo" title="Next photo" onclick="changeDiscoveryPhoto(\'' + esc(photoKey) + '\',1)">›</button>' +
-      '<div class="photo-indicator">' + (photoIndex + 1) + ' / ' + photos.length + '</div>'
-    : '';
-  const badge = liveDiscoveryMode ? "✦ CONECT MEMBER" : "♥ " + p.match + "% match";
-  const onlineIndicator = liveDiscoveryMode ? "" : ' <span class="online"></span>';
-  const id = inlineProfileId(p.id);
-  const allInterests = Array.isArray(p.interests) ? p.interests : [];
-  const visibleInterestTags = chips(allInterests.slice(0, 3));
-  const extraInterestCount = Math.max(0, allInterests.length - 3);
-  const interestMarkup = visibleInterestTags +
-    (extraInterestCount ? '<span class="chip chip-more">+' + extraInterestCount + ' more</span>' : '');
-  $("hero").innerHTML = image + photoControls +
-    '<div class="match">' + badge + '</div>' +
-    '<div class="onphoto"><h2>' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
-    onlineIndicator + '</h2><div class="location">⌖ ' + esc(p.loc) +
-    '</div><div class="bio">' + esc(p.bio) + '</div><div class="chips">' + interestMarkup +
-    '</div><button class="smallbtn" style="margin-top:10px" onclick="showDetail(' + id + ')">View full profile ↗</button></div>';
-  $("counter").textContent = liveDiscoveryMode
-    ? list.length + " compatible Conect profiles available"
-    : list.length + " profiles to explore · demo mode";
+  feed.innerHTML = list.map((profile) => {
+    const photos = profilePhotoUrls(profile);
+    const photoKey = String(profile.id);
+    const photoIndex = photos.length ? (discoveryPhotoIndexes.get(photoKey) || 0) % photos.length : 0;
+    const displayImage = photos[photoIndex] || profile.img || "";
+    const image = displayImage
+      ? '<img loading="lazy" src="' + esc(displayImage) + '" alt="Profile photo of ' + esc(profile.name) + '">'
+      : '<div class="profile-feed-no-photo">' + esc(profile.initial || "C") + '</div>';
+    const photoControls = photos.length > 1
+      ? '<button class="photo-nav prev" aria-label="Previous photo" title="Previous photo" onclick="event.stopPropagation();changeDiscoveryPhoto(\'' + esc(photoKey) + '\',-1)">‹</button>' +
+        '<button class="photo-nav next" aria-label="Next photo" title="Next photo" onclick="event.stopPropagation();changeDiscoveryPhoto(\'' + esc(photoKey) + '\',1)">›</button>' +
+        '<div class="photo-indicator">' + (photoIndex + 1) + ' / ' + photos.length + '</div>'
+      : '';
+    const badge = liveDiscoveryMode ? "✦ CONECT MEMBER" : "♥ " + profile.match + "% match";
+    const idArg = "'" + String(profile.id).replace(/'/g, "") + "'";
+    const interests = Array.isArray(profile.interests) ? profile.interests : [];
+    const interestMarkup = chips(interests.slice(0, 3)) +
+      (interests.length > 3 ? '<span class="chip chip-more">+' + (interests.length - 3) + ' more</span>' : '');
+    const purposes = Array.isArray(profile.purpose) ? profile.purpose : [profile.purpose].filter(Boolean);
+    const purposeLabel = purposes.length ? purposes.join(" and ") : "not specified";
+    return '<article class="profile-scroll-card" data-profile-id="' + esc(profile.id) + '">' +
+      '<div class="card feed-profile-card"><div class="hero">' + image + photoControls +
+        '<div class="match">' + badge + '</div>' +
+        '<div class="onphoto"><h2>' + esc(profile.name) + (profile.age ? ', ' + esc(profile.age) : '') + '</h2>' +
+        '<div class="location">⌖ ' + esc(profile.loc || "Location not specified") + '</div>' +
+        '<div class="bio">' + esc(profile.bio || "") + '</div><div class="chips">' + interestMarkup + '</div>' +
+        '<button type="button" class="smallbtn feed-view-profile" onclick="showDetail(' + idArg + ')">View full profile ↗</button></div>' +
+      '</div></div>' +
+      '<div class="feed-profile-actions">' +
+        '<button type="button" class="action pass" aria-label="Pass on ' + esc(profile.name) + '" title="Pass" onclick="handleFeedProfileAction(' + idArg + ',\'pass\')">×</button>' +
+        '<span class="feed-profile-purpose">' + esc(purposeLabel) + '</span>' +
+        '<button type="button" class="action like" aria-label="Like ' + esc(profile.name) + '" title="Like" onclick="handleFeedProfileAction(' + idArg + ',\'like\')">♥</button>' +
+      '</div></article>';
+  }).join("");
+  // Keep the same approximate feed position when a photo or page state re-renders.
+  if (oldTop > 0) feed.scrollTop = Math.min(oldTop, feed.scrollHeight - feed.clientHeight);
 }
 function renderGrid() {
   if (liveProfilesLoading) {
