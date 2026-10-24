@@ -332,6 +332,53 @@ body:has(#discoverPage:not(.hidden)){overflow:hidden}
  .feed-profile-card .onphoto{right:59px}
 }
 
+
+/* Portfolio: self-preview using the same full-screen profile card as the discovery feed. */
+body:has(#portfolioPage:not(.hidden)){overflow:hidden}
+.app:has(#portfolioPage:not(.hidden)){height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding-top:max(10px,env(safe-area-inset-top));padding-bottom:calc(91px + env(safe-area-inset-bottom))}
+.app:has(#portfolioPage:not(.hidden))>header{flex:0 0 auto;margin-bottom:8px}
+.app:has(#portfolioPage:not(.hidden)) #demoNotice{display:none!important}
+.app:has(#portfolioPage:not(.hidden)) #portfolioPage{display:flex;flex:1 1 auto;flex-direction:column;min-height:0;overflow:hidden;margin:0}
+.portfolio-fixed-header{display:flex;align-items:center;gap:10px;padding:2px 0 10px;flex:0 0 auto}
+.portfolio-back{width:37px;height:37px;flex:0 0 37px;border:0;border-radius:50%;background:#252630;color:white;font-size:29px;line-height:1;display:grid;place-items:center}
+.portfolio-heading{flex:1;min-width:0}
+.portfolio-heading h1{font-size:23px;line-height:1.1;letter-spacing:-.6px;margin:0 0 4px}
+.portfolio-heading p{font-size:11px;color:var(--muted);margin:0}
+.portfolio-preview-badge{flex:0 0 auto;background:#30202b;color:#ffb4c8;border:1px solid #69354b;padding:5px 8px;border-radius:20px;font-size:9px;font-weight:850;letter-spacing:.5px}
+.portfolio-preview-wrap{flex:1 1 auto;min-height:0;overflow:hidden}
+#portfolioPreviewFeed{overscroll-behavior-y:contain;scroll-snap-type:y mandatory}
+.portfolio-preview-card{height:100%;min-height:100%}
+.portfolio-preview-card .feed-profile-card{height:100%;min-height:0}
+.portfolio-preview-card .hero{height:100%;min-height:0}
+.portfolio-preview-card .onphoto{right:67px;max-height:75%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.portfolio-preview-card .feed-profile-details .bio{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.portfolio-preview-card .feed-profile-details.portfolio-details-expanded .bio{display:block;-webkit-line-clamp:unset;overflow:visible}
+.portfolio-preview-card .portfolio-extra-interest{display:none}
+.portfolio-preview-card .portfolio-details-expanded .portfolio-extra-interest{display:inline-flex}
+.portfolio-preview-card .feed-show-more{display:inline-flex;align-items:center;margin:8px 0 0;padding:5px 10px;border:1px solid #ffffff38;border-radius:18px;background:#ffffff18;color:#fff;font:inherit;font-size:11px;font-weight:750}
+.portfolio-preview-card .portfolio-empty-bio{color:#ece7ee}
+.portfolio-preview-card .portfolio-look-note{font-size:10px;color:#e7dfe7;margin-top:8px}
+.portfolio-preview-card .side-actions.feed-profile-side-actions{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:none!important;position:absolute!important;right:10px!important;top:50%!important;transform:translateY(-50%)!important;z-index:12!important;flex-direction:column!important;gap:12px!important}
+.portfolio-preview-card .side-actions.feed-profile-side-actions .side-action{display:grid!important;width:44px;height:44px;font-size:23px;border:1px solid #ffffff70;background:#24242dbb;color:#fff;box-shadow:0 5px 16px #0008;backdrop-filter:blur(9px);opacity:.9}
+.portfolio-preview-card .side-actions.feed-profile-side-actions .feed-like-action{background:#e83d72!important;border-color:#f36b93!important}
+.portfolio-preview-card .feed-profile-card .photo-nav.next{right:62px}
+.portfolio-launch-panel{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;margin:12px 0}
+.portfolio-launch-copy{display:flex;align-items:center;gap:11px;min-width:0}
+.portfolio-launch-copy>div{min-width:0}
+.portfolio-launch-copy strong{font-size:15px;display:block}
+.portfolio-launch-copy p{font-size:11px;line-height:1.4;margin:4px 0 0}
+.portfolio-launch-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:13px;background:#33202a;color:#ffb4c8;font-size:22px}
+.portfolio-launch-panel .primary{flex:0 0 auto;padding:10px 13px;font-size:12px}
+@media(max-width:380px){
+ .portfolio-heading h1{font-size:21px}
+ .portfolio-preview-card .onphoto{right:59px}
+ .portfolio-preview-card .side-actions.feed-profile-side-actions{right:7px!important;gap:10px!important}
+ .portfolio-preview-card .side-actions.feed-profile-side-actions .side-action{width:39px;height:39px;font-size:21px}
+ .portfolio-preview-card .feed-profile-card .photo-nav.next{right:52px}
+ .portfolio-launch-panel{align-items:flex-start}
+ .portfolio-launch-icon{flex-basis:38px;width:38px;height:38px}
+}
+
 </style></head>
 <body><div class="app">
 <header><div class="logo">Conect<em>.</em></div><span class="tag">DISCOVER BETA</span></header>
@@ -390,7 +437,8 @@ body:has(#discoverPage:not(.hidden)){overflow:hidden}
 <section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="liked" role="tab" aria-selected="true"><span>Liked</span><span class="likes-tab-badge" data-likes-count="liked">0</span></button><button data-likes-tab="matches" role="tab" aria-selected="false"><span>Matches</span><span class="likes-tab-badge" data-likes-count="matches">0</span></button><button data-likes-tab="likes" role="tab" aria-selected="false"><span>Likes</span><span class="likes-tab-badge" data-likes-count="likes">0</span></button></div><div class="likes-view-toolbar"><span id="likesResultsLabel">People</span><div class="likes-view-toggle" role="group" aria-label="Change profile layout"><button type="button" id="likesListMode" class="active" aria-pressed="true" onclick="setLikesView('list')" title="List view" aria-label="List view">☰</button><button type="button" id="likesGridMode" aria-pressed="false" onclick="setLikesView('grid')" title="Grid view" aria-label="Grid view">▦</button></div></div><div id="likesList"></div></section>
 <section id="chatsPage" class="hidden"><div id="chatInboxControls"></div><div id="chatList"></div></section>
 <section id="morePage" class="hidden"><h1>More</h1><p>More ways to manage your Conect experience.</p><div class="panel"><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('profilePage')">♙  Edit my profile</button><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('likesPage')">♡  My likes and matches</button><button class="secondary" style="width:100%" onclick="alert('Settings and help will be available in a future version.')">⚙  Settings & help</button></div></section>
-<section id="profilePage" class="hidden"><h1>Your profile</h1><p>Tap your profile picture to edit your basic details.</p>
+<section id="profilePage" class="hidden"><h1>Your profile</h1><p>Manage your details, photos, and how you appear to others.</p>
+<div class="panel portfolio-launch-panel"><div class="portfolio-launch-copy"><span class="portfolio-launch-icon">▣</span><div><strong>Portfolio</strong><p>Preview your profile exactly as it appears in the scrolling Feed.</p></div></div><button type="button" class="primary" onclick="showPortfolioPreview()">Preview</button></div>
 <button type="button" class="profile-hero" id="openBasicsBtn" aria-label="Edit basic profile details">
 <img id="profilePagePhoto" class="profile-hero-photo" alt="Your profile picture">
 <div class="profile-hero-meta"><strong id="profileHeroName">Your name</strong><span id="profileHeroDetails">@username · Add your details</span><span style="color:#ff805b;margin-top:4px">Tap photo to edit basics ✎</span></div><span style="font-size:22px;color:var(--muted)">›</span></button>
@@ -399,6 +447,14 @@ body:has(#discoverPage:not(.hidden)){overflow:hidden}
 <label style="display:block;margin-top:14px">Short bio</label><textarea id="myBio" class="field" rows="3" maxlength="180" placeholder="Tell people a little about yourself"></textarea>
 <label>Looking for</label><select id="myPurpose" class="field"><option value="both">Dating and friendship</option><option value="dating">Dating</option><option value="friends">Friendship</option></select>
 <label for="myEmail" style="display:block;margin-top:14px">Email (optional)</label><input id="myEmail" class="field" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com"><p style="font-size:11px;color:var(--muted);margin-top:-7px">Private: this email is not shown on your public profile.</p><button class="primary" id="saveProfile">Save profile</button><p id="profileSaved" style="font-size:12px"></p></div><section class="panel profile-management-panel" aria-label="Profile visits"><div class="profile-management-heading"><div><h2>Profile visits</h2><p>Last 3 days · only people you have liked are shown.</p></div><span id="profileVisitsCount" class="profile-count-pill">0</span></div><div id="profileVisitsList"><div class="profile-management-empty">Checking recent profile visits…</div></div></section><section class="panel profile-management-panel" aria-label="Blocked users"><div class="profile-management-heading"><div><h2>Blocked users</h2><p>Manage people you have blocked.</p></div></div><div id="blockedUsersList"><div class="profile-management-empty">Loading blocked users…</div></div></section></section>
+<section id="portfolioPage" class="hidden">
+  <div class="portfolio-fixed-header">
+    <button type="button" class="portfolio-back" onclick="showPage('profilePage')" aria-label="Back to Profile">‹</button>
+    <div class="portfolio-heading"><h1>Your Portfolio</h1><p>Preview how people see you while scrolling.</p></div>
+    <span class="portfolio-preview-badge">PREVIEW</span>
+  </div>
+  <div class="portfolio-preview-wrap"><div id="portfolioPreviewFeed" class="profile-scroll-feed" aria-label="Your profile preview"></div></div>
+</section>
 <div id="basicsBackdrop" class="sheet-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="basicsTitle"><div class="basics-sheet"><div class="sheet-handle"></div><h2 class="sheet-title" id="basicsTitle">Basics</h2>
 <label for="myName">Display name</label><input id="myName" class="field" placeholder="Your name" maxlength="40">
 <label for="myAge">Age (18+)</label><input id="myAge" class="field" type="number" min="18" max="99" placeholder="18 or older">
@@ -823,7 +879,7 @@ async function addProfilePhotos(files) {
 }
 $("profileGalleryInput").addEventListener("change",e=>{addProfilePhotos(e.target.files);e.target.value=""});
 const galleryDrop=$("profilePhotoGallery");galleryDrop.addEventListener("dragover",e=>{e.preventDefault();galleryDrop.classList.add("dragging")});galleryDrop.addEventListener("dragleave",()=>galleryDrop.classList.remove("dragging"));galleryDrop.addEventListener("drop",e=>{e.preventDefault();galleryDrop.classList.remove("dragging");addProfilePhotos(e.dataTransfer.files)});
-function showPage(id){["signInPage","interestsSetupPage","discoverPage","likesPage","chatsPage","morePage","profilePage","detailPage"].forEach(x=>$(x).classList.toggle("hidden",x!==id));document.querySelector("nav").classList.toggle("hidden",id==="signInPage"||id==="interestsSetupPage");document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));if(id==="likesPage")renderLikes();if(id==="chatsPage")renderChats();if(id==="profilePage"){ $("myUsername").value=currentUsername;$("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("myBio").value=myProfile.bio||"";$("myPurpose").value=myProfile.purpose||"both";$("profilePagePhoto").src=myProfile.photo||"";$("profileHeroName").textContent=(myProfile.name||"Your name")+(myProfile.age?", "+myProfile.age:"");$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+(myProfile.loc||"Add your location");renderProfilePhotos();$("profileInterestSummary").innerHTML=(myProfile.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join("")||"No interests selected yet.";if($("myEmail"))$("myEmail").value=myProfile.email||"";void loadProfileVisits();void loadBlockedUsers();}}
+function showPage(id){["signInPage","interestsSetupPage","discoverPage","likesPage","chatsPage","morePage","profilePage","portfolioPage","detailPage"].forEach(x=>$(x).classList.toggle("hidden",x!==id));document.querySelector("nav").classList.toggle("hidden",id==="signInPage"||id==="interestsSetupPage");document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id||(id==="portfolioPage"&&b.dataset.page==="profilePage")));if(id==="likesPage")renderLikes();if(id==="chatsPage")renderChats();if(id==="profilePage"){ $("myUsername").value=currentUsername;$("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("myBio").value=myProfile.bio||"";$("myPurpose").value=myProfile.purpose||"both";$("profilePagePhoto").src=myProfile.photo||"";$("profileHeroName").textContent=(myProfile.name||"Your name")+(myProfile.age?", "+myProfile.age:"");$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+(myProfile.loc||"Add your location");renderProfilePhotos();$("profileInterestSummary").innerHTML=(myProfile.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join("")||"No interests selected yet.";if($("myEmail"))$("myEmail").value=myProfile.email||"";void loadProfileVisits();void loadBlockedUsers();}}
 function likeDetailProfile(profileId){if(liveDiscoveryMode){void recordLiveSwipe(profileId,"like",true);return}const p=profiles.find(x=>String(x.id)===String(profileId));if(p)likePerson(p.id)}
 function passDetailProfile(profileId){if(liveDiscoveryMode){void recordLiveSwipe(profileId,"pass",false);showPage("discoverPage");return}const p=profiles.find(x=>String(x.id)===String(profileId));if(!p)return;passed.add(p.id);persist();index=0;renderAll();showPage("discoverPage")}
 function showDetail(id){const p=liveDiscoveryMode?findConectProfile(id):profiles.find(x=>String(x.id)===String(id));if(!p){alert("That profile is no longer available. Refresh Discover and try again.");return}if(liveDiscoveryMode)void recordProfileVisit(p.id);$("detailContent").innerHTML=`<img src="${p.img}" style="width:100%;max-height:390px;object-fit:cover;border-radius:15px"><h2>${esc(p.name)}, ${p.age}</h2><p>⌖ ${esc(p.loc)}</p><p>${esc(p.bio)}</p><div class="chips">${chips(p)}</div><p style="font-size:12px">Looking for: ${p.purpose.join(" and ")}</p><div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likeDetailProfile('${p.id}')">♥ Like</button><button class="secondary" onclick="passDetailProfile('${p.id}')">Pass</button></div>`;showPage("detailPage")}
@@ -1152,6 +1208,90 @@ function toggleFeedMore(profileId) {
   button.textContent = expanded ? "Hide" : "Show more";
   button.setAttribute("aria-expanded", String(expanded));
   button.setAttribute("aria-label", expanded ? "Hide extra profile details" : "Show more interests and bio");
+}
+let portfolioPhotoIndex = 0;
+let portfolioExpanded = false;
+
+function showPortfolioPreview() {
+  portfolioPhotoIndex = 0;
+  portfolioExpanded = false;
+  renderPortfolioPreview();
+  showPage("portfolioPage");
+}
+
+function changePortfolioPhoto(delta) {
+  const profile = getPortfolioProfile();
+  const photos = profilePhotoUrls(profile);
+  if (photos.length < 2) return;
+  portfolioPhotoIndex = (portfolioPhotoIndex + delta + photos.length) % photos.length;
+  renderPortfolioPreview();
+}
+
+function togglePortfolioDetails() {
+  portfolioExpanded = !portfolioExpanded;
+  renderPortfolioPreview();
+}
+
+function getPortfolioProfile() {
+  const photoList = Array.isArray(profilePhotos) ? profilePhotos : [];
+  const fallbackPhoto = String(myProfile.photo || profilePhotoData || "");
+  const firstPhoto = photoList.length ? photoSource(photoList[0]) : fallbackPhoto;
+  const photos = photoList.length ? photoList : (fallbackPhoto ? [fallbackPhoto] : []);
+  const interests = Array.isArray(selectedInterests)
+    ? Array.from(selectedInterests)
+    : Array.from(selectedInterests || []);
+  return {
+    id: "my-portfolio-preview",
+    name: String(myProfile.name || $("myName")?.value || "Your name"),
+    age: Number(myProfile.age || $("myAge")?.value || 0),
+    loc: String(myProfile.loc || [myProfile.city, myProfile.country].filter(Boolean).join(", ") || "Add your location"),
+    bio: String(myProfile.bio || ($("myBio") ? $("myBio").value : "") || ""),
+    purpose: myProfile.purpose || ($("myPurpose") ? $("myPurpose").value : "both"),
+    interests: interests.length ? interests : (Array.isArray(myProfile.interests) ? myProfile.interests : []),
+    photos,
+    img: firstPhoto || fallbackPhoto,
+    initial: String(myProfile.name || "C").trim().charAt(0).toUpperCase() || "C",
+    match: null
+  };
+}
+
+function renderPortfolioPreview() {
+  const root = $("portfolioPreviewFeed");
+  if (!root) return;
+  const profile = getPortfolioProfile();
+  const photos = profilePhotoUrls(profile);
+  portfolioPhotoIndex = photos.length ? ((portfolioPhotoIndex % photos.length) + photos.length) % photos.length : 0;
+  const currentPhoto = photos[portfolioPhotoIndex] || profile.img || "";
+  const image = currentPhoto
+    ? '<img src="' + esc(currentPhoto) + '" alt="Your portfolio profile photo">'
+    : '<div class="profile-feed-no-photo">' + esc(profile.initial || "C") + '</div>';
+  const photoControls = photos.length > 1
+    ? '<button type="button" class="photo-nav prev" aria-label="Previous photo" onclick="changePortfolioPhoto(-1)">‹</button>' +
+      '<button type="button" class="photo-nav next" aria-label="Next photo" onclick="changePortfolioPhoto(1)">›</button>' +
+      '<div class="photo-indicator">' + (portfolioPhotoIndex + 1) + ' / ' + photos.length + '</div>'
+    : '';
+  const interests = Array.isArray(profile.interests) ? profile.interests : [];
+  const interestMarkup = interests.map((interest, i) =>
+    '<span class="chip' + (i >= 3 ? ' portfolio-extra-interest' : '') + '">' + esc(interest) + '</span>'
+  ).join("");
+  const bioMarkup = profile.bio
+    ? '<div class="bio">' + esc(profile.bio) + '</div>'
+    : '<div class="bio portfolio-empty-bio">Add a short bio on your Profile tab to show people what makes you you.</div>';
+  const expandedClass = portfolioExpanded ? " portfolio-details-expanded" : "";
+  const showMore = interests.length > 3 || (profile.bio && profile.bio.length > 90);
+  const purposeText = profile.purpose === "dating" ? "Dating" : profile.purpose === "friends" ? "Friendship" : "Dating and friendship";
+  root.innerHTML = '<article class="profile-scroll-card portfolio-preview-card">' +
+    '<div class="card feed-profile-card"><div class="hero">' + image + photoControls +
+      '<div class="match">✦ YOUR PORTFOLIO</div>' +
+      '<div class="onphoto"><h2>' + esc(profile.name) + (profile.age ? ', ' + esc(profile.age) : '') + '</h2>' +
+      '<div class="location">⌖ ' + esc(profile.loc) + '</div>' +
+      '<div class="feed-profile-details' + expandedClass + '">' + bioMarkup + '<div class="chips">' + interestMarkup + '</div>' +
+      (showMore ? '<button type="button" class="feed-show-more" aria-expanded="' + String(portfolioExpanded) + '" onclick="togglePortfolioDetails()">' + (portfolioExpanded ? 'Hide' : 'Show more') + '</button>' : '') +
+      '</div><div class="portfolio-look-note">This is a preview — others can Like or Pass on your card.</div></div>' +
+      '<div class="side-actions feed-profile-side-actions" aria-label="Preview of profile actions">' +
+        '<button type="button" class="side-action feed-pass-action" aria-label="Pass button preview" title="Pass" disabled>×</button>' +
+        '<button type="button" class="side-action primary-like feed-like-action" aria-label="Like button preview" title="Like" disabled>♥</button>' +
+      '</div></div></div></article>';
 }
 function renderSwipe() {
   const feed = $("profileScrollFeed");
