@@ -25,6 +25,40 @@ h1{font-size:29px;line-height:1.1;letter-spacing:-1px;margin:7px 0}p{color:var(-
 .chat-composer textarea{flex:1;min-width:0;min-height:46px;max-height:130px;resize:vertical;background:var(--panel2);border:1px solid var(--line);border-radius:12px;color:#fff;padding:12px;font:inherit}
 .chat-composer button{min-height:46px}
 .chat-empty{margin:auto;text-align:center;color:var(--muted);padding:28px 12px}
+ /* Chats inbox inspired by the supplied reference: photos, search, and request shortcut. */
+ .chat-page-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 14px}
+ .chat-page-header h1{font-size:28px;line-height:1.1;margin:0;letter-spacing:-.7px}
+ .chat-plus-btn{position:relative;flex:0 0 46px;width:46px;height:46px;border:0;border-radius:50%;background:#252630;color:#fff;font-size:30px;font-weight:400;line-height:1;display:grid;place-items:center;cursor:pointer}
+ .chat-plus-btn:active{transform:scale(.96)}
+ .chat-request-count{position:absolute;right:-2px;top:-2px;min-width:18px;height:18px;padding:0 4px;border-radius:12px;background:#e83d72;border:2px solid var(--bg);font-size:10px;font-weight:800;display:grid;place-items:center}
+ .chat-search{display:flex;align-items:center;gap:9px;height:44px;padding:0 13px;margin:0 0 12px;border-radius:13px;background:#1b1c23;border:1px solid #343540;color:var(--muted)}
+ .chat-search-icon{font-size:20px;line-height:1;flex:0 0 auto}
+ .chat-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text);font:inherit;font-size:14px}
+ .chat-search input::placeholder{color:#a7a7b2}
+ .chat-list{display:flex;flex-direction:column}
+ .chat-list-row{display:flex;align-items:center;gap:12px;width:100%;min-width:0;padding:13px 5px;border:0;border-bottom:1px solid #2a2b30;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+ .chat-list-row:first-child{padding-top:8px}
+ .chat-list-row:active{background:#ffffff08}
+ .chat-avatar{position:relative;display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#e83d72,#7c35f5);color:#fff;font-size:20px;font-weight:800}
+ .chat-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+ .chat-avatar-initial{display:grid;place-items:center;width:100%;height:100%}
+ .chat-list-body{flex:1;min-width:0}
+ .chat-list-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0}
+ .chat-list-name{font-size:15px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .chat-list-date{flex:0 0 auto;font-size:11px;color:var(--muted)}
+ .chat-list-preview{font-size:13px;color:#a7a7b2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}
+ .chat-list-preview.unread{color:#f4edf2;font-weight:650}
+ .chat-request-intro{font-size:13px;color:var(--muted);margin:0 0 12px}
+ .chat-request-row{padding:13px 2px;border-bottom:1px solid #2a2b30;display:flex;align-items:center;gap:12px}
+ .chat-request-body{flex:1;min-width:0}
+ .chat-request-name{font-size:15px;font-weight:750}
+ .chat-request-location{font-size:12px;color:var(--muted);margin-top:3px}
+ .chat-request-actions{display:flex;gap:6px;margin-top:9px}
+ .chat-request-actions button{padding:7px 10px;border-radius:10px;font-size:12px}
+ .chat-request-back{border:0;background:transparent;color:#fff;font:inherit;font-size:14px;padding:7px 10px 7px 0;cursor:pointer}
+ .chat-detail-avatar{flex-basis:52px;width:52px;height:52px}
+ @media(max-width:380px){.chat-avatar{flex-basis:49px;width:49px;height:49px}.chat-list-row{gap:10px;padding:12px 2px}.chat-page-header h1{font-size:26px}}
+
  /* Chat polish: clearer bubbles, safer mobile spacing, and a focused composer. */
  .chat-thread{scroll-behavior:smooth;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#454650 transparent}
  .chat-message{max-width:min(84%,440px);padding:11px 13px;line-height:1.42;box-shadow:0 2px 5px #0002;animation:chat-pop .14s ease-out}
@@ -105,7 +139,7 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
 <div id="gridView" class="grid hidden"></div>
 </section>
 <section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="liked" role="tab" aria-selected="true">Liked</button><button data-likes-tab="matches" role="tab" aria-selected="false">Matches</button><button data-likes-tab="likes" role="tab" aria-selected="false">Likes</button></div><div id="likesList"></div></section>
-<section id="chatsPage" class="hidden"><h1>Chats</h1><p>Messaging unlocks after a mutual like. Your username will identify you in chat requests.</p><div id="chatList"></div></section>
+<section id="chatsPage" class="hidden"><div id="chatInboxControls"></div><div id="chatList"></div></section>
 <section id="morePage" class="hidden"><h1>More</h1><p>More ways to manage your Conect experience.</p><div class="panel"><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('profilePage')">♙  Edit my profile</button><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('likesPage')">♡  My likes and matches</button><button class="secondary" style="width:100%" onclick="alert('Settings and help will be available in a future version.')">⚙  Settings & help</button></div></section>
 <section id="profilePage" class="hidden"><h1>Your profile</h1><p>Tap your profile picture to edit your basic details.</p>
 <button type="button" class="profile-hero" id="openBasicsBtn" aria-label="Edit basic profile details">
@@ -383,6 +417,9 @@ let activeChatMatchId = null;
 let chatRefreshTimer = null;
 let liveChatLoadBusy = false;
 let liveChatSendBusy = false;
+let showChatRequests = false;
+let chatSearchQuery = "";
+const chatMessagePreviews = new Map();
 
 function filtered(){return profiles.filter(p=>(purpose==="both"||p.purpose.includes(purpose))&&!passed.has(p.id)&&!liked.has(p.id))}
 function chips(p){return p.interests.map(i=>`<span class="chip">${esc(i)}</span>`).join("")}
@@ -918,25 +955,154 @@ function renderLikes() {
     esc(p.loc) + '</div></div><button class="secondary" onclick="showDetail(' + p.id + ')">View</button></div>').join("") ||
     '<div class="panel empty">' + empty + '</div>';
 }
-function renderChats() {
-  if (liveDiscoveryMode) {
-    if (activeChatMatchId) {
-      renderLiveChatShell();
-      return;
-    }
-    $("chatList").innerHTML = liveMatches.map(item => {
-      const p = item.profile;
-      return '<div class="panel profiletop"><div class="avatar">' + esc(p.initial) +
-        '</div><div style="flex:1"><b>' + esc(p.name) + '</b><div style="font-size:12px;color:var(--muted)">You matched on Conect</div></div>' +
-        '<button class="secondary" onclick="openLiveChat(\'' + esc(item.id) + '\')">Open chat</button></div>';
-    }).join("") || '<div class="panel empty">No matches yet. When you and another member both like each other, the match will appear here.</div>';
+function chatAvatarMarkup(profile, extraClass = "") {
+  const name = String(profile && profile.name || "Conect member");
+  const initial = String(profile && profile.initial || name.trim().charAt(0).toUpperCase() || "C");
+  const photo = String(profile && (profile.img || profile.photo) || "").trim();
+  const image = photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : "";
+  return '<div class="chat-avatar ' + extraClass + '" aria-hidden="true">' + image +
+    '<span class="chat-avatar-initial">' + esc(initial) + '</span></div>';
+}
+function chatRequestProfiles() {
+  const matchedIds = new Set(liveMatches.map(item => String(item.profile && item.profile.id)));
+  return liveIncomingLikes.filter(profile => !matchedIds.has(String(profile.id)));
+}
+function renderChatInboxControls() {
+  const controls = $("chatInboxControls");
+  if (!controls) return;
+  if (showChatRequests) {
+    controls.innerHTML =
+      '<div class="chat-page-header"><div><button type="button" class="chat-request-back" onclick="closeChatRequests()">← Chats</button><h1>Chat requests</h1></div></div>' +
+      '<p class="chat-request-intro">People who liked you. Like someone back to match and unlock messaging.</p>';
     return;
   }
-  $("chatList").innerHTML = [...matches].map(id => profiles.find(p => p.id === id)).filter(Boolean).map(p =>
-    '<div class="panel profiletop"><div class="avatar">' + esc(p.initial) +
-    '</div><div style="flex:1"><b>' + esc(p.name) + '</b><div style="font-size:12px;color:var(--muted)">You matched in the demo</div></div>' +
-    '<button class="secondary" onclick="alert(\'Demo only: real messaging requires a secure backend and a mutual like from the other account.\')">Open chat</button></div>'
-  ).join("") || '<div class="panel empty">No matches yet. In the real app, chat unlocks only when both people like each other. Demo likes do not create real matches.</div>';
+  const requestCount = liveDiscoveryMode ? chatRequestProfiles().length : 0;
+  controls.innerHTML =
+    '<div class="chat-page-header"><h1>Chats</h1><button type="button" class="chat-plus-btn" onclick="openChatRequests()" aria-label="Chat requests" title="Chat requests"><span aria-hidden="true">+</span>' +
+    (requestCount ? '<span class="chat-request-count">' + requestCount + '</span>' : '') + '</button></div>' +
+    '<label class="chat-search" for="chatSearchInput"><span class="chat-search-icon" aria-hidden="true">⌕</span><input id="chatSearchInput" type="search" autocomplete="off" placeholder="Search chats" aria-label="Search chats" value="' + esc(chatSearchQuery) + '"></label>';
+  const input = $("chatSearchInput");
+  if (input) input.addEventListener("input", event => filterChats(event.target.value));
+}
+function renderChatList() {
+  const root = $("chatList");
+  if (!root) return;
+  const query = chatSearchQuery.trim().toLowerCase();
+  if (liveDiscoveryMode) {
+    const matchesToShow = liveMatches.filter(item => {
+      const p = item.profile || {};
+      const preview = chatMessagePreviews.get(String(item.id));
+      return [p.name, p.username, p.loc, preview && preview.body]
+        .some(value => String(value || "").toLowerCase().includes(query));
+    });
+    if (!matchesToShow.length) {
+      root.innerHTML = '<div class="panel empty">' +
+        (query ? 'No chats match "' + esc(chatSearchQuery.trim()) + '". Try another name.' :
+          'No matches yet. When you and another member both like each other, the match will appear here.') +
+        '</div>';
+      return;
+    }
+    root.innerHTML = '<div class="chat-list">' + matchesToShow.map(item => {
+      const p = item.profile;
+      const preview = chatMessagePreviews.get(String(item.id));
+      const latest = preview
+        ? (preview.mine ? "You: " : "") + preview.body
+        : "You matched on Conect · Say hello 👋";
+      let when = "";
+      const timestamp = preview && preview.created_at;
+      if (timestamp) {
+        const date = new Date(timestamp);
+        if (!Number.isNaN(date.getTime())) {
+          const today = new Date();
+          when = date.toDateString() === today.toDateString()
+            ? date.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+            : date.toLocaleDateString([], {month:"short",day:"numeric"});
+        }
+      } else if (item.created_at) {
+        const date = new Date(item.created_at);
+        if (!Number.isNaN(date.getTime())) when = date.toLocaleDateString([], {month:"short",day:"numeric"});
+      }
+      return '<button type="button" class="chat-list-row" onclick="openLiveChat(\'' + esc(item.id) + '\')" aria-label="Open chat with ' + esc(p.name) + '">' +
+        chatAvatarMarkup(p) +
+        '<span class="chat-list-body"><span class="chat-list-top"><span class="chat-list-name">' + esc(p.name) +
+        (p.age ? ', ' + esc(p.age) : '') + '</span><span class="chat-list-date">' + esc(when) + '</span></span>' +
+        '<span class="chat-list-preview">' + esc(latest) + '</span></span></button>';
+    }).join("") + '</div>';
+    return;
+  }
+  const demoPeople = [...matches].map(id => profiles.find(p => p.id === id)).filter(Boolean)
+    .filter(p => [p.name,p.loc].some(value => String(value || "").toLowerCase().includes(query)));
+  root.innerHTML = demoPeople.length ? '<div class="chat-list">' + demoPeople.map(p =>
+    '<button type="button" class="chat-list-row" onclick="alert(\'Demo only: open a live mutual match to message.\')">' +
+    chatAvatarMarkup(p) + '<span class="chat-list-body"><span class="chat-list-top"><span class="chat-list-name">' +
+    esc(p.name) + '</span><span class="chat-list-date"></span></span><span class="chat-list-preview">You matched in the demo</span></span></button>'
+  ).join("") + '</div>' : '<div class="panel empty">' + (query ? 'No chats match "' + esc(chatSearchQuery.trim()) + '".' : 'No matches yet. Live matches will appear here once you connect your Telegram profile.') + '</div>';
+}
+function renderChatRequests() {
+  const root = $("chatList");
+  if (!root) return;
+  if (!liveDiscoveryMode) {
+    root.innerHTML = '<div class="panel empty">Chat requests appear when your Telegram profile is connected to Conect.</div>';
+    return;
+  }
+  const requests = chatRequestProfiles();
+  if (!requests.length) {
+    root.innerHTML = '<div class="panel empty"><div style="font-size:28px;margin-bottom:8px">♡</div><b>No new chat requests</b><p style="margin:7px 0 0;font-size:13px">When someone likes your profile, they’ll appear here. Like them back to match and start chatting.</p></div>';
+    return;
+  }
+  root.innerHTML = '<div class="chat-list">' + requests.map(p =>
+    '<div class="chat-request-row">' + chatAvatarMarkup(p) +
+    '<div class="chat-request-body"><div class="chat-request-name">' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
+    '</div><div class="chat-request-location">' + esc(p.loc || 'Location not specified') + ' · Liked your profile</div>' +
+    '<div class="chat-request-actions"><button type="button" class="secondary" onclick="showDetail(' + inlineProfileId(p.id) + ')">View profile</button>' +
+    '<button type="button" class="primary" onclick="respondToChatRequest(\'' + esc(p.id) + '\')">Like back ♥</button></div></div></div>'
+  ).join("") + '</div>';
+}
+function filterChats(query) {
+  chatSearchQuery = String(query || "");
+  renderChatList();
+}
+function openChatRequests() {
+  showChatRequests = true;
+  renderChats();
+}
+function closeChatRequests() {
+  showChatRequests = false;
+  renderChats();
+}
+async function respondToChatRequest(profileId) {
+  const profile = liveIncomingLikes.find(p => String(p.id) === String(profileId));
+  if (!profile) return;
+  const button = [...document.querySelectorAll(".chat-request-actions button")].find(el => el.textContent.includes("Like back"));
+  if (button) { button.disabled = true; button.textContent = "Matching…"; }
+  const result = await recordLiveSwipe(profileId, "like", false);
+  if (result) {
+    await loadLiveRelationships();
+    showChatRequests = false;
+    chatSearchQuery = "";
+    showPage("chatsPage");
+    renderChats();
+    if (result.matched) {
+      $("telegramAuthStatus").classList.remove("hidden");
+      $("telegramAuthStatus").style.background = "#153320";
+      $("telegramAuthStatus").textContent = "It’s a match! You can now message " + profile.name + ".";
+    }
+  } else {
+    renderChats();
+  }
+}
+function renderChats() {
+  if (activeChatMatchId && liveDiscoveryMode) {
+    $("chatInboxControls").innerHTML = "";
+    renderLiveChatShell();
+    return;
+  }
+  renderChatInboxControls();
+  if (showChatRequests) {
+    renderChatRequests();
+    return;
+  }
+  renderChatList();
 }
 function stopLiveChatPolling() {
   if (chatRefreshTimer !== null) {
@@ -954,7 +1120,7 @@ function renderLiveChatShell() {
   const p = match.profile;
   $("chatList").innerHTML =
     '<button class="secondary" onclick="closeLiveChat()">← All chats</button>' +
-    '<div class="panel profiletop"><div class="avatar">' + esc(p.initial) + '</div>' +
+    '<div class="panel profiletop">' + chatAvatarMarkup(p, "chat-detail-avatar") +
     '<div style="flex:1"><b>' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
     '</b><div style="font-size:12px;color:var(--muted)">' + esc(p.loc) + ' · Matched on Conect</div></div></div>' +
     '<div id="messageThread" class="chat-thread" role="log" aria-live="polite"><div class="chat-empty">Loading conversation…</div></div>' +
@@ -983,6 +1149,10 @@ function renderLiveMessages(messages, forceScroll = false) {
   const thread = $("messageThread");
   if (!thread) return;
   const wasNearBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 90;
+  if (messages.length && activeChatMatchId) {
+    const latest = messages[messages.length - 1];
+    chatMessagePreviews.set(String(activeChatMatchId), { body: String(latest.body || ""), mine: latest.is_mine === true, created_at: latest.created_at || null });
+  }
   if (!messages.length) {
     thread.innerHTML = '<div class="chat-empty">No messages yet. Say hello 👋</div>';
   } else {
