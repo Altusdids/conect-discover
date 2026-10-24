@@ -1272,13 +1272,19 @@ Deno.serve(async (req: Request) => {
           return a.sort_order - b.sort_order;
         });
 
-        // Move rows into a temporary range first to avoid uniqueness conflicts
-        // when sort_order is constrained per user; clear is_primary before setting it.
+        // Move every row above the current maximum first. A fixed temporary
+        // range (for example, 100+) can collide with leftovers from an interrupted
+        // earlier reorder and make this action fail repeatedly.
+        const temporarySortBase = Math.max(
+          0,
+          ...orderedRows.map((row: any) => Number(row.sort_order) || 0),
+        ) + orderedRows.length + 10;
+        // Clear the primary flag while moving rows into the unique temporary range.
         for (let i = 0; i < orderedRows.length; i++) {
           const row = orderedRows[i];
           const { error: temporaryOrderError } = await admin
             .from("profile_photos")
-            .update({ sort_order: 100 + i, is_primary: false })
+            .update({ sort_order: temporarySortBase + i, is_primary: false })
             .eq("id", row.id)
             .eq("user_id", photoProfile.id);
           if (temporaryOrderError) {
