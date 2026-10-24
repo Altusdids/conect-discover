@@ -313,7 +313,11 @@ Deno.serve(async (req: Request) => {
       action !== "send_message" &&
       action !== "load_chat_updates" &&
       action !== "block_user" &&
-      action !== "report_user"
+      action !== "report_user" &&
+      action !== "unblock_user" &&
+      action !== "load_blocked_users" &&
+      action !== "load_profile_visits" &&
+      action !== "record_profile_visit"
     ) {
       return jsonResponse({ error: "Unsupported action" }, 400);
     }
@@ -345,7 +349,11 @@ Deno.serve(async (req: Request) => {
       action === "send_message" ||
       action === "load_chat_updates" ||
       action === "block_user" ||
-      action === "report_user"
+      action === "report_user" ||
+      action === "unblock_user" ||
+      action === "load_blocked_users" ||
+      action === "load_profile_visits" ||
+      action === "record_profile_visit"
     ) {
       const { data: viewer, error: viewerError } = await admin
         .from("profiles")
@@ -365,7 +373,7 @@ Deno.serve(async (req: Request) => {
       }
 
       // TRUST & SAFETY: all target IDs are checked server-side and the caller is derived from verified Telegram initData.
-      if (action === "block_user" || action === "report_user") {
+      if (action === "block_user" || action === "unblock_user" || action === "report_user") {
         const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId.trim() : "";
         if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUserId)) {
           return jsonResponse({ error: "Invalid profile" }, 400);
@@ -386,6 +394,21 @@ Deno.serve(async (req: Request) => {
         }
         if (!targetProfile) {
           return jsonResponse({ error: "This profile is no longer available" }, 404);
+        }
+
+        if (action === "unblock_user") {
+          const { error: unblockError } = await admin
+            .from("blocks")
+            .delete()
+            .eq("blocker_user_id", viewer.id)
+            .eq("blocked_user_id", targetUserId);
+
+          if (unblockError) {
+            console.error("Unblock profile error", unblockError.message);
+            return jsonResponse({ error: "Could not unblock this profile" }, 500);
+          }
+
+          return jsonResponse({ ok: true, unblockedUserId: targetUserId });
         }
 
         if (action === "block_user") {
@@ -435,6 +458,127 @@ Deno.serve(async (req: Request) => {
         }
 
         return jsonResponse({ ok: true, report: { id: report.id, status: report.status, created_at: report.created_at } });
+      }
+
+      // PROFILE VISITS: record the latest visit once per visitor/profile pair.
+      if (action === "record_profile_visit") {
+        const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId.trim() : "";
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUserId)) {
+          return jsonResponse({ error: "Invalid profile" }, 400);
+        }
+        if (targetUserId === viewer.id) return jsonResponse({ ok: true, skipped: true });
+
+        const { data: target, error: targetError } = await admin
+          .from("profiles")
+          .select("id, is_active")
+          .eq("id", targetUserId)
+          .maybeSingle();
+        if (targetError) {
+          console.error("Profile visit target lookup error", targetError.message);
+          return jsonResponse({ error: "Could not verify this profile" }, 500);
+        }
+        if (!target || !target.is_active) return jsonResponse({ ok: true, skipped: true });
+
+        const blockedOr = "and(blocker_user_id.eq." + viewer.id + ",blocked_user_id.eq." + targetUserId + "),and(blocker_user_id.eq." + targetUserId + ",blocked_user_id.eq." + viewer.id + ")";
+        const { data: blockedRows, error: blockedError } = await admin
+          .from("blocks")
+          .select("blocker_user_id, blocked_user_id")
+          .or(blockedOr);
+        if (blockedError) {
+          console.error("Profile visit block lookup error", blockedError.message);
+          return jsonResponse({ error: "Could not verify profile visibility" }, 500);
+        }
+        if ((blockedRows || []).length) return jsonResponse({ ok: true, skipped: true });
+
+        const { error: visitError } = await admin
+          .from("profile_visits")
+          .upsert({ visitor_user_id: viewer.id, visited_user_id: targetUserId, last_visited_at: new Date().toISOString() }, { onConflict: "visitor_user_id,visited_user_id" });
+        if (visitError) {
+          console.error("Profile visit upsert error", visitError.message);
+          return jsonResponse({ error: "Could not record profile visit" }, 500);
+        }
+        return jsonResponse({ ok: true, recorded: true });
+      }
+
+      // Only show visits from the last 72 hours by people the profile owner has liked.
+      if (action === "load_profile_visits") {
+        const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+        const visitsResult = await admin.from("profile_visits")
+          .select("visitor_user_id, last_visited_at")
+          .eq("visited_user_id", viewer.id)
+          .gte("last_visited_at", cutoff)
+          .order("last_visited_at", { ascending: false })
+          .limit(200);
+        if (visitsResult.error) {
+          console.error("Profile visits lookup error", visitsResult.error.message);
+          return jsonResponse({ error: "Could not load profile visits" }, 500);
+        }
+        const visitRows = visitsResult.data || [];
+        const visitorIds = [...new Set<string>(visitRows.map((row: any) => row.visitor_user_id))];
+        if (!visitorIds.length) return jsonResponse({ ok: true, visits: [], count: 0 });
+
+        const [likedResult, blockedByViewerResult, blockedViewerResult] = await Promise.all([
+          admin.from("swipes").select("to_user_id").eq("from_user_id", viewer.id).in("to_user_id", visitorIds).in("action", ["like", "super_like"]),
+          admin.from("blocks").select("blocked_user_id").eq("blocker_user_id", viewer.id),
+          admin.from("blocks").select("blocker_user_id").eq("blocked_user_id", viewer.id),
+        ]);
+        if (likedResult.error || blockedByViewerResult.error || blockedViewerResult.error) {
+          console.error("Profile visits privacy filter error", { likes: likedResult.error?.message, blockedByViewer: blockedByViewerResult.error?.message, blockedViewer: blockedViewerResult.error?.message });
+          return jsonResponse({ error: "Could not load profile visits" }, 500);
+        }
+        const likedIds = new Set<string>((likedResult.data || []).map((row: any) => row.to_user_id));
+        const blockedIds = new Set<string>([
+          ...(blockedByViewerResult.data || []).map((row: any) => row.blocked_user_id),
+          ...(blockedViewerResult.data || []).map((row: any) => row.blocker_user_id),
+        ]);
+        const eligibleRows = visitRows.filter((row: any) => likedIds.has(row.visitor_user_id) && !blockedIds.has(row.visitor_user_id));
+        const eligibleIds = [...new Set<string>(eligibleRows.map((row: any) => row.visitor_user_id))];
+        if (!eligibleIds.length) return jsonResponse({ ok: true, visits: [], count: 0 });
+
+        const [profilesResult, photosResult, interestsResult] = await Promise.all([
+          admin.from("profiles").select("id, app_username, display_name, age, gender, country, city, bio, purpose, is_active").in("id", eligibleIds).eq("is_active", true),
+          admin.from("profile_photos").select("user_id, storage_path, sort_order, is_primary").in("user_id", eligibleIds).order("sort_order", { ascending: true }),
+          admin.from("profile_interests").select("user_id, interest, position").in("user_id", eligibleIds).order("position", { ascending: true }),
+        ]);
+        if (profilesResult.error || photosResult.error || interestsResult.error) {
+          console.error("Profile visits profile detail error", { profiles: profilesResult.error?.message, photos: photosResult.error?.message, interests: interestsResult.error?.message });
+          return jsonResponse({ error: "Could not load profile visits" }, 500);
+        }
+        const photosByUser = new Map<string, any[]>();
+        for (const row of photosResult.data || []) {
+          const existing = photosByUser.get(row.user_id) || [];
+          existing.push({ public_url: admin.storage.from(PHOTO_BUCKET).getPublicUrl(row.storage_path).data.publicUrl, sort_order: row.sort_order, is_primary: row.is_primary });
+          photosByUser.set(row.user_id, existing);
+        }
+        const interestsByUser = new Map<string, string[]>();
+        for (const row of interestsResult.data || []) {
+          const existing = interestsByUser.get(row.user_id) || []; existing.push(row.interest); interestsByUser.set(row.user_id, existing);
+        }
+        const profileById = new Map<string, any>();
+        for (const profile of profilesResult.data || []) {
+          const photos = photosByUser.get(profile.id) || [];
+          const primary = photos.find((photo: any) => photo.is_primary) || photos[0] || null;
+          profileById.set(profile.id, { id: profile.id, username: profile.app_username, name: profile.display_name, age: profile.age, gender: profile.gender, location: [profile.city, profile.country].filter(Boolean).join(", "), bio: profile.bio, purpose: profile.purpose, interests: interestsByUser.get(profile.id) || [], photos, photo: primary?.public_url || null });
+        }
+        const visits = eligibleRows.filter((row: any) => profileById.has(row.visitor_user_id)).map((row: any) => ({ ...profileById.get(row.visitor_user_id), last_visited_at: row.last_visited_at }));
+        return jsonResponse({ ok: true, visits, count: visits.length, window_hours: 72 });
+      }
+
+      // List users blocked by the verified viewer; emails are never returned here.
+      if (action === "load_blocked_users") {
+        const blocksResult = await admin.from("blocks").select("blocked_user_id, created_at").eq("blocker_user_id", viewer.id).order("created_at", { ascending: false });
+        if (blocksResult.error) { console.error("Blocked users lookup error", blocksResult.error.message); return jsonResponse({ error: "Could not load blocked users" }, 500); }
+        const blockedIds = [...new Set<string>((blocksResult.data || []).map((row: any) => row.blocked_user_id))];
+        if (!blockedIds.length) return jsonResponse({ ok: true, blockedUsers: [] });
+        const [profilesResult, photosResult] = await Promise.all([
+          admin.from("profiles").select("id, app_username, display_name, age, gender, country, city, bio, purpose, is_active").in("id", blockedIds),
+          admin.from("profile_photos").select("user_id, storage_path, sort_order, is_primary").in("user_id", blockedIds).order("sort_order", { ascending: true }),
+        ]);
+        if (profilesResult.error || photosResult.error) { console.error("Blocked user profile lookup error", { profiles: profilesResult.error?.message, photos: photosResult.error?.message }); return jsonResponse({ error: "Could not load blocked users" }, 500); }
+        const photosByUser = new Map<string, any[]>();
+        for (const row of photosResult.data || []) { const existing = photosByUser.get(row.user_id) || []; existing.push({ public_url: admin.storage.from(PHOTO_BUCKET).getPublicUrl(row.storage_path).data.publicUrl, sort_order: row.sort_order, is_primary: row.is_primary }); photosByUser.set(row.user_id, existing); }
+        const blockedUsers = (profilesResult.data || []).map((profile: any) => { const photos = photosByUser.get(profile.id) || []; const primary = photos.find((photo: any) => photo.is_primary) || photos[0] || null; return { id: profile.id, username: profile.app_username, name: profile.display_name, age: profile.age, gender: profile.gender, location: [profile.city, profile.country].filter(Boolean).join(", "), bio: profile.bio, purpose: profile.purpose, interests: [], photos, photo: primary?.public_url || null }; });
+        return jsonResponse({ ok: true, blockedUsers });
       }
 
       // CHAT INBOX UPDATES: returns unread counts and latest previews without marking messages read.
