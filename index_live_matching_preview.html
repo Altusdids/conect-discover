@@ -1241,7 +1241,7 @@ function renderLiveMessages(messages, forceScroll = false) {
       }
       const receipt = mine ? (message.read_at
         ? '<span class="chat-message-receipt" aria-label="Seen">✓✓</span>'
-        : '<span class="chat-message-receipt" aria-label="Sent">✓✓</span>') : '';
+        : '<span class="chat-message-receipt" aria-label="Sent">✓</span>') : '';
       return separator + '<div class="chat-message ' + (mine ? "mine" : "theirs") + '">' +
         esc(message.body) + (time || receipt ? '<span class="chat-message-time">' + esc(time) + receipt + '</span>' : '') + '</div>';
     }).join("");
