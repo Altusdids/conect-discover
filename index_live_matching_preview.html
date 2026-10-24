@@ -379,8 +379,13 @@ body:has(#portfolioPage:not(.hidden)){overflow:hidden}
  .portfolio-launch-icon{flex-basis:38px;width:38px;height:38px}
 }
 
+
+.global-error-banner{position:fixed;z-index:1000;top:12px;left:12px;right:12px;max-width:650px;margin:0 auto;display:flex;align-items:center;gap:12px;justify-content:space-between;padding:13px 14px;border:1px solid #8e3a42;border-radius:14px;background:#351c22;color:#fff;box-shadow:0 10px 30px #0008;font-size:13px}
+.global-error-banner.hidden{display:none}.global-error-banner button{flex:0 0 auto;background:#5a2b32;border:1px solid #9b5960;border-radius:9px;color:#fff;padding:7px 10px}
+.account-delete-panel{border-color:#6b3037}.account-delete-panel h2{margin:0 0 6px;font-size:17px}.account-delete-panel p{font-size:12px;line-height:1.5}.account-delete-button{background:#53222a;border:1px solid #a74754;color:#fff;border-radius:11px;padding:11px 13px;font-weight:800}.account-delete-status{font-size:12px;margin:10px 0 0;color:#ffb7c0}
 </style></head>
-<body><div class="app">
+<body>
+<div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
 <header><div class="logo">Conect<em>.</em></div><span class="tag">DISCOVER BETA</span></header>
 <div class="notice" id="demoNotice">Conect is in test mode. Demo discovery profiles, likes, and photos are still local to this device. Your verified profile details and interests can sync to Conect’s database; real matching and messaging are coming next.</div>
 <div class="notice hidden" id="telegramAuthStatus" role="status" aria-live="polite"></div>
@@ -446,7 +451,13 @@ body:has(#portfolioPage:not(.hidden)){overflow:hidden}
 <label>Interests</label><div id="profileInterestSummary" class="chips" style="margin:7px 0 12px"></div><button type="button" class="secondary" id="editInterestsBtn">Edit interests</button>
 <label style="display:block;margin-top:14px">Short bio</label><textarea id="myBio" class="field" rows="3" maxlength="180" placeholder="Tell people a little about yourself"></textarea>
 <label>Looking for</label><select id="myPurpose" class="field"><option value="both">Dating and friendship</option><option value="dating">Dating</option><option value="friends">Friendship</option></select>
-<label for="myEmail" style="display:block;margin-top:14px">Email (optional)</label><input id="myEmail" class="field" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com"><p style="font-size:11px;color:var(--muted);margin-top:-7px">Private: this email is not shown on your public profile.</p><button class="primary" id="saveProfile">Save profile</button><p id="profileSaved" style="font-size:12px"></p></div><section class="panel profile-management-panel" aria-label="Profile visits"><div class="profile-management-heading"><div><h2>Profile visits</h2><p>Last 3 days · only people you have liked are shown.</p></div><span id="profileVisitsCount" class="profile-count-pill">0</span></div><div id="profileVisitsList"><div class="profile-management-empty">Checking recent profile visits…</div></div></section><section class="panel profile-management-panel" aria-label="Blocked users"><div class="profile-management-heading"><div><h2>Blocked users</h2><p>Manage people you have blocked.</p></div></div><div id="blockedUsersList"><div class="profile-management-empty">Loading blocked users…</div></div></section></section>
+<label for="myEmail" style="display:block;margin-top:14px">Email (optional)</label><input id="myEmail" class="field" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com"><p style="font-size:11px;color:var(--muted);margin-top:-7px">Private: this email is not shown on your public profile.</p><button class="primary" id="saveProfile">Save profile</button><p id="profileSaved" style="font-size:12px"></p></div><section class="panel profile-management-panel" aria-label="Profile visits"><div class="profile-management-heading"><div><h2>Profile visits</h2><p>Last 3 days · only people you have liked are shown.</p></div><span id="profileVisitsCount" class="profile-count-pill">0</span></div><div id="profileVisitsList"><div class="profile-management-empty">Checking recent profile visits…</div></div></section><section class="panel profile-management-panel" aria-label="Blocked users"><div class="profile-management-heading"><div><h2>Blocked users</h2><p>Manage people you have blocked.</p></div></div><div id="blockedUsersList"><div class="profile-management-empty">Loading blocked users…</div></div></section>
+<section class="panel account-delete-panel" aria-label="Delete account">
+  <h2>Delete your account</h2>
+  <p>Permanently removes your Conect profile, photos, interests, likes, matches, chats, blocks, visits, and reports linked to this account. This cannot be undone.</p>
+  <button type="button" class="account-delete-button" id="deleteAccountBtn" onclick="deleteConectAccount()">Delete account permanently</button>
+  <p id="deleteAccountStatus" class="account-delete-status" role="status" aria-live="polite"></p>
+</section></section>
 <section id="portfolioPage" class="hidden">
   <div class="portfolio-fixed-header">
     <button type="button" class="portfolio-back" onclick="showPage('profilePage')" aria-label="Back to Profile">‹</button>
@@ -952,6 +963,70 @@ async function addProfilePhotos(files) {
 }
 $("profileGalleryInput").addEventListener("change",e=>{addProfilePhotos(e.target.files);e.target.value=""});
 const galleryDrop=$("profilePhotoGallery");galleryDrop.addEventListener("dragover",e=>{e.preventDefault();galleryDrop.classList.add("dragging")});galleryDrop.addEventListener("dragleave",()=>galleryDrop.classList.remove("dragging"));galleryDrop.addEventListener("drop",e=>{e.preventDefault();galleryDrop.classList.remove("dragging");addProfilePhotos(e.dataTransfer.files)});
+function dismissGlobalError() {
+  $("globalErrorBanner")?.classList.add("hidden");
+}
+function showGlobalError() {
+  const banner = $("globalErrorBanner");
+  if (banner) banner.classList.remove("hidden");
+}
+window.addEventListener("error", event => {
+  console.error("Conect runtime error", event.error || event.message);
+  showGlobalError();
+});
+window.addEventListener("unhandledrejection", event => {
+  console.error("Conect unhandled async error", event.reason);
+  showGlobalError();
+});
+
+async function deleteConectAccount() {
+  const status = $("deleteAccountStatus");
+  const button = $("deleteAccountBtn");
+  if (!verifiedTelegramUser || !tg || !tg.initData) {
+    if (status) status.textContent = "Account deletion is available only when Conect is open inside your verified Telegram account.";
+    return;
+  }
+  if (!window.confirm("Permanently delete your Conect account and its associated profile data? This cannot be undone.")) return;
+  const confirmation = window.prompt('To confirm permanent deletion, type DELETE');
+  if (confirmation !== "DELETE") {
+    if (status) status.textContent = "Deletion cancelled. No account data was deleted.";
+    return;
+  }
+  if (button) { button.disabled = true; button.textContent = "Deleting account…"; }
+  if (status) status.textContent = "Removing your photos and account data…";
+  try {
+    await conectBackendRequest("delete_account");
+    clearActiveProfileCache();
+    ["mm2_liked", "mm2_passed", "mm2_matches"].forEach(key => {
+      try { localStorage.removeItem(key); } catch (_) {}
+    });
+    liked = new Set();
+    passed = new Set();
+    matches = new Set();
+    profiles = [];
+    liveLikedProfiles = [];
+    liveIncomingLikes = [];
+    liveMatches = [];
+    liveDiscoveryLoaded = false;
+    liveDiscoveryMode = false;
+    activeChatMatchId = null;
+    chatUnreadCounts.clear();
+    chatMessagePreviews.clear();
+    stopLiveChatPolling();
+    updateChatUnreadBadge();
+    const authStatus = $("telegramAuthStatus");
+    if (authStatus) {
+      authStatus.classList.remove("hidden");
+      authStatus.style.background = "#153320";
+      authStatus.textContent = "Your Conect account and associated data have been deleted. You can create a new profile at any time.";
+    }
+    showPage("signInPage");
+  } catch (error) {
+    if (status) status.textContent = "Could not delete your account: " + (error.message || "request failed");
+    if (button) { button.disabled = false; button.textContent = "Delete account permanently"; }
+  }
+}
+
 function showPage(id){["signInPage","interestsSetupPage","discoverPage","likesPage","chatsPage","morePage","profilePage","portfolioPage","detailPage"].forEach(x=>$(x).classList.toggle("hidden",x!==id));document.querySelector("nav").classList.toggle("hidden",id==="signInPage"||id==="interestsSetupPage");document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id||(id==="portfolioPage"&&b.dataset.page==="profilePage")));if(id==="likesPage")renderLikes();if(id==="chatsPage")renderChats();if(id==="profilePage"){ $("myUsername").value=currentUsername;$("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("myBio").value=myProfile.bio||"";$("myPurpose").value=myProfile.purpose||"both";$("profilePagePhoto").src=myProfile.photo||"";$("profileHeroName").textContent=(myProfile.name||"Your name")+(myProfile.age?", "+myProfile.age:"");$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+(myProfile.loc||"Add your location");renderProfilePhotos();$("profileInterestSummary").innerHTML=(myProfile.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join("")||"No interests selected yet.";if($("myEmail"))$("myEmail").value=myProfile.email||"";void loadProfileVisits();void loadBlockedUsers();}}
 function likeDetailProfile(profileId){if(liveDiscoveryMode){void recordLiveSwipe(profileId,"like",true);return}const p=profiles.find(x=>String(x.id)===String(profileId));if(p)likePerson(p.id)}
 function passDetailProfile(profileId){if(liveDiscoveryMode){void recordLiveSwipe(profileId,"pass",false);showPage("discoverPage");return}const p=profiles.find(x=>String(x.id)===String(profileId));if(!p)return;passed.add(p.id);persist();index=0;renderAll();showPage("discoverPage")}
