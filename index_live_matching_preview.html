@@ -459,57 +459,72 @@ body:has(#portfolioPage:not(.hidden)){overflow:hidden}
 </section>
 <section id="discoverPage" class="hidden">
 <div class="discover-fixed-header">
-  <div class="discover-heading"><h1>Discover people.</h1><p>Scroll up to explore profiles.</p></div>
-  <button type="button" class="smallbtn feed-filter-button" id="filterBtn" aria-haspopup="dialog" aria-controls="feedFilterOverlay"><span>⚙ Filters</span><span id="activePurposeLabel">Everyone</span></button>
+  <div class="discover-heading"><h1 data-i18n="discover.title">Discover people.</h1><p data-i18n="discover.subtitle">Scroll up to explore profiles.</p></div>
+  <button type="button" class="smallbtn feed-filter-button" id="filterBtn" aria-haspopup="dialog" aria-controls="feedFilterOverlay"><span data-i18n="filter.button">⚙ Filters</span><span id="activePurposeLabel">Everyone</span></button>
 </div>
 <div id="swipeView" class="profile-feed-wrap"><div id="profileScrollFeed" class="profile-scroll-feed" aria-label="Discover profiles"></div></div>
 <div id="gridView" class="hidden"></div>
 </section>
 <div id="feedFilterOverlay" class="feed-filter-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="feedFilterTitle" onclick="if(event.target===this)closeFeedFilters()">
   <div class="feed-filter-sheet">
-    <div class="feed-filter-sheet-head"><div><h2 id="feedFilterTitle">Discovery filters</h2><p>Choose the kind of connections you want to see.</p></div><button type="button" class="feed-filter-close" aria-label="Close filters" onclick="closeFeedFilters()">×</button></div>
-    <h3>I'm here for</h3>
+    <div class="feed-filter-sheet-head"><div><h2 id="feedFilterTitle" data-i18n="filter.title">Discovery filters</h2><p data-i18n="filter.subtitle">Choose the kind of connections you want to see.</p></div><button type="button" class="feed-filter-close" aria-label="Close filters" onclick="closeFeedFilters()">×</button></div>
+    <h3 data-i18n="filter.purpose">I'm here for</h3>
     <div class="feed-filter-purpose" role="group" aria-label="Discovery purpose">
-      <button type="button" data-purpose="both" class="active" aria-pressed="true">Everyone</button>
-      <button type="button" data-purpose="dating" aria-pressed="false">Dating</button>
-      <button type="button" data-purpose="friends" aria-pressed="false">Friends</button>
+      <button type="button" data-purpose="both" class="active" aria-pressed="true" data-i18n="filter.everyone">Everyone</button>
+      <button type="button" data-purpose="dating" aria-pressed="false" data-i18n="filter.dating">Dating</button>
+      <button type="button" data-purpose="friends" aria-pressed="false" data-i18n="filter.friends">Friends</button>
     </div>
     <div class="feed-filter-fields">
-      <label class="feed-filter-field" for="filterMinAge"><span>Minimum age</span><input id="filterMinAge" type="number" min="18" max="99" step="1" value="18" inputmode="numeric"></label>
-      <label class="feed-filter-field" for="filterMaxAge"><span>Maximum age</span><input id="filterMaxAge" type="number" min="18" max="99" step="1" value="99" inputmode="numeric"></label>
-      <label class="feed-filter-field" for="filterLocationScope" style="grid-column:1/-1"><span>Location</span><select id="filterLocationScope"><option value="any">Anywhere</option><option value="city">Same city</option><option value="country">Same country</option></select></label>
+      <label class="feed-filter-field" for="filterMinAge"><span data-i18n="filter.minAge">Minimum age</span><input id="filterMinAge" type="number" min="18" max="99" step="1" value="18" inputmode="numeric"></label>
+      <label class="feed-filter-field" for="filterMaxAge"><span data-i18n="filter.maxAge">Maximum age</span><input id="filterMaxAge" type="number" min="18" max="99" step="1" value="99" inputmode="numeric"></label>
+      <label class="feed-filter-field" for="filterLocationScope" style="grid-column:1/-1"><span data-i18n="filter.location">Location</span><select id="filterLocationScope"><option value="any" data-i18n="filter.anywhere">Anywhere</option><option value="city" data-i18n="filter.sameCity">Same city</option><option value="country" data-i18n="filter.sameCountry">Same country</option></select></label>
     </div>
     <div class="feed-filter-subsection">
-      <h3>Profile preferences</h3>
+      <h3 data-i18n="filter.preferences">Profile preferences</h3>
       <div class="feed-filter-checks">
-        <label class="feed-filter-check"><input id="filterSharedInterests" type="checkbox"><span>Share at least one interest<small>Only show people who share an interest from your profile.</small></span></label>
-        <label class="feed-filter-check"><input id="filterWithPhotos" type="checkbox"><span>Only profiles with photos<small>Hide profiles without an uploaded profile picture.</small></span></label>
+        <label class="feed-filter-check"><input id="filterSharedInterests" type="checkbox"><span><span data-i18n="filter.sharedInterest">Share at least one interest</span><small data-i18n="filter.sharedInterestHelp">Only show people who share an interest from your profile.</small></span></label>
+        <label class="feed-filter-check"><input id="filterWithPhotos" type="checkbox"><span><span data-i18n="filter.withPhotos">Only profiles with photos</span><small data-i18n="filter.withPhotosHelp">Hide profiles without an uploaded profile picture.</small></span></label>
       </div>
     </div>
     <p class="feed-filter-note">Location uses the city and country written on profiles; it doesn't calculate distance. Filters narrow the profiles available to you.</p>
     <p class="feed-filter-error" id="feedFilterError" role="alert" aria-live="polite"></p>
-    <div class="feed-filter-actions"><button type="button" class="secondary" onclick="resetFeedFilters()">Reset</button><button type="button" class="primary" onclick="applyFeedFilters()">Show profiles</button></div>
+    <div class="feed-filter-actions"><button type="button" class="secondary" onclick="resetFeedFilters()" data-i18n="common.reset">Reset</button><button type="button" class="primary" onclick="applyFeedFilters()" data-i18n="filter.showProfiles">Show profiles</button></div>
   </div>
 </div>
 <section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="liked" role="tab" aria-selected="true"><span>Liked</span><span class="likes-tab-badge" data-likes-count="liked">0</span></button><button data-likes-tab="matches" role="tab" aria-selected="false"><span>Matches</span><span class="likes-tab-badge" data-likes-count="matches">0</span></button><button data-likes-tab="likes" role="tab" aria-selected="false"><span>Likes</span><span class="likes-tab-badge" data-likes-count="likes">0</span></button></div><div class="likes-view-toolbar"><span id="likesResultsLabel">People</span><div class="likes-view-toggle" role="group" aria-label="Change profile layout"><button type="button" id="likesListMode" class="active" aria-pressed="true" onclick="setLikesView('list')" title="List view" aria-label="List view">☰</button><button type="button" id="likesGridMode" aria-pressed="false" onclick="setLikesView('grid')" title="Grid view" aria-label="Grid view">▦</button></div></div><div id="likesList"></div></section>
 <section id="chatsPage" class="hidden"><div id="chatInboxControls"></div><div id="chatList"></div></section>
-<section id="morePage" class="hidden"><h1>More</h1><p>More ways to manage your Conect experience.</p><div class="panel"><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('profilePage')">♙  Edit my profile</button><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('likesPage')">♡  My likes and matches</button><button class="secondary" style="width:100%" onclick="showPage('settingsPage')">⚙  Settings & help</button></div></section>
+<section id="morePage" class="hidden"><h1 data-i18n="nav.more">More</h1><p data-i18n="more.intro">More ways to manage your Conect experience.</p><div class="panel"><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('profilePage')">♙  <span data-i18n="settings.editProfile">Edit my profile</span></button><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('likesPage')">♡  <span data-i18n="more.likesMatches">My likes and matches</span></button><button class="secondary" style="width:100%" onclick="showPage('settingsPage')">⚙  <span data-i18n="settings.title">Settings &amp; help</span></button></div></section>
 <section id="settingsPage" class="hidden">
-  <button type="button" class="secondary" style="margin:0 0 12px" onclick="showPage('morePage')">‹ Back to More</button>
-  <h1>Settings &amp; help</h1>
-  <p>Manage your account and important privacy actions.</p>
-  <div class="panel"><h2 style="font-size:17px;margin:0 0 6px">Account</h2><p style="font-size:12px">Your profile and preferences are managed in Profile.</p><button type="button" class="secondary" style="width:100%" onclick="showPage('profilePage')">Edit my profile</button></div>
+  <button type="button" class="secondary" style="margin:0 0 12px" onclick="showPage('morePage')" data-i18n="common.backMore">‹ Back to More</button>
+  <h1 data-i18n="settings.title">Settings &amp; help</h1>
+  <p data-i18n="settings.intro">Manage your account and important privacy actions.</p>
+  <div class="panel language-panel" aria-label="Language settings">
+    <h2 style="font-size:17px;margin:0 0 6px" data-i18n="language.title">Choose your language</h2>
+    <p style="font-size:12px" data-i18n="language.help">Select the language you want to use in Conect.</p>
+    <label for="appLanguageSelect" data-i18n="language.label">App language</label>
+    <select id="appLanguageSelect" class="field" style="margin-top:7px;margin-bottom:0">
+      <option value="ru">🇷🇺 Русский</option>
+      <option value="en">🇬🇧 English</option>
+      <option value="uz">🇺🇿 O‘zbekcha</option>
+      <option value="es">🇪🇸 Español</option>
+      <option value="tr">🇹🇷 Türkçe</option>
+      <option value="id">🇮🇩 Bahasa Indonesia</option>
+      <option value="zh">🇨🇳 中文</option>
+    </select>
+    <p id="languageSaveStatus" style="font-size:11px;margin:8px 0 0" role="status" aria-live="polite"></p>
+  </div>
+  <div class="panel"><h2 style="font-size:17px;margin:0 0 6px" data-i18n="settings.account">Account</h2><p style="font-size:12px" data-i18n="settings.accountDescription">Your profile and preferences are managed in Profile.</p><button type="button" class="secondary" style="width:100%" onclick="showPage('profilePage')" data-i18n="settings.editProfile">Edit my profile</button></div>
   <div class="panel" aria-label="Privacy and safety resources">
-    <h2 style="font-size:17px;margin:0 0 6px">Privacy &amp; safety</h2>
-    <p style="font-size:12px">Learn what information Conect uses, how to stay safe, and what happens when you delete your account.</p>
-    <a class="secondary" href="./privacy-policy.html" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px">Privacy policy</a>
-    <a class="secondary" href="./community-guidelines.html" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px">Community guidelines</a>
-    <a class="secondary" href="./account-deletion.html" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;text-decoration:none">How account deletion works</a>
+    <h2 style="font-size:17px;margin:0 0 6px" data-i18n="settings.privacy">Privacy &amp; safety</h2>
+    <p style="font-size:12px" data-i18n="settings.privacyDescription">Learn what information Conect uses, how to stay safe, and what happens when you delete your account.</p>
+    <a class="secondary" href="./privacy-policy.html" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px" data-i18n="settings.privacyPolicy">Privacy policy</a>
+    <a class="secondary" href="./community-guidelines.html" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px" data-i18n="settings.communityGuidelines">Community guidelines</a>
+    <a class="secondary" href="./account-deletion.html" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;text-decoration:none" data-i18n="settings.deletionGuide">How account deletion works</a>
   </div>
   <section class="panel account-delete-panel" aria-label="Delete account">
-  <h2>Delete your account</h2>
+  <h2 data-i18n="settings.deleteAccount">Delete your account</h2>
   <p>Permanently removes your Conect profile, photos, interests, likes, matches, chats, blocks, visits, and reports linked to this account. This cannot be undone.</p>
-  <button type="button" class="account-delete-button" id="deleteAccountBtn" onclick="deleteConectAccount()">Delete account permanently</button>
+  <button type="button" class="account-delete-button" id="deleteAccountBtn" onclick="deleteConectAccount()" data-i18n="settings.deleteAccountButton">Delete account permanently</button>
   <p id="deleteAccountStatus" class="account-delete-status" role="status" aria-live="polite"></p>
 </section>
 </section>
@@ -553,7 +568,7 @@ body:has(#portfolioPage:not(.hidden)){overflow:hidden}
 <div class="basics-actions"><button type="button" class="secondary" id="cancelBasicsBtn">Cancel</button><button type="button" class="primary" id="saveBasicsBtn">Save</button></div></div></div>
 <section id="detailPage" class="hidden"><button class="secondary" id="backDiscover">← Back to discover</button><div id="detailContent" class="panel"></div></section>
 </div>
-<nav aria-label="Main navigation"><button class="active" data-page="discoverPage"><b>✥</b>Feed</button><button data-page="likesPage"><b>♥<span class="nav-badge hidden" id="likesBadge">0</span></b>Likes</button><button data-page="chatsPage"><b>▣<span class="nav-badge hidden" id="chatsBadge">0</span></b>Chats</button><button data-page="morePage"><b>♣</b>More</button><button data-page="profilePage"><b>♟</b>Profile</button></nav>
+<nav aria-label="Main navigation"><button class="active" data-page="discoverPage"><b>✥</b><span data-i18n="nav.feed">Feed</span></button><button data-page="likesPage"><b>♥<span class="nav-badge hidden" id="likesBadge">0</span></b><span data-i18n="nav.likes">Likes</span></button><button data-page="chatsPage"><b>▣<span class="nav-badge hidden" id="chatsBadge">0</span></b><span data-i18n="nav.chats">Chats</span></button><button data-page="morePage"><b>♣</b><span data-i18n="nav.more">More</span></button><button data-page="profilePage"><b>♟</b><span data-i18n="nav.profile">Profile</span></button></nav>
 <script>
 const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#101116');tg.setBackgroundColor('#101116')}catch(e){}}
 let profiles=[
