@@ -793,7 +793,8 @@ async function loadLiveExperience(options = {}) {
   if (liveDiscoveryLoaded && !options.force) return true;
   liveDiscoveryMode = true;
   liveProfilesLoading = true;
-  $("demoNotice").textContent = "Live Conect mode: discovery profiles and likes are connected to your account. Messaging is the next stage.";
+  $("demoNotice").classList.add("hidden");
+  $("demoNotice").textContent = "Live Conect mode: discovery, likes, matches, and messaging are connected.";
   renderAll();
   try {
     const discovery = await conectBackendRequest("load_discovery");
@@ -801,9 +802,9 @@ async function loadLiveExperience(options = {}) {
     profiles = discovery.profiles.map(mapConectProfile);
     liveDiscoveryLoaded = true;
     await loadLiveRelationships();
-    $("telegramAuthStatus").classList.remove("hidden");
+    $("telegramAuthStatus").classList.add("hidden");
     $("telegramAuthStatus").style.background = "#153320";
-    $("telegramAuthStatus").textContent = "Your profile is connected. Discovery, likes, and mutual matches are synced with Conect.";
+    $("telegramAuthStatus").textContent = "Your profile is connected. Discovery, likes, matches, and messaging are synced with Conect.";
     return true;
   } catch (error) {
     profiles = [];
@@ -1277,6 +1278,7 @@ async function openLiveChat(matchId) {
   }
   stopLiveChatPolling();
   activeChatMatchId = String(match.id);
+  $("chatInboxControls").innerHTML = "";
   renderLiveChatShell();
   await loadLiveMessages(false);
   const selectedId = activeChatMatchId;
