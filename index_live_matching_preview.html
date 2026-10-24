@@ -48,6 +48,9 @@ h1{font-size:29px;line-height:1.1;letter-spacing:-1px;margin:7px 0}p{color:var(-
  .chat-list-date{flex:0 0 auto;font-size:11px;color:var(--muted)}
  .chat-list-preview{font-size:13px;color:#a7a7b2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}
  .chat-list-preview.unread{color:#f4edf2;font-weight:650}
+ .chat-list-unread{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 5px;border-radius:12px;background:#e83d72;color:#fff;font-size:10px;font-weight:850;line-height:1;flex:0 0 auto}
+ .chat-list-date-wrap{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex:0 0 auto}
+
  .chat-request-intro{font-size:13px;color:var(--muted);margin:0 0 12px}
  .chat-request-row{padding:13px 2px;border-bottom:1px solid #2a2b30;display:flex;align-items:center;gap:12px}
  .chat-request-body{flex:1;min-width:0}
@@ -191,7 +194,7 @@ nav button.active{color:#ef4a7a;background:#303233}nav b{display:block;font-size
 <div class="basics-actions"><button type="button" class="secondary" id="cancelBasicsBtn">Cancel</button><button type="button" class="primary" id="saveBasicsBtn">Save</button></div></div></div>
 <section id="detailPage" class="hidden"><button class="secondary" id="backDiscover">← Back to discover</button><div id="detailContent" class="panel"></div></section>
 </div>
-<nav aria-label="Main navigation"><button class="active" data-page="discoverPage"><b>✥</b>Feed</button><button data-page="likesPage"><b>♥<span class="nav-badge hidden" id="likesBadge">4</span></b>Likes</button><button data-page="chatsPage"><b>▣</b>Chats</button><button data-page="morePage"><b>♣</b>More</button><button data-page="profilePage"><b>♟</b>Profile</button></nav>
+<nav aria-label="Main navigation"><button class="active" data-page="discoverPage"><b>✥</b>Feed</button><button data-page="likesPage"><b>♥<span class="nav-badge hidden" id="likesBadge">4</span></b>Likes</button><button data-page="chatsPage"><b>▣<span class="nav-badge hidden" id="chatsBadge">0</span></b>Chats</button><button data-page="morePage"><b>♣</b>More</button><button data-page="profilePage"><b>♟</b>Profile</button></nav>
 <script>
 const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#101116');tg.setBackgroundColor('#101116')}catch(e){}}
 let profiles=[
@@ -451,6 +454,9 @@ let liveChatSendBusy = false;
 let showChatRequests = false;
 let chatSearchQuery = "";
 const chatMessagePreviews = new Map();
+const chatUnreadCounts = new Map();
+let chatInboxRefreshTimer = null;
+let chatInboxUpdatesBusy = false;
 
 function filtered(){return profiles.filter(p=>(purpose==="both"||p.purpose.includes(purpose))&&!passed.has(p.id)&&!liked.has(p.id))}
 function chips(p){return p.interests.map(i=>`<span class="chip">${esc(i)}</span>`).join("")}
@@ -802,6 +808,7 @@ async function loadLiveExperience(options = {}) {
     profiles = discovery.profiles.map(mapConectProfile);
     liveDiscoveryLoaded = true;
     await loadLiveRelationships();
+    startChatInboxUpdates();
     $("telegramAuthStatus").classList.add("hidden");
     $("telegramAuthStatus").style.background = "#153320";
     $("telegramAuthStatus").textContent = "Your profile is connected. Discovery, likes, matches, and messaging are synced with Conect.";
@@ -987,6 +994,51 @@ function renderLikes() {
     esc(p.loc) + '</div></div><button class="secondary" onclick="showDetail(' + p.id + ')">View</button></div>').join("") ||
     '<div class="panel empty">' + empty + '</div>';
 }
+function updateChatUnreadBadge() {
+  const badge = $("chatsBadge");
+  const total = [...chatUnreadCounts.values()].reduce((sum, count) => sum + Math.max(0, Number(count) || 0), 0);
+  if (badge) {
+    badge.textContent = total > 99 ? "99+" : String(total);
+    badge.classList.toggle("hidden", total < 1);
+    badge.setAttribute("aria-label", total + " unread messages");
+  }
+}
+async function loadChatInboxUpdates(silent = true) {
+  if (!liveDiscoveryMode || !liveDiscoveryLoaded || !verifiedTelegramUser || chatInboxUpdatesBusy) return;
+  chatInboxUpdatesBusy = true;
+  try {
+    const result = await conectBackendRequest("load_chat_updates");
+    const updates = Array.isArray(result.updates) ? result.updates : [];
+    chatUnreadCounts.clear();
+    for (const update of updates) {
+      const matchId = String(update.match_id);
+      const unread = Math.max(0, Number(update.unread_count) || 0);
+      chatUnreadCounts.set(matchId, unread);
+      if (update.latest) {
+        chatMessagePreviews.set(matchId, {
+          body: String(update.latest.body || ""),
+          mine: update.latest.is_mine === true,
+          created_at: update.latest.created_at || null
+        });
+      }
+    }
+    updateChatUnreadBadge();
+    if (!$("chatsPage").classList.contains("hidden") && !activeChatMatchId && !showChatRequests) {
+      renderChatList();
+    }
+  } catch (error) {
+    if (!silent) console.warn("Could not refresh unread chat counts", error);
+  } finally {
+    chatInboxUpdatesBusy = false;
+  }
+}
+function startChatInboxUpdates() {
+  if (chatInboxRefreshTimer !== null) clearInterval(chatInboxRefreshTimer);
+  void loadChatInboxUpdates(true);
+  chatInboxRefreshTimer = setInterval(() => {
+    if (!document.hidden) void loadChatInboxUpdates(true);
+  }, 8000);
+}
 function chatAvatarMarkup(profile, extraClass = "") {
   const name = String(profile && profile.name || "Conect member");
   const initial = String(profile && profile.initial || name.trim().charAt(0).toUpperCase() || "C");
@@ -1037,6 +1089,7 @@ function renderChatList() {
     root.innerHTML = '<div class="chat-list">' + matchesToShow.map(item => {
       const p = item.profile;
       const preview = chatMessagePreviews.get(String(item.id));
+      const unread = chatUnreadCounts.get(String(item.id)) || 0;
       const latest = preview
         ? (preview.mine ? "You: " : "") + preview.body
         : "You matched on Conect · Say hello 👋";
@@ -1057,8 +1110,10 @@ function renderChatList() {
       return '<button type="button" class="chat-list-row" onclick="openLiveChat(\'' + esc(item.id) + '\')" aria-label="Open chat with ' + esc(p.name) + '">' +
         chatAvatarMarkup(p) +
         '<span class="chat-list-body"><span class="chat-list-top"><span class="chat-list-name">' + esc(p.name) +
-        (p.age ? ', ' + esc(p.age) : '') + '</span><span class="chat-list-date">' + esc(when) + '</span></span>' +
-        '<span class="chat-list-preview">' + esc(latest) + '</span></span></button>';
+        (p.age ? ', ' + esc(p.age) : '') + '</span><span class="chat-list-date-wrap"><span class="chat-list-date">' + esc(when) + '</span>' +
+        (unread ? '<span class="chat-list-unread" aria-label="' + unread + ' unread messages">' + (unread > 99 ? '99+' : unread) + '</span>' : '') +
+        '</span></span>' +
+        '<span class="chat-list-preview' + (unread ? ' unread' : '') + '">' + esc(latest) + '</span></span></button>';
     }).join("") + '</div>';
     return;
   }
@@ -1281,6 +1336,7 @@ async function openLiveChat(matchId) {
   $("chatInboxControls").innerHTML = "";
   renderLiveChatShell();
   await loadLiveMessages(false);
+  void loadChatInboxUpdates(true);
   const selectedId = activeChatMatchId;
   chatRefreshTimer = setInterval(() => {
     if (activeChatMatchId === selectedId) void loadLiveMessages(true);
@@ -1290,6 +1346,7 @@ function closeLiveChat() {
   activeChatMatchId = null;
   stopLiveChatPolling();
   renderChats();
+  void loadChatInboxUpdates(true);
 }
 async function sendLiveMessage() {
   if (liveChatSendBusy || !activeChatMatchId) return;
