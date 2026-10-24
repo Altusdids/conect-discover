@@ -767,6 +767,7 @@ function renderSwipe() {
     ? '<img src="' + esc(p.img) + '" alt="Profile photo">'
     : '<div style="width:100%;height:100%;display:grid;place-items:center;font-size:72px;font-weight:800;color:#ffffffb8">' + esc(p.initial) + '</div>';
   const badge = liveDiscoveryMode ? "✦ CONECT MEMBER" : "♥ " + p.match + "% match";
+  const onlineIndicator = liveDiscoveryMode ? "" : ' <span class="online"></span>';
   const id = inlineProfileId(p.id);
   $("hero").innerHTML = image +
     '<div class="match">' + badge + '</div>' +
@@ -777,7 +778,7 @@ function renderSwipe() {
     '<button class="side-action" aria-label="Chats" title="Chats" onclick="showPage(\'chatsPage\')">▣</button>' +
     '<button class="side-action" aria-label="Pass profile" title="Pass" onclick="act(\'pass\')">×</button>' +
     '</div><div class="onphoto"><h2>' + esc(p.name) + (p.age ? ', ' + esc(p.age) : '') +
-    ' <span class="online"></span></h2><div class="location">⌖ ' + esc(p.loc) +
+    onlineIndicator + '</h2><div class="location">⌖ ' + esc(p.loc) +
     '</div><div class="bio">' + esc(p.bio) + '</div><div class="chips">' + chips(p) +
     '</div><button class="smallbtn" style="margin-top:12px" onclick="showDetail(' + id + ')">View full profile ↗</button></div>';
   $("counter").textContent = liveDiscoveryMode
