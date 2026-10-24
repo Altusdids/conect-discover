@@ -482,7 +482,7 @@ body:has(#portfolioPage:not(.hidden)){overflow:hidden}
 <button type="button" class="profile-hero" id="openBasicsBtn" aria-label="Edit basic profile details">
 <img id="profilePagePhoto" class="profile-hero-photo" alt="Your profile picture">
 <div class="profile-hero-meta"><strong id="profileHeroName">Your name</strong><span id="profileHeroDetails">@username · Add your details</span><span style="color:#ff805b;margin-top:4px">Tap photo to edit basics ✎</span></div><span style="font-size:22px;color:var(--muted)">›</span></button>
-<section class="photo-gallery-panel" aria-label="Profile photos"><div class="photo-gallery-head"><p class="photo-gallery-title">Your profile photos</p><button type="button" class="secondary change-main-photo-btn" id="changeMainPhotoBtn">Change main photo</button></div><p class="photo-gallery-help" style="margin:0 0 12px">Your main photo appears first in the Feed.</p><div id="profilePhotoGallery" class="photo-gallery-grid photo-gallery-drop"><button type="button" class="photo-gallery-tile photo-gallery-add" id="addProfilePhotosBtn" aria-label="Add profile photos">+</button></div><input id="profileGalleryInput" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden><input id="mainPhotoCropInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><p class="photo-gallery-help" id="profileGalleryHelp">Tap + to add gallery photos · 0/6</p></section><div class="panel"><label>Username</label><input id="myUsername" class="field" disabled><p style="font-size:12px">Your username is set at sign-in in this prototype.</p>
+<section class="photo-gallery-panel" aria-label="Profile photos"><div class="photo-gallery-head"><p class="photo-gallery-title">Your profile photos</p><button type="button" class="secondary change-main-photo-btn" id="changeMainPhotoBtn">Change main photo</button></div><p class="photo-gallery-help" style="margin:0 0 12px">Your main photo appears first in the Feed.</p><div id="profilePhotoGallery" class="photo-gallery-grid photo-gallery-drop"><button type="button" class="photo-gallery-tile photo-gallery-add" id="addProfilePhotosBtn" aria-label="Add profile photos">+</button></div><input id="profileGalleryInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><input id="mainPhotoCropInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><p class="photo-gallery-help" id="profileGalleryHelp">Tap + to add gallery photos · 0/6</p></section><div class="panel"><label>Username</label><input id="myUsername" class="field" disabled><p style="font-size:12px">Your username is set at sign-in in this prototype.</p>
 <label>Interests</label><div id="profileInterestSummary" class="chips" style="margin:7px 0 12px"></div><button type="button" class="secondary" id="editInterestsBtn">Edit interests</button>
 <label style="display:block;margin-top:14px">Short bio</label><textarea id="myBio" class="field" rows="3" maxlength="180" placeholder="Tell people a little about yourself"></textarea>
 <label>Looking for</label><select id="myPurpose" class="field"><option value="both">Dating and friendship</option><option value="dating">Dating</option><option value="friends">Friendship</option></select>
@@ -888,56 +888,19 @@ function renderProfilePhotos() {
     const src = photoSource(photo);
     const mainTag = i === 0
       ? '<span class="photo-gallery-main current" aria-label="Current main photo">Main photo ✓</span>'
-      : '<button type="button" class="photo-gallery-main" data-main-photo="' + i + '">Set as main</button>';
+      : '';
     return '<div class="photo-gallery-tile"><img src="' + esc(src) + '" alt="Profile photo ' + (i + 1) + '">' + mainTag +
       '<button type="button" class="photo-gallery-remove" data-remove-photo="' + i + '" aria-label="Remove photo ' + (i + 1) + '">×</button></div>';
   }).join("");
   if (profilePhotos.length < 6) {
     root.insertAdjacentHTML("beforeend", '<button type="button" class="photo-gallery-tile photo-gallery-add" id="addProfilePhotosBtn" aria-label="Add profile photos">+</button>');
   }
-  $("profileGalleryHelp").textContent = 'Tap “Set as main” on any uploaded photo to use it in your Feed · ' + profilePhotos.length + '/6';
+  $("profileGalleryHelp").textContent = 'Your main photo is marked first. New photos can be cropped before adding · ' + profilePhotos.length + '/6';
   const add = $("addProfilePhotosBtn");
   if (add) add.onclick = () => $("profileGalleryInput").click();
   root.querySelectorAll("[data-remove-photo]").forEach(btn => {
     btn.onclick = () => removeProfilePhoto(Number(btn.dataset.removePhoto));
   });
-  root.querySelectorAll("[data-main-photo]").forEach(btn => {
-    btn.onclick = () => setMainProfilePhoto(Number(btn.dataset.mainPhoto));
-  });
-}
-
-async function setMainProfilePhoto(index) {
-  if (!Number.isInteger(index) || index < 0 || index >= profilePhotos.length) return;
-  if (index === 0) return;
-  const previous = [...profilePhotos];
-  const photo = profilePhotos[index];
-  const buttons = $("profilePhotoGallery").querySelectorAll("[data-main-photo]");
-  buttons.forEach(button => { button.disabled = true; });
-  try {
-    if (isStoragePhoto(photo)) {
-      if (!verifiedTelegramUser || !tg?.initData) throw new Error("Open Conect inside Telegram to change your main photo.");
-      const result = await conectBackendRequest("set_primary_photo", undefined, { photoId: String(photo.id) });
-      if (!Array.isArray(result.photos)) throw new Error("The server did not return the updated photo gallery.");
-      profilePhotos = result.photos;
-    } else {
-      profilePhotos = [photo, ...profilePhotos.filter((_, i) => i !== index)];
-      saveProfilePhotos();
-      if (liveDiscoveryMode && verifiedTelegramUser) {
-        await syncCurrentProfile();
-        await syncLocalPhotosToServer();
-      }
-    }
-    saveProfilePhotos();
-    renderProfilePhotos();
-    const status = $("profileSaved");
-    if (status) status.textContent = "Main profile photo updated.";
-  } catch (error) {
-    profilePhotos = previous;
-    saveProfilePhotos();
-    renderProfilePhotos();
-    const status = $("profileSaved");
-    if (status) status.textContent = "Could not change the main photo: " + (error.message || "request failed");
-  }
 }
 
 function saveProfilePhotos() {
@@ -1007,6 +970,10 @@ function compressGalleryImage(file) {
   });
 }
 
+// Gallery uploads use the same crop editor as the main photo. When several
+// files are dropped together, crop and save them one at a time.
+let photoCropQueue = [];
+
 async function addProfilePhotos(files) {
   const incoming = Array.from(files || []).filter(f =>
     ["image/jpeg", "image/png", "image/webp"].includes(f.type)
@@ -1015,40 +982,31 @@ async function addProfilePhotos(files) {
     alert("Choose JPEG, PNG, or WebP images.");
     return;
   }
-  let available = 6 - profilePhotos.length;
-  if (available <= 0) {
-    alert("You can add up to 6 profile photos. Remove a photo first.");
-    return;
-  }
-  const chosen = incoming.slice(0, available);
   try {
-    const compressed = [];
-    for (const file of chosen) compressed.push(await compressGalleryImage(file));
-
-    const online = Boolean(tg && tg.initData && verifiedTelegramUser);
-    if (online) {
+    if (liveDiscoveryMode && verifiedTelegramUser && tg?.initData) {
       await syncCurrentProfile();
       await syncLocalPhotosToServer();
-      available = 6 - profilePhotos.length;
-      if (available <= 0) throw new Error("You can have up to 6 profile photos. Remove one first.");
     }
-
-    const accepted = compressed.slice(0, available);
-    if (online) {
-      for (const dataUrl of accepted) {
-        const uploaded = await uploadPhotoDataUrl(dataUrl);
-        profilePhotos.push(uploaded);
-        saveProfilePhotos();
-        renderProfilePhotos();
-      }
-    } else {
-      profilePhotos.push(...accepted);
-      saveProfilePhotos();
-      renderProfilePhotos();
+    const available = 6 - profilePhotos.length;
+    if (available <= 0) {
+      alert("You can add up to 6 profile photos. Remove a photo first.");
+      return;
     }
+    photoCropQueue = incoming.slice(0, available);
+    if (incoming.length > available) {
+      alert("You can have up to 6 profile photos. Only the first " + available + " selected photo(s) will be added.");
+    }
+    openNextGalleryPhotoCrop();
   } catch (error) {
-    alert(error.message || "Could not add the selected photos.");
+    photoCropQueue = [];
+    alert(error.message || "Could not prepare the gallery. Please try again.");
   }
+}
+
+function openNextGalleryPhotoCrop() {
+  if (!photoCropQueue.length) return;
+  const file = photoCropQueue.shift();
+  openPhotoCropFromFile(file, "add-gallery");
 }
 $("profileGalleryInput").addEventListener("change",e=>{addProfilePhotos(e.target.files);e.target.value=""});
 const galleryDrop=$("profilePhotoGallery");galleryDrop.addEventListener("dragover",e=>{e.preventDefault();galleryDrop.classList.add("dragging")});galleryDrop.addEventListener("dragleave",()=>galleryDrop.classList.remove("dragging"));galleryDrop.addEventListener("drop",e=>{e.preventDefault();galleryDrop.classList.remove("dragging");addProfilePhotos(e.dataTransfer.files)});
@@ -1163,8 +1121,12 @@ function cropImageReady(image, fileName, purpose = "setup") {
   $("photoCropZoom").value = "1";
   $("photoCropZoomValue").textContent = "1.0×";
   photoCropState = { image, fileName: fileName || "profile-photo.jpg", purpose, zoom: 1, panX: 0, panY: 0, dragging: false, lastX: 0, lastY: 0 };
-  $("photoCropTitle").textContent = purpose === "replace-main" ? "Crop your new main photo" : "Crop your main photo";
-  $("applyPhotoCropBtn").textContent = purpose === "replace-main" ? "Save main photo" : "Use photo";
+  $("photoCropTitle").textContent = purpose === "replace-main"
+    ? "Crop your new main photo"
+    : purpose === "add-gallery" ? "Crop new gallery photo" : "Crop your main photo";
+  $("applyPhotoCropBtn").textContent = purpose === "replace-main"
+    ? "Save main photo"
+    : purpose === "add-gallery" ? "Crop & add photo" : "Use photo";
   img.src = image.src;
   modal.classList.remove("hidden");
   document.body.style.overflow = "hidden";
@@ -1211,11 +1173,13 @@ function renderPhotoCrop() {
   img.style.top = ((h - rh) / 2 + photoCropState.panY) + "px";
   $("photoCropZoomValue").textContent = photoCropState.zoom.toFixed(1) + "×";
 }
-function cancelPhotoCrop() {
+function cancelPhotoCrop(keepGalleryQueue = false) {
+  const wasGalleryCrop = photoCropState?.purpose === "add-gallery";
   photoCropState = null;
   $("photoCropModal").classList.add("hidden");
   $("photoCropImage").removeAttribute("src");
   document.body.style.overflow = "";
+  if (!keepGalleryQueue && wasGalleryCrop) photoCropQueue = [];
 }
 async function applyPhotoCrop() {
   if (!photoCropState) return;
@@ -1259,7 +1223,16 @@ async function applyPhotoCrop() {
   applyButton.disabled = true;
   applyButton.textContent = "Saving…";
   try {
-    if (purpose === "replace-main" && liveDiscoveryMode && verifiedTelegramUser) {
+    if (purpose === "add-gallery") {
+      if (profilePhotos.length >= 6) throw new Error("You can have up to 6 profile photos.");
+      if (liveDiscoveryMode && verifiedTelegramUser && tg?.initData) {
+        const uploaded = await uploadPhotoDataUrl(cropped);
+        profilePhotos.push(uploaded);
+      } else {
+        profilePhotos.push(cropped);
+      }
+      profilePhotoData = photoSource(profilePhotos[0]) || "";
+    } else if (purpose === "replace-main" && liveDiscoveryMode && verifiedTelegramUser) {
       const result = await conectBackendRequest("replace_primary_photo", undefined, { photoDataUrl: cropped });
       if (!Array.isArray(result.photos) || !result.photos.length) {
         throw new Error("The server did not return the updated photo gallery.");
@@ -1287,8 +1260,15 @@ async function applyPhotoCrop() {
     saveProfilePhotos();
     renderProfilePhotos();
     const status = $("profileSaved");
-    if (status) status.textContent = purpose === "replace-main" ? "Main photo updated and saved." : "Main photo crop saved. Finish setup to sync it to Conect.";
-    cancelPhotoCrop();
+    if (status) {
+      status.textContent = purpose === "replace-main"
+        ? "Main photo updated and saved."
+        : purpose === "add-gallery"
+          ? "Photo cropped and added to your gallery."
+          : "Main photo crop saved. Finish setup to sync it to Conect.";
+    }
+    cancelPhotoCrop(purpose === "add-gallery");
+    if (purpose === "add-gallery" && photoCropQueue.length) openNextGalleryPhotoCrop();
   } catch (error) {
     $("photoCropError").textContent = "Could not save the cropped photo: " + (error.message || "request failed");
   } finally {
