@@ -383,6 +383,26 @@ body:has(#portfolioPage:not(.hidden)){overflow:hidden}
 .global-error-banner{position:fixed;z-index:1000;top:12px;left:12px;right:12px;max-width:650px;margin:0 auto;display:flex;align-items:center;gap:12px;justify-content:space-between;padding:13px 14px;border:1px solid #8e3a42;border-radius:14px;background:#351c22;color:#fff;box-shadow:0 10px 30px #0008;font-size:13px}
 .global-error-banner.hidden{display:none}.global-error-banner button{flex:0 0 auto;background:#5a2b32;border:1px solid #9b5960;border-radius:9px;color:#fff;padding:7px 10px}
 .account-delete-panel{border-color:#6b3037}.account-delete-panel h2{margin:0 0 6px;font-size:17px}.account-delete-panel p{font-size:12px;line-height:1.5}.account-delete-button{background:#53222a;border:1px solid #a74754;color:#fff;border-radius:11px;padding:11px 13px;font-weight:800}.account-delete-status{font-size:12px;margin:10px 0 0;color:#ffb7c0}
+
+.photo-crop-backdrop{position:fixed;inset:0;z-index:1200;background:#09090def;display:flex;align-items:center;justify-content:center;padding:15px}
+.photo-crop-dialog{width:100%;max-width:440px;max-height:94dvh;overflow:auto;background:#1b1c23;border:1px solid #393a45;border-radius:22px;padding:16px;box-shadow:0 20px 60px #000b}
+.photo-crop-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.photo-crop-head h2{font-size:19px;margin:0}
+.photo-crop-stage{position:relative;width:min(100%,360px);aspect-ratio:4/5;margin:14px auto;overflow:hidden;border-radius:15px;background:#101116;touch-action:none;cursor:grab;user-select:none}
+.photo-crop-stage:after{content:"";position:absolute;inset:0;pointer-events:none;border:1px solid #ffffff80;background:linear-gradient(to right,transparent 32.9%,#ffffff30 33.2%,transparent 33.6%,transparent 66.2%,#ffffff30 66.5%,transparent 66.9%),linear-gradient(to bottom,transparent 32.9%,#ffffff30 33.2%,transparent 33.6%,transparent 66.2%,#ffffff30 66.5%,transparent 66.9%)}
+.photo-crop-stage img{position:absolute;max-width:none;max-height:none;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.photo-crop-hint{font-size:12px;color:var(--muted);text-align:center;margin:8px 0}
+.photo-crop-zoom{display:flex;align-items:center;gap:10px;margin:12px 0}
+.photo-crop-zoom label{flex:0 0 auto}
+.photo-crop-zoom input{flex:1;min-width:0;accent-color:#e83d72}
+.photo-crop-actions{display:flex;gap:8px;margin-top:12px}
+.photo-crop-actions button{flex:1}
+.photo-crop-error{font-size:12px;color:#ff9bad;min-height:0;margin:5px 0}
+.photo-gallery-main{position:absolute;left:5px;bottom:5px;max-width:calc(100% - 36px);border:0;border-radius:8px;background:#12131de8;color:#fff;font-size:10px;font-weight:800;padding:5px 7px;cursor:pointer;z-index:2}
+.photo-gallery-main.current{background:#e83d72;color:#fff}
+.photo-gallery-tile .photo-gallery-remove{z-index:3}
+.photo-gallery-tile:has(.photo-gallery-main){border-style:solid;border-color:#ffffff26}
+@media(max-height:680px){.photo-crop-dialog{max-height:96dvh;padding:12px}.photo-crop-stage{width:min(100%,280px)}.photo-crop-head h2{font-size:17px}}
 </style></head>
 <body>
 <div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
@@ -473,6 +493,16 @@ body:has(#portfolioPage:not(.hidden)){overflow:hidden}
   </div>
   <div class="portfolio-preview-wrap"><div id="portfolioPreviewFeed" class="profile-scroll-feed" aria-label="Your profile preview"></div></div>
 </section>
+<div id="photoCropModal" class="photo-crop-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="photoCropTitle">
+  <div class="photo-crop-dialog">
+    <div class="photo-crop-head"><h2 id="photoCropTitle">Crop your main photo</h2><button type="button" class="secondary" onclick="cancelPhotoCrop()">Cancel</button></div>
+    <p class="photo-crop-hint">Drag the photo to position it. Use the slider to zoom, just like Telegram.</p>
+    <div id="photoCropStage" class="photo-crop-stage"><img id="photoCropImage" alt="Adjust crop position" draggable="false"></div>
+    <div class="photo-crop-zoom"><label for="photoCropZoom">Zoom</label><input id="photoCropZoom" type="range" min="1" max="3" step="0.02" value="1"><span id="photoCropZoomValue" style="font-size:12px;color:var(--muted);min-width:34px;text-align:right">1.0×</span></div>
+    <p id="photoCropError" class="photo-crop-error" role="alert"></p>
+    <div class="photo-crop-actions"><button type="button" class="secondary" onclick="cancelPhotoCrop()">Cancel</button><button type="button" class="primary" id="applyPhotoCropBtn" onclick="applyPhotoCrop()">Use photo</button></div>
+  </div>
+</div>
 <div id="basicsBackdrop" class="sheet-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="basicsTitle"><div class="basics-sheet"><div class="sheet-handle"></div><h2 class="sheet-title" id="basicsTitle">Basics</h2>
 <label for="myName">Display name</label><input id="myName" class="field" placeholder="Your name" maxlength="40">
 <label for="myAge">Age (18+)</label><input id="myAge" class="field" type="number" min="18" max="99" placeholder="18 or older">
@@ -559,6 +589,10 @@ async function syncLocalPhotosToServer() {
     renderProfilePhotos();
   }
   profilePhotos = working.filter(photo => Boolean(photoSource(photo)));
+  if (profilePhotos.length && isStoragePhoto(profilePhotos[0])) {
+    const primaryResult = await conectBackendRequest("set_primary_photo", undefined, { photoId: String(profilePhotos[0].id) });
+    if (Array.isArray(primaryResult.photos)) profilePhotos = primaryResult.photos;
+  }
   saveProfilePhotos();
   renderProfilePhotos();
   return { localOnly: false, photos: profilePhotos };
@@ -845,17 +879,58 @@ function renderProfilePhotos() {
   if (!root) return;
   root.innerHTML = profilePhotos.map((photo, i) => {
     const src = photoSource(photo);
-    return `<div class="photo-gallery-tile"><img src="${esc(src)}" alt="Profile photo ${i + 1}"><button type="button" class="photo-gallery-remove" data-remove-photo="${i}" aria-label="Remove photo ${i + 1}">×</button></div>`;
+    const mainTag = i === 0
+      ? '<span class="photo-gallery-main current" aria-label="Current main photo">Main photo ✓</span>'
+      : '<button type="button" class="photo-gallery-main" data-main-photo="' + i + '">Set as main</button>';
+    return '<div class="photo-gallery-tile"><img src="' + esc(src) + '" alt="Profile photo ' + (i + 1) + '">' + mainTag +
+      '<button type="button" class="photo-gallery-remove" data-remove-photo="' + i + '" aria-label="Remove photo ' + (i + 1) + '">×</button></div>';
   }).join("");
   if (profilePhotos.length < 6) {
     root.insertAdjacentHTML("beforeend", '<button type="button" class="photo-gallery-tile photo-gallery-add" id="addProfilePhotosBtn" aria-label="Add profile photos">+</button>');
   }
-  $("profileGalleryHelp").textContent = `Tap + to add photos · ${profilePhotos.length}/6`;
+  $("profileGalleryHelp").textContent = 'Tap “Set as main” on any uploaded photo to use it in your Feed · ' + profilePhotos.length + '/6';
   const add = $("addProfilePhotosBtn");
   if (add) add.onclick = () => $("profileGalleryInput").click();
   root.querySelectorAll("[data-remove-photo]").forEach(btn => {
     btn.onclick = () => removeProfilePhoto(Number(btn.dataset.removePhoto));
   });
+  root.querySelectorAll("[data-main-photo]").forEach(btn => {
+    btn.onclick = () => setMainProfilePhoto(Number(btn.dataset.mainPhoto));
+  });
+}
+
+async function setMainProfilePhoto(index) {
+  if (!Number.isInteger(index) || index < 0 || index >= profilePhotos.length) return;
+  if (index === 0) return;
+  const previous = [...profilePhotos];
+  const photo = profilePhotos[index];
+  const buttons = $("profilePhotoGallery").querySelectorAll("[data-main-photo]");
+  buttons.forEach(button => { button.disabled = true; });
+  try {
+    if (isStoragePhoto(photo)) {
+      if (!verifiedTelegramUser || !tg?.initData) throw new Error("Open Conect inside Telegram to change your main photo.");
+      const result = await conectBackendRequest("set_primary_photo", undefined, { photoId: String(photo.id) });
+      if (!Array.isArray(result.photos)) throw new Error("The server did not return the updated photo gallery.");
+      profilePhotos = result.photos;
+    } else {
+      profilePhotos = [photo, ...profilePhotos.filter((_, i) => i !== index)];
+      saveProfilePhotos();
+      if (liveDiscoveryMode && verifiedTelegramUser) {
+        await syncCurrentProfile();
+        await syncLocalPhotosToServer();
+      }
+    }
+    saveProfilePhotos();
+    renderProfilePhotos();
+    const status = $("profileSaved");
+    if (status) status.textContent = "Main profile photo updated.";
+  } catch (error) {
+    profilePhotos = previous;
+    saveProfilePhotos();
+    renderProfilePhotos();
+    const status = $("profileSaved");
+    if (status) status.textContent = "Could not change the main photo: " + (error.message || "request failed");
+  }
 }
 
 function saveProfilePhotos() {
@@ -1073,59 +1148,147 @@ function renderInterestChoices(){
  root.querySelectorAll("[data-interest]").forEach(btn=>btn.onclick=()=>{const item=btn.dataset.interest;if(selectedInterests.has(item)){selectedInterests.delete(item)}else{if(selectedInterests.size>=10){$("interestError").textContent="Choose up to 10 interests. Remove one before adding another.";return}selectedInterests.add(item)}$("interestError").textContent="";renderInterestChoices();updateInterestCount()});updateInterestCount();
 }
 function updateInterestCount(){$("interestCount").textContent=`${selectedInterests.size} / 10 selected`}
-$("profilePhotoInput").onchange = async e => {
-  const file = e.target.files?.[0];
+let photoCropState = null;
+function cropImageReady(image, fileName) {
+  const modal = $("photoCropModal");
+  const img = $("photoCropImage");
+  $("photoCropError").textContent = "";
+  $("photoCropZoom").value = "1";
+  $("photoCropZoomValue").textContent = "1.0×";
+  photoCropState = { image, fileName: fileName || "profile-photo.jpg", zoom: 1, panX: 0, panY: 0, dragging: false, lastX: 0, lastY: 0 };
+  img.src = image.src;
+  modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+  requestAnimationFrame(renderPhotoCrop);
+}
+function openPhotoCropFromFile(file) {
   if (!file) return;
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-    $("photoError").textContent = "Choose a JPEG, PNG, or WebP image.";
-    e.target.value = "";
+    $("photoError").textContent = "Choose a JPEG, PNG, or WebP photo.";
     return;
   }
   if (file.size > 12 * 1024 * 1024) {
     $("photoError").textContent = "Choose an image smaller than 12 MB.";
-    e.target.value = "";
     return;
   }
-  if (isStoragePhoto(profilePhotos[0])) {
-    $("photoError").textContent = "Your main photo is already saved online. Use the Profile photo gallery to add or remove photos.";
-    e.target.value = "";
+  $("photoError").textContent = "";
+  const reader = new FileReader();
+  reader.onerror = () => { $("photoError").textContent = "Could not read that image. Try another photo."; };
+  reader.onload = () => {
+    const image = new Image();
+    image.onerror = () => { $("photoError").textContent = "Could not open that image. Try another photo."; };
+    image.onload = () => cropImageReady(image, file.name);
+    image.src = String(reader.result || "");
+  };
+  reader.readAsDataURL(file);
+}
+function renderPhotoCrop() {
+  if (!photoCropState) return;
+  const stage = $("photoCropStage");
+  const img = $("photoCropImage");
+  const w = stage.clientWidth, h = stage.clientHeight;
+  if (!w || !h) return;
+  const image = photoCropState.image;
+  const base = Math.max(w / image.naturalWidth, h / image.naturalHeight);
+  const scale = base * photoCropState.zoom;
+  const rw = image.naturalWidth * scale, rh = image.naturalHeight * scale;
+  const minX = (w - rw) / 2, maxX = (rw - w) / 2;
+  const minY = (h - rh) / 2, maxY = (rh - h) / 2;
+  photoCropState.panX = Math.max(minX, Math.min(maxX, photoCropState.panX));
+  photoCropState.panY = Math.max(minY, Math.min(maxY, photoCropState.panY));
+  img.style.width = rw + "px";
+  img.style.height = rh + "px";
+  img.style.left = ((w - rw) / 2 + photoCropState.panX) + "px";
+  img.style.top = ((h - rh) / 2 + photoCropState.panY) + "px";
+  $("photoCropZoomValue").textContent = photoCropState.zoom.toFixed(1) + "×";
+}
+function cancelPhotoCrop() {
+  photoCropState = null;
+  $("photoCropModal").classList.add("hidden");
+  $("photoCropImage").removeAttribute("src");
+  document.body.style.overflow = "";
+}
+function applyPhotoCrop() {
+  if (!photoCropState) return;
+  const stage = $("photoCropStage");
+  const image = photoCropState.image;
+  const w = stage.clientWidth, h = stage.clientHeight;
+  const base = Math.max(w / image.naturalWidth, h / image.naturalHeight);
+  const scale = base * photoCropState.zoom;
+  const rw = image.naturalWidth * scale, rh = image.naturalHeight * scale;
+  const left = (w - rw) / 2 + photoCropState.panX;
+  const top = (h - rh) / 2 + photoCropState.panY;
+  const sx = Math.max(0, -left / scale);
+  const sy = Math.max(0, -top / scale);
+  const sw = Math.min(image.naturalWidth - sx, w / scale);
+  const sh = Math.min(image.naturalHeight - sy, h / scale);
+  if (!(sw > 0 && sh > 0)) {
+    $("photoCropError").textContent = "That crop is invalid. Reposition the photo and try again.";
     return;
   }
-  try {
-    const dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const scale = Math.min(1, 600 / Math.max(img.width, img.height));
-      canvas.width = Math.max(1, Math.round(img.width * scale));
-      canvas.height = Math.max(1, Math.round(img.height * scale));
-      const context = canvas.getContext("2d");
-      if (!context) {
-        $("photoError").textContent = "Could not process this image.";
-        return;
-      }
-      context.drawImage(img, 0, 0, canvas.width, canvas.height);
-      profilePhotoData = canvas.toDataURL("image/jpeg", 0.78);
-      if (profilePhotos.length) profilePhotos[0] = profilePhotoData;
-      else profilePhotos = [profilePhotoData];
-      myProfile = { ...myProfile, photo: profilePhotoData, photos: profilePhotos };
-      try { localStorage.setItem("mm2_profile", JSON.stringify(myProfile)); } catch (_) {}
-      $("profilePhotoPreview").src = profilePhotoData;
-      $("photoError").textContent = "";
-      renderProfilePhotos();
-    };
-    img.onerror = () => {
-      $("photoError").textContent = "Could not read that image. Try another photo.";
-    };
-    img.src = dataUrl;
-  } catch (_) {
-    $("photoError").textContent = "Could not load that image. Try another photo.";
+  const canvas = document.createElement("canvas");
+  canvas.width = 800;
+  canvas.height = Math.round(800 * h / w);
+  const context = canvas.getContext("2d");
+  if (!context) {
+    $("photoCropError").textContent = "Could not process the crop. Please try another photo.";
+    return;
   }
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  let cropped;
+  try { cropped = canvas.toDataURL("image/jpeg", 0.88); }
+  catch (_) {
+    $("photoCropError").textContent = "Could not export this photo. Please try another image.";
+    return;
+  }
+  if (profilePhotos.length) profilePhotos[0] = cropped;
+  else profilePhotos = [cropped];
+  profilePhotoData = cropped;
+  myProfile = { ...myProfile, photo: cropped, photos: profilePhotos };
+  try { localStorage.setItem("mm2_profile", JSON.stringify(myProfile)); }
+  catch (_) {
+    $("photoError").textContent = "Your browser storage is full. Try a smaller photo.";
+    cancelPhotoCrop();
+    return;
+  }
+  $("profilePhotoPreview").src = cropped;
+  $("photoError").textContent = "";
+  saveProfilePhotos();
+  renderProfilePhotos();
+  cancelPhotoCrop();
+}
+const photoCropStage = $("photoCropStage");
+photoCropStage.addEventListener("pointerdown", event => {
+  if (!photoCropState) return;
+  photoCropState.dragging = true;
+  photoCropState.lastX = event.clientX;
+  photoCropState.lastY = event.clientY;
+  photoCropStage.setPointerCapture(event.pointerId);
+});
+photoCropStage.addEventListener("pointermove", event => {
+  if (!photoCropState?.dragging) return;
+  photoCropState.panX += event.clientX - photoCropState.lastX;
+  photoCropState.panY += event.clientY - photoCropState.lastY;
+  photoCropState.lastX = event.clientX;
+  photoCropState.lastY = event.clientY;
+  renderPhotoCrop();
+});
+function stopPhotoCropDrag() { if (photoCropState) photoCropState.dragging = false; }
+photoCropStage.addEventListener("pointerup", stopPhotoCropDrag);
+photoCropStage.addEventListener("pointercancel", stopPhotoCropDrag);
+$("photoCropZoom").addEventListener("input", event => {
+  if (!photoCropState) return;
+  photoCropState.zoom = Number(event.target.value) || 1;
+  renderPhotoCrop();
+});
+window.addEventListener("resize", () => { if (photoCropState) renderPhotoCrop(); });
+
+$("profilePhotoInput").onchange = e => {
+  const file = e.target.files?.[0];
+  e.target.value = "";
+  if (file) openPhotoCropFromFile(file);
 };
 $("finishSetupBtn").onclick = async () => {
   if (!profilePhotoData) {
