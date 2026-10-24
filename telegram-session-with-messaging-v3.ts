@@ -1264,9 +1264,12 @@ Deno.serve(async (req: Request) => {
           return jsonResponse({ error: "Could not load your photo gallery" }, 500);
         }
 
-        const orderedRows = [...(photoRows || [])].sort((a: any, b: any) =>
-          a.id === photoId ? -1 : b.id === photoId ? 1 : a.sort_order - b.sort_order
-        );
+        const orderedRows = [...(photoRows || [])].sort((a: any, b: any) => {
+          if (a.id === b.id) return 0;
+          if (a.id === photoId) return -1;
+          if (b.id === photoId) return 1;
+          return a.sort_order - b.sort_order;
+        });
 
         for (let i = 0; i < orderedRows.length; i++) {
           const row = orderedRows[i];
