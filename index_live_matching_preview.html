@@ -786,6 +786,10 @@ function renderSwipe() {
     : list.length + " profiles to explore · demo mode";
 }
 function renderGrid() {
+  if (liveProfilesLoading) {
+    $("gridView").innerHTML = '<div class="panel empty">Loading real Conect profiles…</div>';
+    return;
+  }
   const list = liveDiscoveryMode ? currentProfileList() : profiles.filter(p => purpose === "both" || p.purpose.includes(purpose));
   if (!list.length) {
     $("gridView").innerHTML = '<div class="panel empty">' + (liveDiscoveryMode ? "No new compatible profiles right now." : "No demo profiles available for this filter.") + '</div>';
