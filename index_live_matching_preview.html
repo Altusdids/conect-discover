@@ -2512,7 +2512,7 @@ function renderLiveChatShell() {
         '<button type="button" class="chat-record-btn" id="chatRecordBtn" aria-label="Record voice message" title="Record voice message" onclick="toggleChatVoiceRecording()">🎙</button>' +
         '<button id="chatSendBtn" type="submit" class="chat-send-btn" aria-label="Send message" title="Send message"><span class="chat-send-glyph" aria-hidden="true">➤</span></button>' +
       '</form>' +
-      '<input id="chatAttachmentInput" type="file" accept=".pdf,.txt,.csv,.rtf,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp,.gif,.mp3,.m4a,.wav,.ogg,.webm,.mp4" hidden>' +
+      '<input id="chatAttachmentInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" hidden>' +
       '<p id="chatMediaStatus" class="chat-media-status" role="status" aria-live="polite"></p>' +
       '<div id="chatEmojiTray" class="chat-emoji-tray hidden" aria-label="Choose an emoji">' +
         ['👋','❤️','😂','😍','🥹','🔥','👍','🙏','😭','✨','🤍','😊','🎉','😅','💯','😉'].map(emoji => '<button type="button" onclick="insertChatEmoji(\'' + emoji + '\')" aria-label="Insert ' + emoji + '">' + emoji + '</button>').join('') +
@@ -2602,16 +2602,16 @@ async function sendChatAttachment(file, type = "file") {
     return;
   }
   const mimeType = normalizedChatMime(file);
-  const allowed = new Set([
-    "application/pdf","text/plain","text/csv","application/rtf","application/zip","application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.ms-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","application/vnd.ms-powerpoint",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation","image/jpeg","image/png","image/webp","image/gif",
-    "audio/webm","audio/ogg","audio/mp4","audio/mpeg","audio/wav","video/mp4","video/webm"
+  const allowedPhotoVideoTypes = new Set([
+    "image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm"
   ]);
+  const allowedVoiceTypes = new Set(["audio/webm","audio/ogg","audio/mp4","audio/mpeg","audio/wav"]);
+  const allowed = type === "voice" ? allowedVoiceTypes : allowedPhotoVideoTypes;
   if (!allowed.has(mimeType)) {
     const status = $("chatStatus");
-    if (status) status.textContent = "That file type isn't supported. Try a PDF, document, image, audio, or video file.";
+    if (status) status.textContent = type === "voice"
+      ? "That voice recording format isn't supported. Please try recording again."
+      : "Only photos and videos can be attached. Use the microphone button to send a voice message.";
     return;
   }
   if (type === "voice" && !mimeType.startsWith("audio/")) {
