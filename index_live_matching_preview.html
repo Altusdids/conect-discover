@@ -702,6 +702,7 @@ nav.chat-conversation-nav-hidden{display:none!important}
   background:#23242b!important;box-shadow:0 12px 35px #000b!important;overscroll-behavior:contain
 }
 .chat-message-menu[data-portaled="true"].hidden{display:none!important}
+.chat-message.media-only .chat-message-actions{top:4px!important;right:4px!important}
 .chat-message.media-only .chat-message-more,.chat-message.voice-message .chat-message-more{opacity:1!important}
 .chat-message.theirs .chat-message-more{background:#34353d!important;color:#fff!important}
 .chat-record-cancel,.chat-record-finish,.chat-recording-panel{display:none!important}
@@ -3338,13 +3339,19 @@ async function openLiveChat(matchId) {
 }
 function closeLiveChat() {
   if (chatMediaRecorder && chatMediaRecorder.state !== "inactive") {
+    chatRecordingCancelled = true;
     try { chatMediaRecorder.stop(); } catch (_) {}
+  }
+  if (chatRecordingTimer !== null) {
+    clearInterval(chatRecordingTimer);
+    chatRecordingTimer = null;
   }
   if (chatMediaStream) chatMediaStream.getTracks().forEach(track => track.stop());
   chatMediaStream = null;
   chatMediaRecorder = null;
   chatMediaChunks = [];
   chatRecordingActive = false;
+  chatRecordingStartedAt = 0;
   activeChatMatchId = null;
   document.querySelector("nav")?.classList.remove("chat-conversation-nav-hidden");
   lastRenderedChatMessageSignature = "";
