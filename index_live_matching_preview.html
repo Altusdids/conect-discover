@@ -1147,7 +1147,7 @@ function profilePhotoStoragePathFromUrl(value) {
     const marker = markers.find(item => url.pathname.includes(item));
     if (!marker) return "";
     const path = decodeURIComponent(url.pathname.slice(url.pathname.indexOf(marker) + marker.length));
-    if (!path || path.startsWith("/") || path.includes("..") || path.includes("\\\\")) return "";
+    if (!path || path.startsWith("/") || path.includes("..") || path.includes("\\")) return "";
     return path;
   } catch (_) {
     return "";
