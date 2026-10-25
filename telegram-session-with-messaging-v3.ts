@@ -321,6 +321,9 @@ Deno.serve(async (req: Request) => {
       action !== "record_swipe" &&
       action !== "load_messages" &&
       action !== "send_message" &&
+      action !== "edit_message" &&
+      action !== "delete_message" &&
+      action !== "search_users" &&
       action !== "load_chat_updates" &&
       action !== "block_user" &&
       action !== "report_user" &&
@@ -418,6 +421,9 @@ Deno.serve(async (req: Request) => {
       action === "record_swipe" ||
       action === "load_messages" ||
       action === "send_message" ||
+      action === "edit_message" ||
+      action === "delete_message" ||
+      action === "search_users" ||
       action === "load_chat_updates" ||
       action === "block_user" ||
       action === "report_user" ||
@@ -743,8 +749,8 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      // PRIVATE MESSAGING: only participants in a real, active match can read/send.
-      if (action === "load_messages" || action === "send_message") {
+      // PRIVATE MESSAGING: only participants in a real, active match can read/send/edit/delete.
+      if (action === "load_messages" || action === "send_message" || action === "edit_message" || action === "delete_message") {
         const matchId = typeof body.matchId === "string" ? body.matchId.trim() : "";
         if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(matchId)) {
           return jsonResponse({ error: "Invalid conversation" }, 400);
@@ -778,10 +784,97 @@ Deno.serve(async (req: Request) => {
           return jsonResponse({ error: "Messaging is unavailable for this conversation" }, 403);
         }
 
+        if (action === "edit_message") {
+          const messageId = typeof body.messageId === "string" ? body.messageId.trim() : "";
+          const messageBody = typeof body.message === "string" ? body.message.trim() : "";
+          if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(messageId)) {
+            return jsonResponse({ error: "Invalid message" }, 400);
+          }
+          if (!messageBody || messageBody.length > 4000) {
+            return jsonResponse({ error: "Messages must contain 1–4000 characters" }, 400);
+          }
+          const { data: ownMessage, error: ownMessageError } = await admin
+            .from("messages")
+            .select("id, sender_user_id")
+            .eq("id", messageId)
+            .eq("match_id", matchRow.id)
+            .maybeSingle();
+          if (ownMessageError) {
+            console.error("Edit message lookup error", ownMessageError.message);
+            return jsonResponse({ error: "Could not verify that message" }, 500);
+          }
+          if (!ownMessage || ownMessage.sender_user_id !== viewer.id) {
+            return jsonResponse({ error: "You can only edit your own messages" }, 403);
+          }
+          const { data: updatedMessage, error: editError } = await admin
+            .from("messages")
+            .update({ body: messageBody, edited_at: new Date().toISOString() })
+            .eq("id", messageId)
+            .eq("match_id", matchRow.id)
+            .eq("sender_user_id", viewer.id)
+            .select("id, match_id, sender_user_id, body, created_at, read_at, reply_to_message_id, edited_at")
+            .maybeSingle();
+          if (editError || !updatedMessage) {
+            console.error("Edit message database error", editError?.message || "Message not found");
+            return jsonResponse({ error: "Could not edit message" }, 500);
+          }
+          return jsonResponse({ ok: true, message: { ...updatedMessage, is_mine: true } });
+        }
+
+        if (action === "delete_message") {
+          const messageId = typeof body.messageId === "string" ? body.messageId.trim() : "";
+          if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(messageId)) {
+            return jsonResponse({ error: "Invalid message" }, 400);
+          }
+          const { data: ownMessage, error: ownMessageError } = await admin
+            .from("messages")
+            .select("id, sender_user_id")
+            .eq("id", messageId)
+            .eq("match_id", matchRow.id)
+            .maybeSingle();
+          if (ownMessageError) {
+            console.error("Delete message lookup error", ownMessageError.message);
+            return jsonResponse({ error: "Could not verify that message" }, 500);
+          }
+          if (!ownMessage || ownMessage.sender_user_id !== viewer.id) {
+            return jsonResponse({ error: "You can only delete your own messages" }, 403);
+          }
+          const { error: deleteError } = await admin
+            .from("messages")
+            .delete()
+            .eq("id", messageId)
+            .eq("match_id", matchRow.id)
+            .eq("sender_user_id", viewer.id);
+          if (deleteError) {
+            console.error("Delete message database error", deleteError.message);
+            return jsonResponse({ error: "Could not delete message" }, 500);
+          }
+          return jsonResponse({ ok: true, deleted: true, messageId });
+        }
+
         if (action === "send_message") {
           const messageBody = typeof body.message === "string" ? body.message.trim() : "";
           if (!messageBody || messageBody.length > 4000) {
             return jsonResponse({ error: "Messages must contain 1–4000 characters" }, 400);
+          }
+          const rawReplyTo = typeof body.replyToMessageId === "string" ? body.replyToMessageId.trim() : "";
+          if (rawReplyTo && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawReplyTo)) {
+            return jsonResponse({ error: "Invalid reply message" }, 400);
+          }
+          let replyToMessageId: string | null = null;
+          if (rawReplyTo) {
+            const { data: replyMessage, error: replyLookupError } = await admin
+              .from("messages")
+              .select("id")
+              .eq("id", rawReplyTo)
+              .eq("match_id", matchRow.id)
+              .maybeSingle();
+            if (replyLookupError) {
+              console.error("Reply lookup error", replyLookupError.message);
+              return jsonResponse({ error: "Could not verify reply message" }, 500);
+            }
+            if (!replyMessage) return jsonResponse({ error: "The replied-to message is no longer available" }, 400);
+            replyToMessageId = replyMessage.id;
           }
 
           const { data: newMessage, error: insertError } = await admin
@@ -790,8 +883,9 @@ Deno.serve(async (req: Request) => {
               match_id: matchRow.id,
               sender_user_id: viewer.id,
               body: messageBody,
+              reply_to_message_id: replyToMessageId,
             })
-            .select("id, match_id, sender_user_id, body, created_at, read_at")
+            .select("id, match_id, sender_user_id, body, created_at, read_at, reply_to_message_id, edited_at")
             .single();
 
           if (insertError || !newMessage) {
@@ -819,7 +913,7 @@ Deno.serve(async (req: Request) => {
 
         const { data: messageRows, error: messagesError } = await admin
           .from("messages")
-          .select("id, match_id, sender_user_id, body, created_at, read_at")
+          .select("id, match_id, sender_user_id, body, created_at, read_at, reply_to_message_id, edited_at")
           .eq("match_id", matchRow.id)
           .order("created_at", { ascending: true })
           .limit(200);
@@ -829,10 +923,12 @@ Deno.serve(async (req: Request) => {
           return jsonResponse({ error: "Could not load conversation messages" }, 500);
         }
 
+        const messageBodiesById = new Map((messageRows || []).map((message: any) => [message.id, message.body]));
         return jsonResponse({
           ok: true,
           messages: (messageRows || []).map((message: any) => ({
             ...message,
+            reply_to_body: message.reply_to_message_id ? messageBodiesById.get(message.reply_to_message_id) || "" : null,
             is_mine: message.sender_user_id === viewer.id,
           })),
         });
@@ -1003,6 +1099,101 @@ Deno.serve(async (req: Request) => {
           incomingLikes,
           matches,
         });
+      }
+
+      if (action === "search_users") {
+        const query = typeof body.query === "string"
+          ? body.query.trim().replace(/^@+/, "").toLowerCase()
+          : "";
+        if (!/^[a-z0-9_]{3,20}$/.test(query)) {
+          return jsonResponse({ error: "Enter a username prefix with 3–20 letters, numbers, or underscores" }, 400);
+        }
+
+        const [profilesResult, blocksOutResult, blocksInResult] = await Promise.all([
+          admin.from("profiles")
+            .select("id, app_username, display_name, age, gender, country, city, bio, purpose, looking_for, is_active")
+            .eq("is_active", true)
+            .neq("id", viewer.id)
+            .ilike("app_username", query + "%")
+            .order("app_username", { ascending: true })
+            .limit(25),
+          admin.from("blocks").select("blocked_user_id").eq("blocker_user_id", viewer.id),
+          admin.from("blocks").select("blocker_user_id").eq("blocked_user_id", viewer.id),
+        ]);
+
+        if (profilesResult.error || blocksOutResult.error || blocksInResult.error) {
+          console.error("Username search error", {
+            profiles: profilesResult.error?.message,
+            blocksOut: blocksOutResult.error?.message,
+            blocksIn: blocksInResult.error?.message,
+          });
+          return jsonResponse({ error: "Could not search Conect usernames" }, 500);
+        }
+
+        const blockedIds = new Set([
+          ...(blocksOutResult.data || []).map((row: any) => row.blocked_user_id),
+          ...(blocksInResult.data || []).map((row: any) => row.blocker_user_id),
+        ]);
+        const candidates = (profilesResult.data || [])
+          .filter((profile: any) => !blockedIds.has(profile.id))
+          .slice(0, 20);
+        if (!candidates.length) return jsonResponse({ ok: true, profiles: [] });
+
+        const candidateIds = candidates.map((profile: any) => profile.id);
+        const [photosResult, interestsResult] = await Promise.all([
+          admin.from("profile_photos")
+            .select("user_id, storage_path, sort_order, is_primary")
+            .in("user_id", candidateIds)
+            .order("sort_order", { ascending: true }),
+          admin.from("profile_interests")
+            .select("user_id, interest, position")
+            .in("user_id", candidateIds)
+            .order("position", { ascending: true }),
+        ]);
+        if (photosResult.error || interestsResult.error) {
+          console.error("Username search profile details error", {
+            photos: photosResult.error?.message,
+            interests: interestsResult.error?.message,
+          });
+          return jsonResponse({ error: "Could not load profile search results" }, 500);
+        }
+
+        const photosByUser = new Map<string, any[]>();
+        for (const photo of photosResult.data || []) {
+          const list = photosByUser.get(photo.user_id) || [];
+          list.push({
+            public_url: admin.storage.from(PHOTO_BUCKET).getPublicUrl(photo.storage_path).data.publicUrl,
+            sort_order: photo.sort_order,
+            is_primary: photo.is_primary,
+          });
+          photosByUser.set(photo.user_id, list);
+        }
+        const interestsByUser = new Map<string, string[]>();
+        for (const row of interestsResult.data || []) {
+          const list = interestsByUser.get(row.user_id) || [];
+          list.push(row.interest);
+          interestsByUser.set(row.user_id, list);
+        }
+
+        const safeProfiles = candidates.map((profile: any) => {
+          const photos = photosByUser.get(profile.id) || [];
+          const primary = photos.find((photo: any) => photo.is_primary) || photos[0] || null;
+          return {
+            id: profile.id,
+            username: profile.app_username,
+            name: profile.display_name,
+            age: profile.age,
+            gender: profile.gender,
+            location: [profile.city, profile.country].filter(Boolean).join(", "),
+            bio: profile.bio,
+            purpose: profile.purpose,
+            looking_for: profile.looking_for || "any",
+            interests: interestsByUser.get(profile.id) || [],
+            photos,
+            photo: primary?.public_url || null,
+          };
+        });
+        return jsonResponse({ ok: true, profiles: safeProfiles });
       }
 
       if (action === "load_discovery") {
