@@ -7,8 +7,9 @@ Internal working procedure — review before each beta expansion.
 - The backend validates report reasons and inserts reports into the Supabase `reports` table.
 - Report reasons currently include fake profile, harassment, spam, inappropriate content, suspected underage user, and other.
 - The app does not currently expose a dedicated moderator dashboard or a published response-time commitment.
-- The current account-deletion workflow deletes report records linked to a deleted account. This may conflict with safety-evidence retention and must be decided before a broad launch.
-- This runbook describes a proposed manual workflow; it is not an automated feature already implemented.
+- **Live production status:** the deployed account-deletion workflow currently deletes report rows linked to the deleted account.
+- **Staged proposal only:** branch beta-safety-report-retention contains a migration that makes report profile references nullable, clears the deleted profile's direct reference, timestamps report closure, and adds a manual purge function for closed reports older than 12 months. This change is NOT live until it has been reviewed, tested in a non-production environment, and deliberately deployed.
+- The proposed retained record can still include user-submitted free text that identifies someone. Moderators must restrict access and redact information that is not necessary for safety review.
 
 ## Access and ownership
 1. Name a primary moderator and backup moderator before inviting beta users.
@@ -39,7 +40,12 @@ Suggested beta objective (not a current promise): acknowledge high-risk reports 
 - Do not ask a user to confront the alleged offender.
 
 ## Account deletion and evidence retention
-Before public launch, decide whether safety reports must be retained when either reporter or reported user deletes an account. Current deletion removes linked report rows, which may destroy useful evidence. If a retention exception is justified, get legal advice, update the retention policy/privacy policy, and implement a minimal anonymised or restricted retention record instead of silently preserving identifiable data indefinitely.
+- Until the staged migration is tested and deployed, production still deletes report rows linked to an account that is deleted.
+- Proposed beta behaviour: keep a limited report record, null the direct reference to any deleted profile, and retain the report reason/details/status/timestamps only for safety review. This is pseudonymisation, not guaranteed anonymisation; free-text details may identify people and must be redacted when unnecessary.
+- Closed reports receive a closed_at timestamp and are eligible for deletion 12 months after that recorded date. Existing closed records with no historical timestamp are assigned the rollout date. Reopened reports clear the closure timestamp.
+- Review open/reviewing cases at least monthly for continued necessity. Run select public.purge_expired_conect_reports(); from the Supabase SQL Editor at least monthly once the migration is deployed; review the returned number and confirm only expired closed reports were removed. No automated purge schedule is installed by the staged migration.
+- Run the rollback-only safety-report-retention-test.sql against a non-production environment after applying the migration. Do not test by deleting an account that contains data you want to keep.
+- Confirm this retention exception and its necessity with the responsible legal/privacy reviewer before broad public launch.
 
 ## Operational prerequisites before public launch
 - Publish operator name, address and a monitored privacy/safety contact.
