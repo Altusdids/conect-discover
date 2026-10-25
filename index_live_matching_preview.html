@@ -653,42 +653,42 @@ body:has(#discoverPage:not(.hidden)){height:100dvh!important;overflow:hidden!imp
 
 /* Conversation mode uses the full available Telegram viewport; hide the main tab bar. */
 nav.chat-conversation-nav-hidden{display:none!important}
-.app:has(.chat-conversation){
+.app:has(#chatsPage:not(.hidden) .chat-conversation){
   height:100dvh!important;min-height:100dvh!important;display:flex!important;flex-direction:column!important;
   overflow:hidden!important;padding:8px 10px calc(8px + env(safe-area-inset-bottom))!important
 }
-.app:has(.chat-conversation) #chatsPage:not(.hidden){
+.app:has(#chatsPage:not(.hidden) .chat-conversation) #chatsPage:not(.hidden){
   display:flex!important;flex:1 1 auto!important;flex-direction:column!important;
   min-height:0!important;height:auto!important;overflow:hidden!important;margin:0!important
 }
-.app:has(.chat-conversation) #chatInboxControls{display:none!important}
-.app:has(.chat-conversation) #chatList{
+.app:has(#chatsPage:not(.hidden) .chat-conversation) #chatInboxControls{display:none!important}
+.app:has(#chatsPage:not(.hidden) .chat-conversation) #chatList{
   display:flex!important;flex:1 1 auto!important;min-height:0!important;height:auto!important;
   overflow:hidden!important;padding:0!important;margin:0!important
 }
-.app:has(.chat-conversation) .chat-conversation{
+.app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-conversation{
   display:flex!important;flex:1 1 auto!important;flex-direction:column!important;
   width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important
 }
-.app:has(.chat-conversation) .chat-conversation-header{flex:0 0 auto!important;padding:7px 2px 11px!important;margin-bottom:5px!important}
-.app:has(.chat-conversation) .chat-thread{
+.app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-conversation-header{flex:0 0 auto!important;padding:7px 2px 11px!important;margin-bottom:5px!important}
+.app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-thread{
   flex:1 1 0!important;height:0!important;min-height:0!important;max-height:none!important;
   overflow-x:hidden!important;overflow-y:auto!important;padding:10px 3px 16px!important;
   margin:0!important;gap:10px!important;overscroll-behavior:contain!important
 }
-.app:has(.chat-conversation) .chat-composer-context{flex:0 0 auto!important}
-.app:has(.chat-conversation) .chat-composer{flex:0 0 auto!important;margin:7px 0 5px!important}
-.app:has(.chat-conversation) #chatEmojiTray{flex:0 0 auto!important;max-height:20vh!important;overflow-y:auto!important}
-.app:has(.chat-conversation) #chatStatus{flex:0 0 auto!important;margin:2px 0!important}
-.app:has(.chat-conversation) .chat-conversation-note{display:none!important}
-.app:has(.chat-conversation) .chat-message.media-only{max-width:min(88%,360px)!important}
-.app:has(.chat-conversation) .chat-message-attachment-preview{max-width:min(100%,340px)!important;max-height:42vh!important}
-.app:has(.chat-conversation) .chat-message-video{width:min(100%,340px)!important;max-height:44vh!important}
-.app:has(.chat-conversation) .chat-message.voice-message{max-width:min(92%,420px)!important}
+.app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-composer-context{flex:0 0 auto!important}
+.app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-composer{flex:0 0 auto!important;margin:7px 0 5px!important}
+.app:has(#chatsPage:not(.hidden) .chat-conversation) #chatEmojiTray{flex:0 0 auto!important;max-height:20vh!important;overflow-y:auto!important}
+.app:has(#chatsPage:not(.hidden) .chat-conversation) #chatStatus{flex:0 0 auto!important;margin:2px 0!important}
+.app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-conversation-note{display:none!important}
+.app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-message.media-only{max-width:min(88%,360px)!important}
+.app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-message-attachment-preview{max-width:min(100%,340px)!important;max-height:42vh!important}
+.app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-message-video{width:min(100%,340px)!important;max-height:44vh!important}
+.app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-message.voice-message{max-width:min(92%,420px)!important}
 @media(max-width:560px){
-  .app:has(.chat-conversation){padding:5px 8px calc(5px + env(safe-area-inset-bottom))!important}
-  .app:has(.chat-conversation) .chat-thread{padding:8px 2px 14px!important}
-  .app:has(.chat-conversation) .chat-message.media-only{max-width:88%!important}
+  .app:has(#chatsPage:not(.hidden) .chat-conversation){padding:5px 8px calc(5px + env(safe-area-inset-bottom))!important}
+  .app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-thread{padding:8px 2px 14px!important}
+  .app:has(#chatsPage:not(.hidden) .chat-conversation) .chat-message.media-only{max-width:88%!important}
 }
 
 
@@ -875,6 +875,10 @@ nav button .nav-badge,.chat-request-count,.chat-list-unread{
   .chat-conversation-status{font-size:10px!important}
 }
 
+
+/* Opening a profile from inside a chat must release the conversation's fixed, non-scrolling viewport. */
+body:has(#detailPage:not(.hidden)){height:auto!important;min-height:100dvh!important;overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+.app:has(#detailPage:not(.hidden)){height:auto!important;min-height:100dvh!important;display:block!important;overflow:visible!important;padding-bottom:calc(24px + env(safe-area-inset-bottom))!important}
 </style></head>
 <body>
 <div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
