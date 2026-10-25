@@ -1,6 +1,6 @@
 # Conect profile-photo privacy rollout
 
-Status: `telegram-session` Edge Function version 26 is active, and the latest frontend (`?v=ed40ef1`) passed the profile-photo and navigation tests before the privacy switch. Supabase confirms `profile-photos.public = false`. After the switch, desktop in-app photos appeared normally, but a direct public object URL also displayed the image. This may be a cached response; direct denial is **not verified**. Next test from an Incognito window using a fresh `cacheNonce` query parameter. Keep the bucket private and do not mark the rollout complete until a fresh direct request is denied and signed-photo loading remains healthy.
+Status: `telegram-session` Edge Function version 26 is active. Supabase confirms `profile-photos.public = false`. After the switch, the user confirmed all tested in-app photo screens loaded normally on desktop. A direct `/object/public/profile-photos/...` URL displayed an image in the first test, but a new Chrome Incognito request with a unique `cacheNonce` was denied. Direct anonymous access is now verified denied for that fresh request. **One remaining runtime check:** test that an expired/stale signed photo URL triggers the frontend refresh successfully. Do not mark the entire rollout complete until that check is passed.
 
 ## Why this must be done in order
 
