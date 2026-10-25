@@ -588,6 +588,68 @@ body:has(#discoverPage:not(.hidden)){height:100dvh!important;overflow:hidden!imp
   .chat-message-audio{width:220px}
 }
 
+
+/* Media-first chat styling inspired by compact messenger bubbles. */
+.chat-message.media-only{
+  max-width:min(82%,310px)!important;width:auto!important;
+  padding:0!important;margin:7px 0!important;
+  border:0!important;background:transparent!important;box-shadow:none!important;
+  overflow:visible!important;border-radius:0!important
+}
+.chat-message.media-only .chat-message-actions{top:-8px!important;right:4px!important}
+.chat-message-media-link{display:block;max-width:100%;line-height:0;border-radius:15px;overflow:hidden;background:#101116}
+.chat-message-attachment-preview{
+  display:block;width:auto;max-width:min(100%,290px);max-height:320px;
+  object-fit:cover;border:0;border-radius:15px;margin:0;background:#101116
+}
+.chat-message-video{
+  display:block;width:min(100%,290px);max-width:100%;max-height:340px;aspect-ratio:1/1;
+  object-fit:cover;border:2px solid #d93665;border-radius:16px;margin:0;background:#08090d
+}
+.chat-message.voice-message{max-width:min(88%,390px)!important;width:100%;padding:14px 12px 10px!important;border-radius:20px 20px 6px 20px!important;background:#d93665!important;border:0!important;box-shadow:none!important}
+.chat-voice-player{display:flex;align-items:center;gap:10px;width:100%;min-width:0}
+.chat-voice-play{
+  flex:0 0 38px;width:38px;height:38px;min-height:38px;padding:0!important;
+  display:grid;place-items:center;border:0;border-radius:50%;background:#fff;color:#d93665;
+  font-size:16px;line-height:1;cursor:pointer
+}
+.chat-voice-main{flex:1;min-width:0}
+.chat-voice-wave{
+  height:34px;display:flex;align-items:center;justify-content:space-between;gap:2px;
+  width:100%;min-width:0;cursor:pointer;overflow:hidden;touch-action:pan-y
+}
+.chat-voice-wave span{display:block;flex:1;min-width:2px;max-width:4px;border-radius:4px;background:#f6b6c8;opacity:.93;transition:background .08s}
+.chat-voice-wave span.played{background:#fff}
+.chat-voice-time{display:flex;justify-content:space-between;gap:8px;margin-top:2px;font-size:10px;color:#ffe4ec;line-height:1.2}
+.chat-voice-audio{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important}
+.chat-message.voice-message .chat-message-body{margin-top:8px;font-size:12px}
+.chat-message.voice-message .chat-message-time{display:block;text-align:right;color:#ffe4ec;font-size:10px;margin:4px 1px 0}
+.chat-message.voice-message .chat-message-actions{top:3px!important;right:4px!important}
+.chat-message.voice-message .chat-message-more{background:#b72b53;color:#fff;border-radius:8px}
+.chat-message:not(.voice-message):not(.media-only) .chat-message-actions{top:2px}
+.chat-message:not(.voice-message):not(.media-only){padding-top:17px!important}
+.chat-composer .chat-emoji-btn,.chat-composer .chat-attach-btn,.chat-composer .chat-record-btn,.chat-composer .chat-send-btn{
+  flex:0 0 34px!important;width:34px!important;min-width:34px!important;height:34px!important;min-height:34px!important;padding:0!important
+}
+.chat-composer .chat-attach-btn{order:0!important}
+.chat-composer .chat-emoji-btn{order:1!important}
+.chat-composer #chatMessageInput{order:2!important;flex:1 1 auto!important;width:0!important}
+.chat-composer .chat-record-btn{order:3!important}
+.chat-composer .chat-send-btn{order:4!important;display:none!important}
+.chat-composer .chat-send-btn.is-visible{display:grid!important}
+.chat-composer .chat-record-btn.is-hidden{display:none!important}
+.chat-composer .chat-attach-btn,.chat-composer .chat-emoji-btn{font-size:18px!important}
+.chat-composer .chat-record-btn{background:transparent!important;color:#e83d72!important;font-size:19px!important}
+.chat-composer .chat-send-btn{background:#e83d72!important;color:#fff!important}
+@media(max-width:380px){
+ .chat-message.media-only{max-width:82%!important}
+ .chat-message-attachment-preview{max-width:100%;max-height:300px}
+ .chat-message-video{max-width:100%;max-height:300px}
+ .chat-message.voice-message{max-width:92%!important;padding:12px 10px 9px!important}
+ .chat-voice-play{flex-basis:34px;width:34px;height:34px;min-height:34px}
+ .chat-composer .chat-emoji-btn,.chat-composer .chat-attach-btn,.chat-composer .chat-record-btn,.chat-composer .chat-send-btn{flex-basis:31px!important;width:31px!important;min-width:31px!important;height:31px!important;min-height:31px!important}
+}
+
 </style></head>
 <body>
 <div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
@@ -2506,9 +2568,9 @@ function renderLiveChatShell() {
       '<div id="messageThread" class="chat-thread" role="log" aria-live="polite"><div class="chat-empty">Loading conversation…</div></div>' +
       '<div id="chatComposerContext" class="chat-composer-context hidden"><span id="chatComposerContextText"></span><button type="button" onclick="clearChatComposerContext()" aria-label="Cancel reply or edit" title="Cancel">×</button></div>' +
       '<form id="chatComposer" class="chat-composer">' +
+        '<button type="button" class="chat-attach-btn" id="chatAttachBtn" aria-label="Attach a photo or video" title="Attach a photo or video" onclick="chooseChatAttachment()">📎</button>' +
         '<button type="button" class="chat-emoji-btn" id="chatEmojiBtn" aria-label="Open emoji picker" title="Add emoji" onclick="toggleChatEmojiPicker()">☺</button>' +
-        '<button type="button" class="chat-attach-btn" id="chatAttachBtn" aria-label="Attach a file" title="Attach a file" onclick="chooseChatAttachment()">📎</button>' +
-        '<textarea id="chatMessageInput" maxlength="4000" aria-label="Message" placeholder="Message…" required rows="1"></textarea>' +
+        '<textarea id="chatMessageInput" maxlength="4000" aria-label="Message" placeholder="Message…" rows="1"></textarea>' +
         '<button type="button" class="chat-record-btn" id="chatRecordBtn" aria-label="Record voice message" title="Record voice message" onclick="toggleChatVoiceRecording()">🎙</button>' +
         '<button id="chatSendBtn" type="submit" class="chat-send-btn" aria-label="Send message" title="Send message"><span class="chat-send-glyph" aria-hidden="true">➤</span></button>' +
       '</form>' +
@@ -2529,6 +2591,7 @@ function renderLiveChatShell() {
   input.addEventListener("input", () => {
     input.style.height = "auto";
     input.style.height = Math.min(input.scrollHeight, 118) + "px";
+    syncChatComposerActions();
   });
   input.addEventListener("keydown", event => {
     if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
@@ -2537,6 +2600,68 @@ function renderLiveChatShell() {
     }
   });
   $("chatAttachmentInput")?.addEventListener("change", () => { void handleChatAttachmentSelected(); });
+  syncChatComposerActions();
+}
+function syncChatComposerActions() {
+  const input = $("chatMessageInput");
+  const send = $("chatSendBtn");
+  const record = $("chatRecordBtn");
+  if (!input || !send || !record) return;
+  const hasText = Boolean(input.value.trim()) || Boolean(chatEditingMessageId);
+  send.classList.toggle("is-visible", hasText);
+  record.classList.toggle("is-hidden", hasText && !chatRecordingActive);
+  if (chatRecordingActive) {
+    record.classList.remove("is-hidden");
+    send.classList.remove("is-visible");
+  }
+}
+function formatVoiceTime(seconds) {
+  const value = Number(seconds);
+  if (!Number.isFinite(value) || value < 0) return "0:00";
+  const total = Math.floor(value);
+  return Math.floor(total / 60) + ":" + String(total % 60).padStart(2,"0");
+}
+function syncChatVoicePlayback(audioId) {
+  const audio = $(audioId);
+  if (!audio) return;
+  const suffix = audioId.replace(/^chatVoiceAudio_/,"");
+  const button = $("chatVoiceButton_" + suffix);
+  const time = $("chatVoiceTime_" + suffix);
+  const wave = $("chatVoiceWave_" + suffix);
+  const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+  const current = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+  const progress = duration > 0 ? Math.max(0,Math.min(1,current/duration)) : 0;
+  if (button) {
+    button.textContent = !audio.paused && !audio.ended ? "Ⅱ" : "▶";
+    button.setAttribute("aria-label", !audio.paused && !audio.ended ? "Pause voice message" : "Play voice message");
+  }
+  if (time) time.textContent = formatVoiceTime(current) + " / " + formatVoiceTime(duration);
+  if (wave) Array.from(wave.children).forEach((bar,index) => bar.classList.toggle("played",index < Math.round(progress * wave.children.length)));
+}
+function toggleChatVoicePlayback(audioId) {
+  const audio = $(audioId);
+  if (!audio) return;
+  if (audio.paused || audio.ended) {
+    document.querySelectorAll(".chat-voice-audio").forEach(other => { if (other !== audio) { other.pause(); other.currentTime = 0; } });
+    const playback = audio.play();
+    if (playback && typeof playback.catch === "function") playback.catch(() => {
+      const status = $("chatStatus");
+      if (status) status.textContent = "Could not play this voice message. Reopen the conversation and try again.";
+    });
+  } else {
+    audio.pause();
+  }
+  syncChatVoicePlayback(audioId);
+}
+function seekChatVoicePlayback(audioId,event) {
+  const audio = $(audioId);
+  const wave = event.currentTarget;
+  if (!audio || !wave || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
+  const rect = wave.getBoundingClientRect();
+  if (!rect.width) return;
+  const fraction = Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width));
+  audio.currentTime = fraction * audio.duration;
+  syncChatVoicePlayback(audioId);
 }
 function toggleChatEmojiPicker() {
   const tray = $("chatEmojiTray");
@@ -2801,24 +2926,46 @@ function renderLiveMessages(messages, forceScroll = false) {
         : '';
       const editedLabel = message.edited_at ? '<span class="chat-message-edited">edited</span>' : '';
       const messageType = message.message_type || "text";
-      const fileName = String(message.attachment_name || (messageType === "voice" ? "Voice message" : "Attached file"));
+      const fileName = String(message.attachment_name || (messageType === "voice" ? "Voice message" : "Attached media"));
       const attachmentUrl = String(message.attachment_url || "");
       const mimeType = String(message.attachment_mime_type || "").toLowerCase();
       const fileSizeLabel = formatChatFileSize(message.attachment_size);
       let attachmentMarkup = "";
+      let mediaClass = "";
+      const safeMessageId = messageId.replace(/[^a-zA-Z0-9_-]/g, "");
+      const voiceAudioId = "chatVoiceAudio_" + safeMessageId;
+      const voiceButtonId = "chatVoiceButton_" + safeMessageId;
+      const voiceTimeId = "chatVoiceTime_" + safeMessageId;
+      const voiceWaveId = "chatVoiceWave_" + safeMessageId;
       if (message.attachment_path) {
-        if (attachmentUrl && messageType === "voice" && mimeType.startsWith("audio/")) {
-          attachmentMarkup = '<audio class="chat-message-audio" controls preload="none" src="' + esc(attachmentUrl) + '" aria-label="Voice message"></audio>';
+        if (messageType === "voice" && attachmentUrl && mimeType.startsWith("audio/")) {
+          const waveBars = Array.from({length:36}, (_, barIndex) => {
+            const seed = safeMessageId.split("").reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, 7);
+            const height = 7 + ((Math.imul(seed + barIndex * 29, 2654435761) >>> 0) % 22);
+            return '<span style="height:' + height + 'px"></span>';
+          }).join("");
+          attachmentMarkup = '<div class="chat-voice-player">' +
+            '<button type="button" class="chat-voice-play" id="' + voiceButtonId + '" onclick="toggleChatVoicePlayback(\'' + voiceAudioId + '\')" aria-label="Play voice message">▶</button>' +
+            '<div class="chat-voice-main">' +
+              '<div class="chat-voice-wave" id="' + voiceWaveId + '" onclick="seekChatVoicePlayback(\'' + voiceAudioId + '\',event)" role="slider" aria-label="Voice message progress" tabindex="0">' + waveBars + '</div>' +
+              '<div class="chat-voice-time"><span id="' + voiceTimeId + '">0:00 / 0:00</span><span>♫</span></div>' +
+            '</div>' +
+            '<audio class="chat-voice-audio" id="' + voiceAudioId + '" preload="metadata" src="' + esc(attachmentUrl) + '" aria-label="Voice message" ontimeupdate="syncChatVoicePlayback(\'' + voiceAudioId + '\')" onloadedmetadata="syncChatVoicePlayback(\'' + voiceAudioId + '\')" onplay="syncChatVoicePlayback(\'' + voiceAudioId + '\')" onpause="syncChatVoicePlayback(\'' + voiceAudioId + '\')" onended="syncChatVoicePlayback(\'' + voiceAudioId + '\')"></audio>' +
+          '</div>';
+          mediaClass = " voice-message";
         } else if (attachmentUrl && mimeType.startsWith("image/")) {
-          attachmentMarkup = '<a href="' + esc(attachmentUrl) + '" target="_blank" rel="noopener noreferrer" aria-label="Open image attachment"><img class="chat-message-attachment-preview" src="' + esc(attachmentUrl) + '" alt="' + esc(fileName) + '" loading="lazy"></a>';
+          attachmentMarkup = '<a class="chat-message-media-link" href="' + esc(attachmentUrl) + '" target="_blank" rel="noopener noreferrer" aria-label="View photo full size"><img class="chat-message-attachment-preview" src="' + esc(attachmentUrl) + '" alt="' + esc(fileName) + '" loading="lazy"></a>';
+          mediaClass = " media-only";
         } else if (attachmentUrl && mimeType.startsWith("video/")) {
-          attachmentMarkup = '<video class="chat-message-video" controls preload="none" src="' + esc(attachmentUrl) + '" aria-label="' + esc(fileName) + '"></video>';
+          attachmentMarkup = '<video class="chat-message-video" controls playsinline preload="metadata" src="' + esc(attachmentUrl) + '" aria-label="' + esc(fileName) + '"></video>';
+          mediaClass = " media-only";
+        } else {
+          attachmentMarkup = '<a class="chat-message-attachment" href="' + esc(attachmentUrl || "#") + '"' +
+            (attachmentUrl ? ' target="_blank" rel="noopener noreferrer" download="' + esc(fileName) + '"' : ' aria-disabled="true" onclick="return false"') +
+            '><span class="chat-message-attachment-icon" aria-hidden="true">↧</span>' +
+            '<span><span class="chat-message-attachment-name">' + esc(fileName) + '</span><span class="chat-message-attachment-meta">' +
+            (fileSizeLabel ? esc(fileSizeLabel) + " · " : "") + (attachmentUrl ? "Open or download" : "Media unavailable; reopen chat to retry") + '</span></span></a>';
         }
-        attachmentMarkup += '<a class="chat-message-attachment" href="' + esc(attachmentUrl || "#") + '"' +
-          (attachmentUrl ? ' target="_blank" rel="noopener noreferrer" download="' + esc(fileName) + '"' : ' aria-disabled="true" onclick="return false"') +
-          '><span class="chat-message-attachment-icon" aria-hidden="true">' + (messageType === "voice" ? "♫" : mimeType.startsWith("image/") ? "▧" : mimeType.startsWith("video/") ? "▶" : "↧") + '</span>' +
-          '<span><span class="chat-message-attachment-name">' + esc(fileName) + '</span><span class="chat-message-attachment-meta">' +
-          (fileSizeLabel ? esc(fileSizeLabel) + " · " : "") + (attachmentUrl ? "Open or download" : "Attachment unavailable; reopen chat to retry") + '</span></span></a>';
       }
       const messageOptions = '<div class="chat-message-actions"><button type="button" class="chat-message-more" onclick="toggleChatMessageMenu(this)" aria-label="Message options" title="Message options">⋯</button>' +
         '<div class="chat-message-menu hidden" role="menu">' +
@@ -2827,8 +2974,12 @@ function renderLiveMessages(messages, forceScroll = false) {
         (mine && messageType === "text" ? '<button type="button" role="menuitem" onclick="editChatMessage(\'' + esc(messageId) + '\')">✎ Edit</button>' : '') +
         (mine ? '<button type="button" role="menuitem" class="danger" onclick="deleteChatMessage(\'' + esc(messageId) + '\')">× Delete</button>' : '') +
         '</div></div>';
-      return separator + '<div class="chat-message ' + (mine ? "mine" : "theirs") + '" data-message-id="' + esc(messageId) + '">' +
-        messageOptions + quoted + attachmentMarkup + (message.body ? '<div class="chat-message-body">' + esc(message.body) + editedLabel + '</div>' : (editedLabel ? '<div class="chat-message-body">' + editedLabel + '</div>' : '')) +
+      const isDefaultMediaLabel = (messageType === "voice" && String(message.body || "") === "Voice message") ||
+        (messageType !== "voice" && mimeType.startsWith("image/") && String(message.body || "") === "Photo") ||
+        (messageType !== "voice" && mimeType.startsWith("video/") && String(message.body || "") === "Video");
+      const displayBody = message.body && !isDefaultMediaLabel ? String(message.body) : "";
+      return separator + '<div class="chat-message ' + (mine ? "mine" : "theirs") + mediaClass + '" data-message-id="' + esc(messageId) + '">' +
+        messageOptions + quoted + attachmentMarkup + (displayBody ? '<div class="chat-message-body">' + esc(displayBody) + editedLabel + '</div>' : (editedLabel ? '<div class="chat-message-body">' + editedLabel + '</div>' : '')) +
         (time || receipt ? '<span class="chat-message-time">' + esc(time) + receipt + '</span>' : '') + '</div>';
     }).join("");
   }
