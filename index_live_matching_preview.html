@@ -2681,6 +2681,9 @@ async function openLiveChat(matchId) {
     return;
   }
   stopLiveChatPolling();
+  chatReplyToMessage = null;
+  chatEditingMessageId = null;
+  currentChatMessages = [];
   activeChatMatchId = String(match.id);
   $("chatInboxControls").innerHTML = "";
   renderLiveChatShell();
@@ -2693,6 +2696,9 @@ async function openLiveChat(matchId) {
 }
 function closeLiveChat() {
   activeChatMatchId = null;
+  chatReplyToMessage = null;
+  chatEditingMessageId = null;
+  currentChatMessages = [];
   stopLiveChatPolling();
   renderChats();
   void loadChatInboxUpdates(true);
