@@ -55,17 +55,6 @@ values (
   false,
   10485760,
   array[
-    'application/pdf',
-    'text/plain',
-    'text/csv',
-    'application/rtf',
-    'application/zip',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'image/jpeg',
     'image/png',
     'image/webp',
@@ -77,6 +66,7 @@ values (
     'audio/wav',
     'video/mp4',
     'video/webm'
+
   ]
 )
 on conflict (id) do update set
