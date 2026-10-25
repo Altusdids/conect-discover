@@ -22,7 +22,7 @@ Supabase documents private buckets as requiring an authorized request or a time-
 
    Expected result: public = false.
 
-6. Test that direct public object URLs are denied and that images still load inside Conect through signed URLs. Test on desktop and Android, then wait for an hour or use an expired/stale photo URL scenario to confirm the frontend can refresh it. Never paste signed URLs into public chats; anyone holding a signed URL may use it until its validity/cache window ends.
+6. Immediately test that direct public object URLs are denied and that images still load inside Conect through signed URLs. Test on desktop and Android. Then, after one hour or with a stale/expired link scenario, confirm the frontend can refresh it. Do not mark the rollout complete until all these checks pass. Never paste signed URLs into public chats; anyone holding a signed URL may use it until its validity/cache window ends.
 7. Only after these checks pass, update the public Privacy Policy wording from the current-public-URL note to the verified private-bucket behavior.
 
 ## Safety notes
