@@ -209,23 +209,29 @@ async function signProfilePhotoRows(admin: any, photos: any[]) {
   )];
   if (!paths.length) return [];
 
-  const { data, error } = await admin.storage
-    .from(PHOTO_BUCKET)
-    .createSignedUrls(paths, PROFILE_PHOTO_URL_TTL_SECONDS);
-
-  if (error || !Array.isArray(data)) {
-    console.error("Profile photo signed URL creation error", error?.message || "No signed URL data returned");
-    throw new Error("Could not create secure profile photo links");
-  }
-
   const urlByPath = new Map<string, string>();
-  for (let i = 0; i < paths.length; i++) {
-    const item = data[i];
-    if (!item || item.error || typeof item.signedUrl !== "string" || !item.signedUrl) {
-      console.error("Profile photo signed URL missing", { path: paths[i], error: item?.error || null });
+  // Sign in moderate batches so a large Discover/relationship response does
+  // not depend on the Storage API accepting an unbounded paths array.
+  const SIGNED_URL_BATCH_SIZE = 50;
+  for (let start = 0; start < paths.length; start += SIGNED_URL_BATCH_SIZE) {
+    const batchPaths = paths.slice(start, start + SIGNED_URL_BATCH_SIZE);
+    const { data, error } = await admin.storage
+      .from(PHOTO_BUCKET)
+      .createSignedUrls(batchPaths, PROFILE_PHOTO_URL_TTL_SECONDS);
+
+    if (error || !Array.isArray(data)) {
+      console.error("Profile photo signed URL creation error", error?.message || "No signed URL data returned");
       throw new Error("Could not create secure profile photo links");
     }
-    urlByPath.set(paths[i], item.signedUrl);
+
+    for (let i = 0; i < batchPaths.length; i++) {
+      const item = data[i];
+      if (!item || item.error || typeof item.signedUrl !== "string" || !item.signedUrl) {
+        console.error("Profile photo signed URL missing", { path: batchPaths[i], error: item?.error || null });
+        throw new Error("Could not create secure profile photo links");
+      }
+      urlByPath.set(batchPaths[i], item.signedUrl);
+    }
   }
 
   const expiresAt = new Date(Date.now() + PROFILE_PHOTO_URL_TTL_SECONDS * 1000).toISOString();
