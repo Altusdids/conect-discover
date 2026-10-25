@@ -335,6 +335,7 @@ Deno.serve(async (req: Request) => {
       action !== "record_swipe" &&
       action !== "load_messages" &&
       action !== "send_message" &&
+      action !== "prepare_attachment_upload" &&
       action !== "send_attachment_message" &&
       action !== "edit_message" &&
       action !== "delete_message" &&
@@ -436,6 +437,7 @@ Deno.serve(async (req: Request) => {
       action === "record_swipe" ||
       action === "load_messages" ||
       action === "send_message" ||
+      action === "prepare_attachment_upload" ||
       action === "send_attachment_message" ||
       action === "edit_message" ||
       action === "delete_message" ||
@@ -766,7 +768,7 @@ Deno.serve(async (req: Request) => {
       }
 
       // PRIVATE MESSAGING: only participants in a real, active match can read/send/edit/delete.
-      if (action === "load_messages" || action === "send_message" || action === "send_attachment_message" || action === "edit_message" || action === "delete_message") {
+      if (action === "load_messages" || action === "send_message" || action === "prepare_attachment_upload" || action === "send_attachment_message" || action === "edit_message" || action === "delete_message") {
         const matchId = typeof body.matchId === "string" ? body.matchId.trim() : "";
         if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(matchId)) {
           return jsonResponse({ error: "Invalid conversation" }, 400);
@@ -800,14 +802,11 @@ Deno.serve(async (req: Request) => {
           return jsonResponse({ error: "Messaging is unavailable for this conversation" }, 403);
         }
 
-        if (action === "send_attachment_message") {
+        if (action === "prepare_attachment_upload") {
           const rawFileName = typeof body.fileName === "string" ? body.fileName.trim() : "";
           const rawMimeType = typeof body.mimeType === "string" ? body.mimeType.split(";")[0].trim().toLowerCase() : "";
-          const fileBase64 = typeof body.fileBase64 === "string" ? body.fileBase64 : "";
-          const messageType = body.messageType === "voice" ? "voice" : "file";
-          const caption = typeof body.caption === "string" ? body.caption.trim().slice(0, 2000) : "";
           const rawFileSize = Number(body.fileSize);
-
+          const messageType = body.messageType === "voice" ? "voice" : "file";
           if (!rawFileName || rawFileName.length > 180) {
             return jsonResponse({ error: "Choose a file with a valid filename" }, 400);
           }
@@ -817,27 +816,82 @@ Deno.serve(async (req: Request) => {
           if (messageType === "voice" && !rawMimeType.startsWith("audio/")) {
             return jsonResponse({ error: "A voice message must be an audio file" }, 400);
           }
-          if (!fileBase64 || fileBase64.length > Math.ceil(MAX_CHAT_ATTACHMENT_BYTES * 4 / 3) + 8 ||
-              !/^[A-Za-z0-9+/]*={0,2}$/.test(fileBase64) || fileBase64.length % 4 !== 0) {
-            return jsonResponse({ error: "The file data is invalid or too large (maximum 10 MB)" }, 413);
+          if (!Number.isInteger(rawFileSize) || rawFileSize < 1 || rawFileSize > MAX_CHAT_ATTACHMENT_BYTES) {
+            return jsonResponse({ error: "Files and voice messages must be 10 MB or smaller" }, 413);
           }
-
-          let fileBytes: Uint8Array;
-          try {
-            const binary = atob(fileBase64);
-            fileBytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-          } catch {
-            return jsonResponse({ error: "Could not read the selected file" }, 400);
-          }
-          if (!fileBytes.length || fileBytes.byteLength > MAX_CHAT_ATTACHMENT_BYTES ||
-              (Number.isFinite(rawFileSize) && rawFileSize > 0 && rawFileSize !== fileBytes.byteLength)) {
-            return jsonResponse({ error: "Files must be between 1 byte and 10 MB" }, 413);
-          }
-
           const safeFileName = rawFileName
             .replace(/[^a-zA-Z0-9._ ()-]/g, "_")
             .replace(/\.{2,}/g, ".")
             .slice(0, 120) || (messageType === "voice" ? "voice-message" : "attachment");
+          const storagePath = matchRow.id + "/" + viewer.id + "/" + crypto.randomUUID() + "-" + safeFileName;
+          const { data: signedUpload, error: signedUploadError } = await admin.storage
+            .from(CHAT_ATTACHMENT_BUCKET)
+            .createSignedUploadUrl(storagePath);
+          if (signedUploadError || !signedUpload) {
+            console.error("Chat attachment signed upload URL error", signedUploadError?.message);
+            return jsonResponse({ error: "Could not prepare the file upload" }, 500);
+          }
+          return jsonResponse({
+            ok: true,
+            storagePath,
+            signedUploadUrl: signedUpload.signedUrl,
+            fileName: safeFileName,
+            mimeType: rawMimeType,
+            fileSize: rawFileSize,
+            messageType,
+          });
+        }
+
+        if (action === "send_attachment_message") {
+          const storagePath = typeof body.storagePath === "string" ? body.storagePath.trim() : "";
+          const rawFileName = typeof body.fileName === "string" ? body.fileName.trim() : "";
+          const rawMimeType = typeof body.mimeType === "string" ? body.mimeType.split(";")[0].trim().toLowerCase() : "";
+          const rawFileSize = Number(body.fileSize);
+          const messageType = body.messageType === "voice" ? "voice" : "file";
+          const caption = typeof body.caption === "string" ? body.caption.trim().slice(0, 2000) : "";
+          const prefix = matchRow.id + "/" + viewer.id + "/";
+          if (!storagePath.startsWith(prefix) || storagePath.slice(prefix.length).includes("/") ||
+              storagePath.slice(prefix.length).includes("..")) {
+            return jsonResponse({ error: "Invalid attachment path" }, 400);
+          }
+          if (!rawFileName || rawFileName.length > 180 || !ALLOWED_CHAT_MIME_TYPES.has(rawMimeType)) {
+            return jsonResponse({ error: "Invalid attachment details" }, 400);
+          }
+          if (messageType === "voice" && !rawMimeType.startsWith("audio/")) {
+            return jsonResponse({ error: "A voice message must be an audio file" }, 400);
+          }
+          if (!Number.isInteger(rawFileSize) || rawFileSize < 1 || rawFileSize > MAX_CHAT_ATTACHMENT_BYTES) {
+            return jsonResponse({ error: "Files and voice messages must be 10 MB or smaller" }, 413);
+          }
+          const safeFileName = rawFileName
+            .replace(/[^a-zA-Z0-9._ ()-]/g, "_")
+            .replace(/\.{2,}/g, ".")
+            .slice(0, 120) || (messageType === "voice" ? "voice-message" : "attachment");
+          const storedName = storagePath.slice(prefix.length);
+          if (!storedName.endsWith("-" + safeFileName)) {
+            return jsonResponse({ error: "Attachment filename does not match the uploaded file" }, 400);
+          }
+
+          const { data: storedObjects, error: listError } = await admin.storage
+            .from(CHAT_ATTACHMENT_BUCKET)
+            .list(matchRow.id + "/" + viewer.id, { limit: 100, search: storedName });
+          if (listError) {
+            console.error("Chat attachment verification error", listError.message);
+            return jsonResponse({ error: "Could not verify the uploaded file" }, 500);
+          }
+          const storedObject = (storedObjects || []).find((object: any) => object.name === storedName);
+          if (!storedObject || !storedObject.metadata) {
+            return jsonResponse({ error: "Upload was not found. Please retry the attachment." }, 409);
+          }
+          const storedSize = Number(storedObject.metadata.size ?? storedObject.metadata.contentLength);
+          const storedMime = String(storedObject.metadata.mimetype || storedObject.metadata.contentType || "").split(";")[0].toLowerCase();
+          if (!Number.isFinite(storedSize) || storedSize !== rawFileSize || storedSize > MAX_CHAT_ATTACHMENT_BYTES) {
+            return jsonResponse({ error: "The uploaded file size did not match. Please try again." }, 400);
+          }
+          if (storedMime && storedMime !== rawMimeType) {
+            return jsonResponse({ error: "The uploaded file type did not match. Please try again." }, 400);
+          }
+
           const rawReplyTo = typeof body.replyToMessageId === "string" ? body.replyToMessageId.trim() : "";
           if (rawReplyTo && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawReplyTo)) {
             return jsonResponse({ error: "Invalid reply message" }, 400);
@@ -858,15 +912,6 @@ Deno.serve(async (req: Request) => {
             replyToMessageId = replyMessage.id;
           }
 
-          const storagePath = matchRow.id + "/" + viewer.id + "/" + crypto.randomUUID() + "-" + safeFileName;
-          const { error: uploadError } = await admin.storage
-            .from(CHAT_ATTACHMENT_BUCKET)
-            .upload(storagePath, fileBytes, { contentType: rawMimeType, upsert: false });
-          if (uploadError) {
-            console.error("Chat attachment storage upload error", uploadError.message);
-            return jsonResponse({ error: "Could not upload this file. Please try again." }, 500);
-          }
-
           const { data: newMessage, error: insertError } = await admin
             .from("messages")
             .insert({
@@ -877,7 +922,7 @@ Deno.serve(async (req: Request) => {
               attachment_path: storagePath,
               attachment_name: safeFileName,
               attachment_mime_type: rawMimeType,
-              attachment_size: fileBytes.byteLength,
+              attachment_size: storedSize,
               reply_to_message_id: replyToMessageId,
             })
             .select("id, match_id, sender_user_id, body, created_at, read_at, reply_to_message_id, edited_at, message_type, attachment_path, attachment_name, attachment_mime_type, attachment_size")
