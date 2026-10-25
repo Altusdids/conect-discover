@@ -553,6 +553,14 @@ body:has(#discoverPage:not(.hidden)){height:100dvh!important;overflow:hidden!imp
   .username-search-result button{padding:7px 8px}
 }
 
+
+/* Explicit Profile page order: heading, profile summary, portfolio, then the remaining tools. */
+#profilePage:not(.hidden){display:flex!important;flex-direction:column!important;align-items:stretch!important}
+#profilePage:not(.hidden)>h1,
+#profilePage:not(.hidden)>p:first-of-type{order:-10!important}
+#profilePage:not(.hidden)>.profile-hero{order:-9!important}
+#profilePage:not(.hidden)>.portfolio-launch-panel{order:-8!important}
+
 </style></head>
 <body>
 <div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
