@@ -1,6 +1,6 @@
 # Conect profile-photo privacy rollout
 
-Status: `telegram-session` Edge Function version 26 is active. The latest frontend (`?v=ed40ef1`) passed the profile-photo screens and profile scroll/navigation regression tests. A read-only check immediately before the privacy switch confirmed `profile-photos` is still public (`public = true`). Next: switch it to private in the Supabase Dashboard, then run the post-switch checks below.
+Status: `telegram-session` Edge Function version 26 is active, and the latest frontend (`?v=ed40ef1`) passed the profile-photo and navigation tests before the privacy switch. Supabase now confirms `profile-photos.public = false`. **Post-switch tests are pending:** confirm a direct public object URL is denied and profile photos still load throughout Conect using signed URLs.
 
 ## Why this must be done in order
 
@@ -20,7 +20,7 @@ Supabase documents private buckets as requiring an authorized request or a time-
    FROM storage.buckets
    WHERE id = 'profile-photos';
 
-   Expected result: public = false.
+   Result verified: public = false.
 
 6. Immediately test that direct public object URLs are denied and that images still load inside Conect through signed URLs. Test on desktop and Android. Then, after one hour or with a stale/expired link scenario, confirm the frontend can refresh it. Do not mark the rollout complete until all these checks pass. Never paste signed URLs into public chats; anyone holding a signed URL may use it until its validity/cache window ends.
 7. Only after these checks pass, update the public Privacy Policy wording from the current-public-URL note to the verified private-bucket behavior.
