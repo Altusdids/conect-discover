@@ -12,13 +12,7 @@ const PHOTO_BUCKET = "profile-photos";
 const CHAT_ATTACHMENT_BUCKET = "chat-attachments";
 const MAX_CHAT_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const ALLOWED_CHAT_MIME_TYPES = new Set([
-  "application/pdf", "text/plain", "text/csv", "application/rtf", "application/zip",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-powerpoint",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  // The attachment picker accepts photos and videos. Audio is reserved for voice notes.
   "image/jpeg", "image/png", "image/webp", "image/gif",
   "audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav",
   "video/mp4", "video/webm",
@@ -852,6 +846,9 @@ Deno.serve(async (req: Request) => {
           if (messageType === "voice" && !rawMimeType.startsWith("audio/")) {
             return jsonResponse({ error: "A voice message must be an audio file" }, 400);
           }
+          if (messageType !== "voice" && !rawMimeType.startsWith("image/") && !rawMimeType.startsWith("video/")) {
+            return jsonResponse({ error: "Only photos and videos can be attached. Use the microphone for voice messages." }, 415);
+          }
           if (!Number.isInteger(rawFileSize) || rawFileSize < 1 || rawFileSize > MAX_CHAT_ATTACHMENT_BYTES) {
             return jsonResponse({ error: "Files and voice messages must be 10 MB or smaller" }, 413);
           }
@@ -895,6 +892,9 @@ Deno.serve(async (req: Request) => {
           }
           if (messageType === "voice" && !rawMimeType.startsWith("audio/")) {
             return jsonResponse({ error: "A voice message must be an audio file" }, 400);
+          }
+          if (messageType !== "voice" && !rawMimeType.startsWith("image/") && !rawMimeType.startsWith("video/")) {
+            return jsonResponse({ error: "Only photos and videos can be attached. Use the microphone for voice messages." }, 415);
           }
           if (!Number.isInteger(rawFileSize) || rawFileSize < 1 || rawFileSize > MAX_CHAT_ATTACHMENT_BYTES) {
             return jsonResponse({ error: "Files and voice messages must be 10 MB or smaller" }, 413);
@@ -953,7 +953,9 @@ Deno.serve(async (req: Request) => {
             .insert({
               match_id: matchRow.id,
               sender_user_id: viewer.id,
-              body: caption,
+              // Keep a non-empty body even when the user sends an attachment without a caption.
+              // Some existing schemas/constraints require messages.body to contain text.
+              body: caption || (messageType === "voice" ? "Voice message" : rawMimeType.startsWith("video/") ? "Video" : "Photo"),
               message_type: messageType,
               attachment_path: storagePath,
               attachment_name: safeFileName,
@@ -965,10 +967,19 @@ Deno.serve(async (req: Request) => {
             .single();
 
           if (insertError || !newMessage) {
-            console.error("Chat attachment message insert error", insertError?.message);
+            console.error("Chat attachment message insert error", {
+              code: insertError?.code,
+              message: insertError?.message,
+              details: insertError?.details,
+              hint: insertError?.hint,
+            });
             const { error: cleanupError } = await admin.storage.from(CHAT_ATTACHMENT_BUCKET).remove([storagePath]);
             if (cleanupError) console.error("Chat attachment rollback cleanup error", cleanupError.message);
-            return jsonResponse({ error: "The file uploaded but could not be added to the conversation" }, 500);
+            if (insertError?.code === "42703" || insertError?.code === "PGRST204" ||
+                /column .* does not exist|schema cache/i.test(String(insertError?.message || ""))) {
+              return jsonResponse({ error: "Chat attachment database fields are missing. Run the latest chat-attachments-migration.sql in Supabase SQL Editor, then retry." }, 500);
+            }
+            return jsonResponse({ error: "The upload succeeded, but the attachment message could not be saved. Check the Supabase Edge Function logs for the database error." }, 500);
           }
 
           const { data: signed, error: signedError } = await admin.storage
