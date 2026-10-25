@@ -2242,7 +2242,7 @@ async function loadChatInboxUpdates(silent = true) {
       chatUnreadCounts.set(matchId, unread);
       if (update.latest) {
         chatMessagePreviews.set(matchId, {
-          body: String(update.latest.body || ""),
+          body: String(update.latest.body || (update.latest.message_type === "voice" ? "Voice message" : update.latest.attachment_name ? "📎 " + update.latest.attachment_name : "")),
           mine: update.latest.is_mine === true,
           created_at: update.latest.created_at || null
         });
@@ -2563,7 +2563,7 @@ function formatChatFileSize(size) {
 }
 function normalizedChatMime(file) {
   const given = String(file && file.type || "").split(";")[0].trim().toLowerCase();
-  if (given) return given;
+  if (given && given !== "application/octet-stream") return given;
   const ext = String(file && file.name || "").split(".").pop().toLowerCase();
   const byExtension = {
     pdf:"application/pdf",txt:"text/plain",csv:"text/csv",rtf:"application/rtf",zip:"application/zip",
@@ -2641,7 +2641,7 @@ async function sendChatAttachment(file, type = "file") {
     if (status) status.textContent = type === "voice" ? "Uploading voice message…" : "Uploading attachment…";
     const uploadResponse = await fetch(uploadInfo.signedUploadUrl, {
       method: "PUT",
-      headers: { "Content-Type": mimeType, "cache-control": "max-age=3600" },
+      headers: { "Content-Type": mimeType, "cache-control": "max-age=3600", "x-upsert": "false" },
       body: file
     });
     if (!uploadResponse.ok) {
@@ -2752,7 +2752,7 @@ function renderLiveMessages(messages, forceScroll = false) {
   const wasNearBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 90;
   if (currentChatMessages.length && activeChatMatchId) {
     const latest = currentChatMessages[currentChatMessages.length - 1];
-    chatMessagePreviews.set(String(activeChatMatchId), { body: String(latest.body || ""), mine: latest.is_mine === true, created_at: latest.created_at || null });
+    chatMessagePreviews.set(String(activeChatMatchId), { body: String(latest.body || (latest.message_type === "voice" ? "Voice message" : latest.attachment_name ? "📎 " + latest.attachment_name : "")), mine: latest.is_mine === true, created_at: latest.created_at || null });
   }
   if (!currentChatMessages.length) {
     thread.innerHTML = '<div class="chat-empty">No messages yet. Say hello 👋</div>';
