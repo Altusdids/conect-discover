@@ -1114,6 +1114,7 @@ let chatReplyToMessage = null;
 let chatEditingMessageId = null;
 let currentChatMessages = [];
 let chatUserSearchBusy = false;
+let chatSearchProfiles = [];
 let showChatRequests = false;
 let chatSearchQuery = "";
 const chatMessagePreviews = new Map();
@@ -1695,7 +1696,7 @@ function currentProfileList() {
   );
 }
 function allLiveRelationshipProfiles() {
-  return [...profiles, ...liveLikedProfiles, ...liveIncomingLikes, ...liveMatches.map(item => item.profile).filter(Boolean)];
+  return [...profiles, ...chatSearchProfiles, ...liveLikedProfiles, ...liveIncomingLikes, ...liveMatches.map(item => item.profile).filter(Boolean)];
 }
 function findConectProfile(id) {
   const key = String(id);
@@ -1762,6 +1763,7 @@ async function recordLiveSwipe(profileId, action, openLikesAfter = false) {
       swipeAction: action === "star" ? "super_like" : action
     });
     profiles = profiles.filter(p => String(p.id) !== String(profile.id));
+    chatSearchProfiles = chatSearchProfiles.filter(p => String(p.id) !== String(profile.id));
     await loadLiveRelationships();
     renderAll();
     if (openLikesAfter) showPage("likesPage");
@@ -2365,11 +2367,7 @@ async function searchConectUsers() {
   try {
     const result = await conectBackendRequest("search_users", undefined, { query });
     const found = (Array.isArray(result.profiles) ? result.profiles : []).map(mapConectProfile);
-    for (const person of found) {
-      const existingIndex = profiles.findIndex(item => String(item.id) === String(person.id));
-      if (existingIndex >= 0) profiles[existingIndex] = { ...profiles[existingIndex], ...person };
-      else profiles.push(person);
-    }
+    chatSearchProfiles = found;
     if (!found.length) {
       if (status) status.textContent = "No active profiles found for that username. Try a different spelling.";
       return;
@@ -2997,7 +2995,7 @@ function showDetail(id) {
       '<div class="profile-report-actions"><button type="button" class="secondary" onclick="cancelProfileReport()">Cancel</button><button type="submit" class="primary" id="submitProfileReportBtn">Submit report</button></div>' +
     '</form><p id="profileActionStatus" class="profile-action-status" role="status" aria-live="polite"></p>';
   const actionButtons = liveDiscoveryMode
-    ? (profiles.some(candidate => String(candidate.id) === String(p.id))
+    ? (profiles.some(candidate => String(candidate.id) === String(p.id)) || chatSearchProfiles.some(candidate => String(candidate.id) === String(p.id))
         ? '<div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(' + idArg + ')">♥ Like</button><button class="secondary" onclick="recordLiveSwipe(' + idArg + ', \'pass\').then(function(){showPage(\'discoverPage\')})">Pass</button></div>'
         : '')
     : '<div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likePerson(' + idArg + ')">♥ Like</button><button class="secondary" onclick="act(\'pass\')">Pass</button></div>';
