@@ -413,6 +413,40 @@ Deno.serve(async (req: Request) => {
         }
       }
 
+      // Clean up private chat files for conversations that will be removed with this account.
+      const { data: accountMatches, error: accountMatchesError } = await admin
+        .from("matches")
+        .select("id")
+        .or(`user_a.eq.${account.id},user_b.eq.${account.id}`);
+      if (accountMatchesError) {
+        console.error("Delete account match lookup error", accountMatchesError.message);
+        return jsonResponse({ error: "Could not prepare chat attachment cleanup" }, 500);
+      }
+      const accountMatchIds = (accountMatches || []).map((row: any) => row.id);
+      if (accountMatchIds.length) {
+        const { data: attachmentRows, error: attachmentRowsError } = await admin
+          .from("messages")
+          .select("attachment_path")
+          .in("match_id", accountMatchIds)
+          .not("attachment_path", "is", null);
+        if (attachmentRowsError) {
+          console.error("Delete account chat attachment lookup error", attachmentRowsError.message);
+          return jsonResponse({ error: "Could not prepare chat attachment cleanup" }, 500);
+        }
+        const attachmentPaths = [...new Set((attachmentRows || [])
+          .map((row: any) => row.attachment_path)
+          .filter((path: unknown): path is string => typeof path === "string" && path.length > 0))];
+        if (attachmentPaths.length) {
+          const { error: attachmentCleanupError } = await admin.storage
+            .from(CHAT_ATTACHMENT_BUCKET)
+            .remove(attachmentPaths);
+          if (attachmentCleanupError) {
+            console.error("Delete account chat attachment cleanup error", attachmentCleanupError.message);
+            return jsonResponse({ error: "Could not remove chat attachments. Your account was not deleted; please retry." }, 500);
+          }
+        }
+      }
+
       const { data: deletionResult, error: deletionError } = await admin.rpc(
         "delete_conect_account_data",
         { p_profile_id: account.id },
