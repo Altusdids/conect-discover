@@ -3,6 +3,18 @@
 -- The bucket is private: clients must retrieve files only through a verified
 -- matched conversation, using temporary signed URLs created by the Edge Function.
 
+-- Also ensure the earlier reply/edit fields exist. These are no-ops if the
+-- chat-message-actions migration has already been applied.
+alter table public.messages
+  add column if not exists reply_to_message_id uuid null
+  references public.messages(id) on delete set null;
+
+alter table public.messages
+  add column if not exists edited_at timestamptz null;
+
+create index if not exists messages_reply_to_message_id_idx
+  on public.messages(reply_to_message_id);
+
 alter table public.messages
   add column if not exists message_type text not null default 'text';
 
