@@ -2620,13 +2620,16 @@ async function sendChatAttachment(file, type = "file") {
     return;
   }
   const matchId = activeChatMatchId;
+  const caption = $("chatMessageInput")?.value.trim() || "";
   chatUploadBusy = true;
   const status = $("chatStatus");
   const attachBtn = $("chatAttachBtn");
   const recordBtn = $("chatRecordBtn");
   const sendBtn = $("chatSendBtn");
+  const composerInput = $("chatMessageInput");
   if (status) status.textContent = type === "voice" ? "Sending voice message…" : "Uploading attachment…";
   [attachBtn, recordBtn, sendBtn].forEach(button => { if (button) button.disabled = true; });
+  if (composerInput) composerInput.disabled = true;
   try {
     const uploadInfo = await conectBackendRequest("prepare_attachment_upload", undefined, {
       matchId,
@@ -2639,10 +2642,13 @@ async function sendChatAttachment(file, type = "file") {
       throw new Error("The server did not prepare a secure file upload.");
     }
     if (status) status.textContent = type === "voice" ? "Uploading voice message…" : "Uploading attachment…";
+    const uploadForm = new FormData();
+    uploadForm.append("cacheControl", "3600");
+    uploadForm.append("", file);
     const uploadResponse = await fetch(uploadInfo.signedUploadUrl, {
       method: "PUT",
-      headers: { "Content-Type": mimeType, "cache-control": "max-age=3600", "x-upsert": "false" },
-      body: file
+      headers: { "x-upsert": "false" },
+      body: uploadForm
     });
     if (!uploadResponse.ok) {
       const uploadError = await uploadResponse.json().catch(() => ({}));
@@ -2655,7 +2661,7 @@ async function sendChatAttachment(file, type = "file") {
       mimeType: uploadInfo.mimeType || mimeType,
       fileSize: uploadInfo.fileSize || file.size,
       messageType: uploadInfo.messageType || type,
-      caption: $("chatMessageInput")?.value.trim() || "",
+      caption,
       replyToMessageId: chatReplyToMessage ? chatReplyToMessage.id : null
     });
     if (activeChatMatchId !== matchId) return;
@@ -2670,6 +2676,7 @@ async function sendChatAttachment(file, type = "file") {
   } finally {
     chatUploadBusy = false;
     [attachBtn, recordBtn, sendBtn].forEach(button => { if (button) button.disabled = false; });
+    if (composerInput) composerInput.disabled = false;
   }
 }
 async function toggleChatVoiceRecording() {
