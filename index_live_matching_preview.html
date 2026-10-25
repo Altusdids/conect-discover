@@ -2644,7 +2644,11 @@ async function sendChatAttachment(file, type = "file") {
     if (status) status.textContent = type === "voice" ? "Uploading voice message…" : "Uploading attachment…";
     const uploadForm = new FormData();
     uploadForm.append("cacheControl", "3600");
-    uploadForm.append("", file);
+    const originalMime = String(file.type || "").split(";")[0].trim().toLowerCase();
+    const storageFile = originalMime === mimeType
+      ? file
+      : new File([file], file.name || "attachment", { type: mimeType, lastModified: file.lastModified || Date.now() });
+    uploadForm.append("", storageFile);
     const uploadResponse = await fetch(uploadInfo.signedUploadUrl, {
       method: "PUT",
       headers: { "x-upsert": "false" },
