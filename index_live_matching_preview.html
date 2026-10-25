@@ -2581,8 +2581,13 @@ function renderChatComposerContext() {
   }
 }
 function clearChatComposerContext() {
+  const wasEditing = Boolean(chatEditingMessageId);
   chatReplyToMessage = null;
   chatEditingMessageId = null;
+  if (wasEditing) {
+    const input = $("chatMessageInput");
+    if (input) { input.value = ""; input.style.height = "auto"; }
+  }
   renderChatComposerContext();
 }
 function replyToChatMessage(messageId) {
