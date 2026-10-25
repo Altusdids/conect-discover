@@ -2484,11 +2484,6 @@ function renderLiveChatShell() {
       if (input.value.trim()) void sendLiveMessage();
     }
   });
-  const usernameSearchForm = $("usernameSearchForm");
-  usernameSearchForm?.addEventListener("submit", event => {
-    event.preventDefault();
-    void searchConectUsers();
-  });
 }
 function toggleChatEmojiPicker() {
   const tray = $("chatEmojiTray");
@@ -3179,6 +3174,13 @@ if (discoveryWheelFeed) {
       discoveryWheelFeed.scrollTo({ top: destination, behavior: "smooth" });
     }
   }, { passive: false });
+}
+const usernameSearchForm = $("usernameSearchForm");
+if (usernameSearchForm) {
+  usernameSearchForm.addEventListener("submit", event => {
+    event.preventDefault();
+    void searchConectUsers();
+  });
 }
 const languagePicker = $("appLanguageSelect");
 if (languagePicker) {
