@@ -2628,22 +2628,33 @@ async function sendChatAttachment(file, type = "file") {
   if (status) status.textContent = type === "voice" ? "Sending voice message…" : "Uploading attachment…";
   [attachBtn, recordBtn, sendBtn].forEach(button => { if (button) button.disabled = true; });
   try {
-    const dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error("Could not read this file."));
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.readAsDataURL(file);
-    });
-    const comma = dataUrl.indexOf(",");
-    if (comma < 0) throw new Error("The selected file could not be encoded.");
-    const fileBase64 = dataUrl.slice(comma + 1);
-    await conectBackendRequest("send_attachment_message", undefined, {
+    const uploadInfo = await conectBackendRequest("prepare_attachment_upload", undefined, {
       matchId,
       fileName: file.name || (type === "voice" ? "voice-message.webm" : "attachment"),
       mimeType,
       fileSize: file.size,
-      fileBase64,
-      messageType: type,
+      messageType: type
+    });
+    if (!uploadInfo.signedUploadUrl || !uploadInfo.storagePath) {
+      throw new Error("The server did not prepare a secure file upload.");
+    }
+    if (status) status.textContent = type === "voice" ? "Uploading voice message…" : "Uploading attachment…";
+    const uploadResponse = await fetch(uploadInfo.signedUploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": mimeType, "cache-control": "max-age=3600" },
+      body: file
+    });
+    if (!uploadResponse.ok) {
+      const uploadError = await uploadResponse.json().catch(() => ({}));
+      throw new Error(uploadError.message || "Storage upload failed (" + uploadResponse.status + ")");
+    }
+    await conectBackendRequest("send_attachment_message", undefined, {
+      matchId,
+      storagePath: uploadInfo.storagePath,
+      fileName: uploadInfo.fileName || file.name || "attachment",
+      mimeType: uploadInfo.mimeType || mimeType,
+      fileSize: uploadInfo.fileSize || file.size,
+      messageType: uploadInfo.messageType || type,
       caption: $("chatMessageInput")?.value.trim() || "",
       replyToMessageId: chatReplyToMessage ? chatReplyToMessage.id : null
     });
@@ -2967,7 +2978,7 @@ function closeLiveChat() {
   void loadChatInboxUpdates(true);
 }
 async function sendLiveMessage() {
-  if (liveChatSendBusy || !activeChatMatchId) return;
+  if (liveChatSendBusy || chatUploadBusy || !activeChatMatchId) return;
   const input = $("chatMessageInput");
   if (!input) return;
   const message = input.value.trim();
