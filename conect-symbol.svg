@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Conect interlocking heart symbol</title>
+  <defs>
+    <linearGradient id="heartA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd84d"/>
+      <stop offset=".42" stop-color="#ff8a19"/>
+      <stop offset=".72" stop-color="#ff4b1f"/>
+      <stop offset="1" stop-color="#ff153f"/>
+    </linearGradient>
+    <linearGradient id="heartB" x1=".05" y1="0" x2=".95" y2="1">
+      <stop offset="0" stop-color="#ffb52e"/>
+      <stop offset=".45" stop-color="#ff4c32"/>
+      <stop offset=".72" stop-color="#ff174d"/>
+      <stop offset="1" stop-color="#ff6255"/>
+    </linearGradient>
+    <radialGradient id="tile" cx=".5" cy=".38" r=".78">
+      <stop offset="0" stop-color="#19151a"/>
+      <stop offset=".7" stop-color="#070709"/>
+      <stop offset="1" stop-color="#020203"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feComposite in="blur" in2="SourceGraphic" operator="in" result="glowShape"/>
+      <feMerge><feMergeNode in="glowShape"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000" flood-opacity=".55"/>
+    </filter>
+  </defs>
+  <rect x="18" y="18" width="476" height="476" rx="112" fill="url(#tile)" stroke="#252329" stroke-width="2"/>
+  <rect x="21" y="21" width="470" height="470" rx="110" fill="none" stroke="#ffffff" stroke-opacity=".035" stroke-width="2"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+    <path d="M247 190 C214 153 189 132 153 132 C108 132 80 162 80 202 C80 251 131 292 218 359 C234 371 247 380 260 368 C285 348 315 324 341 300" stroke="url(#heartA)" stroke-width="27"/>
+    <path d="M267 190 C300 153 325 132 361 132 C406 132 434 162 434 202 C434 251 383 292 296 359 C280 371 267 380 254 368 C229 348 199 324 173 300" stroke="url(#heartB)" stroke-width="27"/>
+    <path d="M337 197 C314 211 287 234 267 259 C249 281 249 309 267 330 C275 340 288 350 299 359" stroke="url(#heartB)" stroke-width="25"/>
+  </g>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#softShadow)">
+    <path d="M247 190 C214 153 189 132 153 132 C108 132 80 162 80 202 C80 251 131 292 218 359 C234 371 247 380 260 368 C285 348 315 324 341 300" stroke="url(#heartA)" stroke-width="25"/>
+    <path d="M267 190 C300 153 325 132 361 132 C406 132 434 162 434 202 C434 251 383 292 296 359 C280 371 267 380 254 368 C229 348 199 324 173 300" stroke="url(#heartB)" stroke-width="25"/>
+    <path d="M337 197 C314 211 287 234 267 259 C249 281 249 309 267 330 C275 340 288 350 299 359" stroke="url(#heartB)" stroke-width="23"/>
+  </g>
+</svg>
