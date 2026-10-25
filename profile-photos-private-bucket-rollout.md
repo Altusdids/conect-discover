@@ -1,6 +1,6 @@
 # Conect profile-photo privacy rollout
 
-Status: the `telegram-session` Edge Function is deployed and active at version 26. The frontend scroll fix is committed (preview cache-buster `?v=f476ab5`) and needs a live retest. The `profile-photos` bucket is still public; do not switch it until all app checks below pass.
+Status: the `telegram-session` Edge Function is deployed and active at version 26. The frontend scroll fix is committed (preview cache-buster `?v=ed40ef1`) and needs a live retest. The `profile-photos` bucket is still public; do not switch it until all app checks below pass.
 
 ## Why this must be done in order
 
@@ -10,9 +10,9 @@ Supabase documents private buckets as requiring an authorized request or a time-
 
 ## Rollout steps
 
-1. Open the latest GitHub Pages preview with a fresh cache-buster, e.g. `?v=f476ab5`, and confirm the new frontend loads.
+1. Open the latest GitHub Pages preview with a fresh cache-buster, e.g. `?v=ed40ef1`, and confirm the new frontend loads.
 2. Confirm Supabase Dashboard → Edge Functions → `telegram-session` shows the already-deployed version 26 as active. If the backend source has changed since that deployment, deploy the current `telegram-session-with-messaging-v3.ts` source while keeping the existing function name and project secrets.
-3. While the bucket is still public, test your own profile photo and gallery, Discover cards, Likes/Matches, username search, profile visits, and Blocked users. Also open a person's full profile by tapping their icon in a chat and verify you can scroll all the way down and use the visible options. If any photo or profile detail fails, stop and fix it before continuing.
+3. While the bucket is still public, test your own profile photo and gallery, Discover cards, Likes/Matches, username search, profile visits, and Blocked users. Also open a person's full profile by tapping their icon in a chat verify you can scroll all the way down and use the visible options, then tap **Back to discover** and confirm the bottom tab bar reappears immediately without refreshing. Also try returning to Chats and opening the conversation again. If any photo, profile details, or navigation fails, stop and fix it before continuing.
 4. In Supabase Dashboard → Storage → Buckets → profile-photos, open the bucket's action menu and choose Make private (wording may vary).
 5. Verify the setting with this read-only query:
 
