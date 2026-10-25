@@ -422,6 +422,12 @@ body:has(#portfolioPage:not(.hidden)){overflow:hidden}
 .photo-gallery-tile .photo-gallery-remove{z-index:3}
 .photo-gallery-tile:has(.photo-gallery-main){border-style:solid;border-color:#ffffff26}
 @media(max-height:680px){.photo-crop-dialog{max-height:96dvh;padding:12px}.photo-crop-stage{width:min(100%,280px)}.photo-crop-head h2{font-size:17px}}
+
+/* Fix overlapping discovery controls: keep the photo-next arrow clear of Pass/Like actions. */
+#discoverPage .feed-profile-card .photo-nav.next{right:66px!important}
+@media(max-width:380px){
+  #discoverPage .feed-profile-card .photo-nav.next{right:64px!important}
+}
 </style></head>
 <body>
 <div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
@@ -1610,7 +1616,8 @@ async function recordLiveSwipe(profileId, action, openLikesAfter = false) {
     return null;
   }
   liveSwipeBusy = true;
-  $("counter").textContent = "Saving your choice…";
+  const swipeCounter = $("counter");
+  if (swipeCounter) swipeCounter.textContent = "Saving your choice…";
   try {
     const result = await conectBackendRequest("record_swipe", undefined, {
       targetUserId: String(profile.id),
