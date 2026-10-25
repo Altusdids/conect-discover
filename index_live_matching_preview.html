@@ -3018,6 +3018,7 @@ function clearChatComposerContext() {
     if (input) { input.value = ""; input.style.height = "auto"; }
   }
   renderChatComposerContext();
+  syncChatComposerActions();
 }
 function replyToChatMessage(messageId) {
   const message = currentChatMessages.find(item => String(item.id) === String(messageId));
