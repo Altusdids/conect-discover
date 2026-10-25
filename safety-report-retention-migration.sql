@@ -9,6 +9,10 @@ ALTER TABLE public.reports
   ALTER COLUMN reporter_user_id DROP NOT NULL,
   ALTER COLUMN reported_user_id DROP NOT NULL;
 
+-- Reports are written through the server-side Edge Function and are reviewed by
+-- the project operator. Do not expose report rows directly to app client roles.
+REVOKE ALL ON TABLE public.reports FROM anon, authenticated;
+
 ALTER TABLE public.reports
   ADD COLUMN IF NOT EXISTS closed_at timestamptz;
 
