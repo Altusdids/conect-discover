@@ -41,8 +41,8 @@ begin
       add constraint messages_message_type_check
       check (message_type in ('text', 'file', 'voice'));
   end if;
-end
-$$;
+end;
+$;
 
 create index if not exists messages_attachment_path_idx
   on public.messages(attachment_path)
