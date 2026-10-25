@@ -650,6 +650,47 @@ body:has(#discoverPage:not(.hidden)){height:100dvh!important;overflow:hidden!imp
  .chat-composer .chat-emoji-btn,.chat-composer .chat-attach-btn,.chat-composer .chat-record-btn,.chat-composer .chat-send-btn{flex-basis:31px!important;width:31px!important;min-width:31px!important;height:31px!important;min-height:31px!important}
 }
 
+
+/* Conversation mode uses the full available Telegram viewport; hide the main tab bar. */
+nav.chat-conversation-nav-hidden{display:none!important}
+.app:has(.chat-conversation){
+  height:100dvh!important;min-height:100dvh!important;display:flex!important;flex-direction:column!important;
+  overflow:hidden!important;padding:8px 10px calc(8px + env(safe-area-inset-bottom))!important
+}
+.app:has(.chat-conversation) #chatsPage:not(.hidden){
+  display:flex!important;flex:1 1 auto!important;flex-direction:column!important;
+  min-height:0!important;height:auto!important;overflow:hidden!important;margin:0!important
+}
+.app:has(.chat-conversation) #chatInboxControls{display:none!important}
+.app:has(.chat-conversation) #chatList{
+  display:flex!important;flex:1 1 auto!important;min-height:0!important;height:auto!important;
+  overflow:hidden!important;padding:0!important;margin:0!important
+}
+.app:has(.chat-conversation) .chat-conversation{
+  display:flex!important;flex:1 1 auto!important;flex-direction:column!important;
+  width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important
+}
+.app:has(.chat-conversation) .chat-conversation-header{flex:0 0 auto!important;padding:7px 2px 11px!important;margin-bottom:5px!important}
+.app:has(.chat-conversation) .chat-thread{
+  flex:1 1 0!important;height:0!important;min-height:0!important;max-height:none!important;
+  overflow-x:hidden!important;overflow-y:auto!important;padding:10px 3px 16px!important;
+  margin:0!important;gap:10px!important;overscroll-behavior:contain!important
+}
+.app:has(.chat-conversation) .chat-composer-context{flex:0 0 auto!important}
+.app:has(.chat-conversation) .chat-composer{flex:0 0 auto!important;margin:7px 0 5px!important}
+.app:has(.chat-conversation) #chatEmojiTray{flex:0 0 auto!important;max-height:20vh!important;overflow-y:auto!important}
+.app:has(.chat-conversation) #chatStatus{flex:0 0 auto!important;margin:2px 0!important}
+.app:has(.chat-conversation) .chat-conversation-note{display:none!important}
+.app:has(.chat-conversation) .chat-message.media-only{max-width:min(88%,360px)!important}
+.app:has(.chat-conversation) .chat-message-attachment-preview{max-width:min(100%,340px)!important;max-height:42vh!important}
+.app:has(.chat-conversation) .chat-message-video{width:min(100%,340px)!important;max-height:44vh!important}
+.app:has(.chat-conversation) .chat-message.voice-message{max-width:min(92%,420px)!important}
+@media(max-width:560px){
+  .app:has(.chat-conversation){padding:5px 8px calc(5px + env(safe-area-inset-bottom))!important}
+  .app:has(.chat-conversation) .chat-thread{padding:8px 2px 14px!important}
+  .app:has(.chat-conversation) .chat-message.media-only{max-width:88%!important}
+}
+
 </style></head>
 <body>
 <div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
@@ -1205,6 +1246,8 @@ let liveMatches = [];
 const discoveryPhotoIndexes = new Map();
 let activeChatMatchId = null;
 let chatRefreshTimer = null;
+let lastRenderedChatMessageSignature = "";
+let pendingLiveMessages = null;
 let liveChatLoadBusy = false;
 let liveChatSendBusy = false;
 let chatReplyToMessage = null;
@@ -2580,7 +2623,6 @@ function renderLiveChatShell() {
         ['👋','❤️','😂','😍','🥹','🔥','👍','🙏','😭','✨','🤍','😊','🎉','😅','💯','😉'].map(emoji => '<button type="button" onclick="insertChatEmoji(\'' + emoji + '\')" aria-label="Insert ' + emoji + '">' + emoji + '</button>').join('') +
       '</div>' +
       '<p id="chatStatus" role="status" style="font-size:12px;color:var(--muted)"></p>' +
-      '<p class="chat-conversation-note">Only you and your matched partner can access this conversation.</p>' +
     '</div>';
   const composer = $("chatComposer");
   const input = $("chatMessageInput");
@@ -2637,6 +2679,7 @@ function syncChatVoicePlayback(audioId) {
   }
   if (time) time.textContent = formatVoiceTime(current) + " / " + formatVoiceTime(duration);
   if (wave) Array.from(wave.children).forEach((bar,index) => bar.classList.toggle("played",index < Math.round(progress * wave.children.length)));
+  if (audio.ended) applyPendingLiveMessages();
 }
 function toggleChatVoicePlayback(audioId) {
   const audio = $(audioId);
@@ -2881,10 +2924,52 @@ function cleanupChatRecorder() {
     recordBtn.title = "Record voice message";
   }
 }
+function chatMessagesSignature(messages) {
+  return JSON.stringify((Array.isArray(messages) ? messages : []).map(message => ({
+    id: String(message.id || ""),
+    body: String(message.body || ""),
+    created_at: message.created_at || null,
+    read_at: message.read_at || null,
+    edited_at: message.edited_at || null,
+    reply_to_message_id: message.reply_to_message_id || null,
+    reply_to_body: message.reply_to_body || null,
+    is_mine: message.is_mine === true,
+    message_type: message.message_type || "text",
+    attachment_path: message.attachment_path || null,
+    attachment_name: message.attachment_name || null,
+    attachment_mime_type: message.attachment_mime_type || null,
+    attachment_size: message.attachment_size || null
+  })));
+}
+function chatMediaCurrentlyPlaying() {
+  const thread = $("messageThread");
+  if (!thread) return false;
+  return Array.from(thread.querySelectorAll("audio,video")).some(media => !media.paused && !media.ended);
+}
+function applyPendingLiveMessages() {
+  if (!Array.isArray(pendingLiveMessages) || chatMediaCurrentlyPlaying()) return;
+  const next = pendingLiveMessages;
+  pendingLiveMessages = null;
+  renderLiveMessages(next);
+}
 function renderLiveMessages(messages, forceScroll = false) {
   const thread = $("messageThread");
   if (!thread) return;
-  currentChatMessages = Array.isArray(messages) ? messages : [];
+  const nextMessages = Array.isArray(messages) ? messages : [];
+  const nextSignature = chatMessagesSignature(nextMessages);
+  // Signed URLs change during polling; do not rebuild the DOM unless message content/metadata changes.
+  if (!forceScroll && nextSignature === lastRenderedChatMessageSignature) {
+    currentChatMessages = nextMessages;
+    return;
+  }
+  // Never replace a playing audio/video element. Apply new messages once playback finishes.
+  if (chatMediaCurrentlyPlaying()) {
+    pendingLiveMessages = nextMessages;
+    return;
+  }
+  currentChatMessages = nextMessages;
+  pendingLiveMessages = null;
+  lastRenderedChatMessageSignature = nextSignature;
   const wasNearBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 90;
   if (currentChatMessages.length && activeChatMatchId) {
     const latest = currentChatMessages[currentChatMessages.length - 1];
@@ -2957,7 +3042,7 @@ function renderLiveMessages(messages, forceScroll = false) {
           attachmentMarkup = '<a class="chat-message-media-link" href="' + esc(attachmentUrl) + '" target="_blank" rel="noopener noreferrer" aria-label="View photo full size"><img class="chat-message-attachment-preview" src="' + esc(attachmentUrl) + '" alt="' + esc(fileName) + '" loading="lazy"></a>';
           mediaClass = " media-only";
         } else if (attachmentUrl && mimeType.startsWith("video/")) {
-          attachmentMarkup = '<video class="chat-message-video" controls playsinline preload="metadata" src="' + esc(attachmentUrl) + '" aria-label="' + esc(fileName) + '"></video>';
+          attachmentMarkup = '<video class="chat-message-video" controls playsinline preload="metadata" onended="applyPendingLiveMessages()" src="' + esc(attachmentUrl) + '" aria-label="' + esc(fileName) + '"></video>';
           mediaClass = " media-only";
         } else {
           attachmentMarkup = '<a class="chat-message-attachment" href="' + esc(attachmentUrl || "#") + '"' +
@@ -3110,6 +3195,9 @@ async function openLiveChat(matchId) {
     return;
   }
   stopLiveChatPolling();
+  lastRenderedChatMessageSignature = "";
+  pendingLiveMessages = null;
+  document.querySelector("nav")?.classList.add("chat-conversation-nav-hidden");
   chatReplyToMessage = null;
   chatEditingMessageId = null;
   currentChatMessages = [];
@@ -3133,6 +3221,9 @@ function closeLiveChat() {
   chatMediaChunks = [];
   chatRecordingActive = false;
   activeChatMatchId = null;
+  document.querySelector("nav")?.classList.remove("chat-conversation-nav-hidden");
+  lastRenderedChatMessageSignature = "";
+  pendingLiveMessages = null;
   chatReplyToMessage = null;
   chatEditingMessageId = null;
   currentChatMessages = [];
