@@ -561,6 +561,33 @@ body:has(#discoverPage:not(.hidden)){height:100dvh!important;overflow:hidden!imp
 #profilePage:not(.hidden)>.profile-hero{order:-9!important}
 #profilePage:not(.hidden)>.portfolio-launch-panel{order:-8!important}
 
+
+/* Chat file attachments and voice messages. */
+.chat-composer .chat-attach-btn,.chat-composer .chat-record-btn{
+  flex:0 0 34px!important;width:34px!important;min-width:34px!important;
+  height:34px!important;min-height:34px!important;padding:0!important;
+  border:0!important;border-radius:50%!important;display:grid;place-items:center;
+  font-size:18px!important;line-height:1;cursor:pointer
+}
+.chat-composer .chat-attach-btn{background:transparent!important;color:#c4c6cc!important}
+.chat-composer .chat-record-btn{background:#292a31!important;color:#f7b1c9!important}
+.chat-composer .chat-record-btn.recording{background:#b91f4e!important;color:#fff!important;animation:chat-record-pulse 1s ease-in-out infinite alternate}
+@keyframes chat-record-pulse{from{box-shadow:0 0 0 0 #f0447440}to{box-shadow:0 0 0 5px #f0447400}}
+.chat-composer .chat-record-btn:disabled,.chat-composer .chat-attach-btn:disabled{opacity:.48;cursor:wait}
+.chat-message-attachment{display:flex;align-items:center;gap:9px;max-width:100%;margin:3px 0 5px;padding:9px 10px;border:1px solid #ffffff22;border-radius:12px;background:#0002;color:inherit;text-decoration:none;overflow-wrap:anywhere}
+.chat-message-attachment-icon{flex:0 0 30px;width:30px;height:30px;border-radius:9px;background:#ffffff14;display:grid;place-items:center;font-size:17px}
+.chat-message-attachment-name{min-width:0;font-size:12px;font-weight:750;overflow-wrap:anywhere}
+.chat-message-attachment-meta{font-size:10px;opacity:.7;margin-top:2px}
+.chat-message-attachment-preview{display:block;max-width:min(100%,250px);max-height:260px;object-fit:contain;border-radius:10px;margin:4px 0 7px;background:#0002}
+.chat-message-audio{display:block;width:min(100%,270px);height:42px;margin:4px 0 5px;max-width:100%}
+.chat-message-video{display:block;max-width:min(100%,260px);max-height:230px;border-radius:10px;margin:4px 0 7px;background:#000}
+.chat-media-status{font-size:11px;color:var(--muted);margin:3px 4px 7px;min-height:0}
+.chat-media-status:empty{display:none}
+@media(max-width:360px){
+  .chat-composer .chat-attach-btn,.chat-composer .chat-record-btn{flex-basis:30px!important;width:30px!important;min-width:30px!important;height:30px!important;min-height:30px!important;font-size:16px!important}
+  .chat-message-audio{width:220px}
+}
+
 </style></head>
 <body>
 <div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
@@ -1123,6 +1150,11 @@ let chatEditingMessageId = null;
 let currentChatMessages = [];
 let chatUserSearchBusy = false;
 let chatSearchProfiles = [];
+let chatUploadBusy = false;
+let chatMediaRecorder = null;
+let chatMediaStream = null;
+let chatMediaChunks = [];
+let chatRecordingActive = false;
 let showChatRequests = false;
 let chatSearchQuery = "";
 const chatMessagePreviews = new Map();
@@ -2475,9 +2507,13 @@ function renderLiveChatShell() {
       '<div id="chatComposerContext" class="chat-composer-context hidden"><span id="chatComposerContextText"></span><button type="button" onclick="clearChatComposerContext()" aria-label="Cancel reply or edit" title="Cancel">×</button></div>' +
       '<form id="chatComposer" class="chat-composer">' +
         '<button type="button" class="chat-emoji-btn" id="chatEmojiBtn" aria-label="Open emoji picker" title="Add emoji" onclick="toggleChatEmojiPicker()">☺</button>' +
+        '<button type="button" class="chat-attach-btn" id="chatAttachBtn" aria-label="Attach a file" title="Attach a file" onclick="chooseChatAttachment()">📎</button>' +
         '<textarea id="chatMessageInput" maxlength="4000" aria-label="Message" placeholder="Message…" required rows="1"></textarea>' +
+        '<button type="button" class="chat-record-btn" id="chatRecordBtn" aria-label="Record voice message" title="Record voice message" onclick="toggleChatVoiceRecording()">🎙</button>' +
         '<button id="chatSendBtn" type="submit" class="chat-send-btn" aria-label="Send message" title="Send message"><span class="chat-send-glyph" aria-hidden="true">➤</span></button>' +
       '</form>' +
+      '<input id="chatAttachmentInput" type="file" accept=".pdf,.txt,.csv,.rtf,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp,.gif,.mp3,.m4a,.wav,.ogg,.webm,.mp4" hidden>' +
+      '<p id="chatMediaStatus" class="chat-media-status" role="status" aria-live="polite"></p>' +
       '<div id="chatEmojiTray" class="chat-emoji-tray hidden" aria-label="Choose an emoji">' +
         ['👋','❤️','😂','😍','🥹','🔥','👍','🙏','😭','✨','🤍','😊','🎉','😅','💯','😉'].map(emoji => '<button type="button" onclick="insertChatEmoji(\'' + emoji + '\')" aria-label="Insert ' + emoji + '">' + emoji + '</button>').join('') +
       '</div>' +
@@ -2500,6 +2536,7 @@ function renderLiveChatShell() {
       if (input.value.trim()) void sendLiveMessage();
     }
   });
+  $("chatAttachmentInput")?.addEventListener("change", () => { void handleChatAttachmentSelected(); });
 }
 function toggleChatEmojiPicker() {
   const tray = $("chatEmojiTray");
@@ -2516,6 +2553,186 @@ function insertChatEmoji(emoji) {
   input.focus();
   input.setSelectionRange(pos, pos);
   input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+function formatChatFileSize(size) {
+  const bytes = Number(size);
+  if (!Number.isFinite(bytes) || bytes <= 0) return "";
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0) + " MB";
+}
+function normalizedChatMime(file) {
+  const given = String(file && file.type || "").split(";")[0].trim().toLowerCase();
+  if (given) return given;
+  const ext = String(file && file.name || "").split(".").pop().toLowerCase();
+  const byExtension = {
+    pdf:"application/pdf",txt:"text/plain",csv:"text/csv",rtf:"application/rtf",zip:"application/zip",
+    doc:"application/msword",docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls:"application/vnd.ms-excel",xlsx:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ppt:"application/vnd.ms-powerpoint",pptx:"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",
+    mp3:"audio/mpeg",m4a:"audio/mp4",wav:"audio/wav",ogg:"audio/ogg",webm:"audio/webm",mp4:"video/mp4"
+  };
+  return byExtension[ext] || "";
+}
+function chooseChatAttachment() {
+  if (!activeChatMatchId) return;
+  if (chatUploadBusy || chatRecordingActive) return;
+  const input = $("chatAttachmentInput");
+  if (input) input.click();
+}
+async function handleChatAttachmentSelected() {
+  const input = $("chatAttachmentInput");
+  if (!input || !input.files || !input.files.length) return;
+  const file = input.files[0];
+  input.value = "";
+  await sendChatAttachment(file, "file");
+}
+async function sendChatAttachment(file, type = "file") {
+  if (chatUploadBusy || !activeChatMatchId || !file) return;
+  if (chatEditingMessageId) {
+    const status = $("chatStatus");
+    if (status) status.textContent = "Finish or cancel editing your text message before attaching a file.";
+    return;
+  }
+  const MAX_BYTES = 10 * 1024 * 1024;
+  if (!file.size || file.size > MAX_BYTES) {
+    const status = $("chatStatus");
+    if (status) status.textContent = "Files and voice messages must be 10 MB or smaller.";
+    return;
+  }
+  const mimeType = normalizedChatMime(file);
+  const allowed = new Set([
+    "application/pdf","text/plain","text/csv","application/rtf","application/zip","application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation","image/jpeg","image/png","image/webp","image/gif",
+    "audio/webm","audio/ogg","audio/mp4","audio/mpeg","audio/wav","video/mp4","video/webm"
+  ]);
+  if (!allowed.has(mimeType)) {
+    const status = $("chatStatus");
+    if (status) status.textContent = "That file type isn't supported. Try a PDF, document, image, audio, or video file.";
+    return;
+  }
+  if (type === "voice" && !mimeType.startsWith("audio/")) {
+    const status = $("chatStatus");
+    if (status) status.textContent = "The recording could not be identified as an audio file.";
+    return;
+  }
+  const matchId = activeChatMatchId;
+  chatUploadBusy = true;
+  const status = $("chatStatus");
+  const attachBtn = $("chatAttachBtn");
+  const recordBtn = $("chatRecordBtn");
+  const sendBtn = $("chatSendBtn");
+  if (status) status.textContent = type === "voice" ? "Sending voice message…" : "Uploading attachment…";
+  [attachBtn, recordBtn, sendBtn].forEach(button => { if (button) button.disabled = true; });
+  try {
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Could not read this file."));
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.readAsDataURL(file);
+    });
+    const comma = dataUrl.indexOf(",");
+    if (comma < 0) throw new Error("The selected file could not be encoded.");
+    const fileBase64 = dataUrl.slice(comma + 1);
+    await conectBackendRequest("send_attachment_message", undefined, {
+      matchId,
+      fileName: file.name || (type === "voice" ? "voice-message.webm" : "attachment"),
+      mimeType,
+      fileSize: file.size,
+      fileBase64,
+      messageType: type,
+      caption: $("chatMessageInput")?.value.trim() || "",
+      replyToMessageId: chatReplyToMessage ? chatReplyToMessage.id : null
+    });
+    if (activeChatMatchId !== matchId) return;
+    const composerInput = $("chatMessageInput");
+    if (composerInput) { composerInput.value = ""; composerInput.style.height = "auto"; }
+    clearChatComposerContext();
+    if (status) status.textContent = type === "voice" ? "Voice message sent." : "File sent.";
+    await loadLiveMessages(false);
+    if (composerInput) composerInput.focus();
+  } catch (error) {
+    if (status) status.textContent = "Could not send attachment: " + (error.message || "upload failed");
+  } finally {
+    chatUploadBusy = false;
+    [attachBtn, recordBtn, sendBtn].forEach(button => { if (button) button.disabled = false; });
+  }
+}
+async function toggleChatVoiceRecording() {
+  if (chatUploadBusy || !activeChatMatchId) return;
+  if (chatRecordingActive && chatMediaRecorder) {
+    const status = $("chatStatus");
+    if (status) status.textContent = "Preparing your voice message…";
+    try { chatMediaRecorder.stop(); } catch (_) {}
+    return;
+  }
+  if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function" || typeof MediaRecorder === "undefined") {
+    const status = $("chatStatus");
+    if (status) status.textContent = "Voice recording isn't available in this browser. Try updating Telegram or use a modern browser.";
+    return;
+  }
+  try {
+    chatMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const preferredTypes = ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4"];
+    const options = {};
+    const chosen = preferredTypes.find(mime => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mime));
+    if (chosen) options.mimeType = chosen;
+    chatMediaChunks = [];
+    chatMediaRecorder = new MediaRecorder(chatMediaStream, options);
+    chatMediaRecorder.ondataavailable = event => { if (event.data && event.data.size) chatMediaChunks.push(event.data); };
+    chatMediaRecorder.onerror = () => {
+      const status = $("chatStatus");
+      if (status) status.textContent = "Voice recording failed. Check microphone permission and try again.";
+      cleanupChatRecorder();
+    };
+    chatMediaRecorder.onstop = () => {
+      const recorder = chatMediaRecorder;
+      const chunks = chatMediaChunks.slice();
+      const actualType = String((recorder && recorder.mimeType) || (chunks[0] && chunks[0].type) || "audio/webm").split(";")[0].toLowerCase();
+      cleanupChatRecorder();
+      if (!chunks.length) {
+        const status = $("chatStatus");
+        if (status) status.textContent = "No audio was recorded. Please try again.";
+        return;
+      }
+      const extension = actualType === "audio/ogg" ? "ogg" : actualType === "audio/mp4" ? "m4a" : actualType === "audio/mpeg" ? "mp3" : actualType === "audio/wav" ? "wav" : "webm";
+      const blob = new Blob(chunks, { type: actualType });
+      const voiceFile = new File([blob], "voice-message." + extension, { type: actualType, lastModified: Date.now() });
+      void sendChatAttachment(voiceFile, "voice");
+    };
+    chatMediaRecorder.start();
+    chatRecordingActive = true;
+    const recordBtn = $("chatRecordBtn");
+    if (recordBtn) {
+      recordBtn.classList.add("recording");
+      recordBtn.textContent = "■";
+      recordBtn.setAttribute("aria-label", "Stop and send voice message");
+      recordBtn.title = "Stop and send voice message";
+    }
+    const status = $("chatStatus");
+    if (status) status.textContent = "Recording… tap ■ to send the voice message.";
+  } catch (error) {
+    cleanupChatRecorder();
+    const status = $("chatStatus");
+    if (status) status.textContent = "Microphone access was denied or unavailable: " + (error.message || "check browser permissions");
+  }
+}
+function cleanupChatRecorder() {
+  if (chatMediaStream) chatMediaStream.getTracks().forEach(track => track.stop());
+  chatMediaStream = null;
+  chatMediaRecorder = null;
+  chatMediaChunks = [];
+  chatRecordingActive = false;
+  const recordBtn = $("chatRecordBtn");
+  if (recordBtn) {
+    recordBtn.classList.remove("recording");
+    recordBtn.textContent = "🎙";
+    recordBtn.setAttribute("aria-label", "Record voice message");
+    recordBtn.title = "Record voice message";
+  }
 }
 function renderLiveMessages(messages, forceScroll = false) {
   const thread = $("messageThread");
@@ -2561,14 +2778,35 @@ function renderLiveMessages(messages, forceScroll = false) {
         ? '<div class="chat-message-quote">↪ ' + esc(message.reply_to_body.length > 160 ? message.reply_to_body.slice(0,157) + "…" : message.reply_to_body) + '</div>'
         : '';
       const editedLabel = message.edited_at ? '<span class="chat-message-edited">edited</span>' : '';
+      const messageType = message.message_type || "text";
+      const fileName = String(message.attachment_name || (messageType === "voice" ? "Voice message" : "Attached file"));
+      const attachmentUrl = String(message.attachment_url || "");
+      const mimeType = String(message.attachment_mime_type || "").toLowerCase();
+      const fileSizeLabel = formatChatFileSize(message.attachment_size);
+      let attachmentMarkup = "";
+      if (message.attachment_path) {
+        if (attachmentUrl && messageType === "voice" && mimeType.startsWith("audio/")) {
+          attachmentMarkup = '<audio class="chat-message-audio" controls preload="none" src="' + esc(attachmentUrl) + '" aria-label="Voice message"></audio>';
+        } else if (attachmentUrl && mimeType.startsWith("image/")) {
+          attachmentMarkup = '<a href="' + esc(attachmentUrl) + '" target="_blank" rel="noopener noreferrer" aria-label="Open image attachment"><img class="chat-message-attachment-preview" src="' + esc(attachmentUrl) + '" alt="' + esc(fileName) + '" loading="lazy"></a>';
+        } else if (attachmentUrl && mimeType.startsWith("video/")) {
+          attachmentMarkup = '<video class="chat-message-video" controls preload="none" src="' + esc(attachmentUrl) + '" aria-label="' + esc(fileName) + '"></video>';
+        }
+        attachmentMarkup += '<a class="chat-message-attachment" href="' + esc(attachmentUrl || "#") + '"' +
+          (attachmentUrl ? ' target="_blank" rel="noopener noreferrer" download="' + esc(fileName) + '"' : ' aria-disabled="true" onclick="return false"') +
+          '><span class="chat-message-attachment-icon" aria-hidden="true">' + (messageType === "voice" ? "♫" : mimeType.startsWith("image/") ? "▧" : mimeType.startsWith("video/") ? "▶" : "↧") + '</span>' +
+          '<span><span class="chat-message-attachment-name">' + esc(fileName) + '</span><span class="chat-message-attachment-meta">' +
+          (fileSizeLabel ? esc(fileSizeLabel) + " · " : "") + (attachmentUrl ? "Open or download" : "Attachment unavailable; reopen chat to retry") + '</span></span></a>';
+      }
       const messageOptions = '<div class="chat-message-actions"><button type="button" class="chat-message-more" onclick="toggleChatMessageMenu(this)" aria-label="Message options" title="Message options">⋯</button>' +
         '<div class="chat-message-menu hidden" role="menu">' +
         '<button type="button" role="menuitem" onclick="replyToChatMessage(\'' + esc(messageId) + '\')">↩ Reply</button>' +
         '<button type="button" role="menuitem" onclick="copyChatMessage(\'' + esc(messageId) + '\')">▢ Copy</button>' +
-        (mine ? '<button type="button" role="menuitem" onclick="editChatMessage(\'' + esc(messageId) + '\')">✎ Edit</button><button type="button" role="menuitem" class="danger" onclick="deleteChatMessage(\'' + esc(messageId) + '\')">× Delete</button>' : '') +
+        (mine && messageType === "text" ? '<button type="button" role="menuitem" onclick="editChatMessage(\'' + esc(messageId) + '\')">✎ Edit</button>' : '') +
+        (mine ? '<button type="button" role="menuitem" class="danger" onclick="deleteChatMessage(\'' + esc(messageId) + '\')">× Delete</button>' : '') +
         '</div></div>';
       return separator + '<div class="chat-message ' + (mine ? "mine" : "theirs") + '" data-message-id="' + esc(messageId) + '">' +
-        messageOptions + quoted + '<div class="chat-message-body">' + esc(message.body || "") + editedLabel + '</div>' +
+        messageOptions + quoted + attachmentMarkup + (message.body ? '<div class="chat-message-body">' + esc(message.body) + editedLabel + '</div>' : (editedLabel ? '<div class="chat-message-body">' + editedLabel + '</div>' : '')) +
         (time || receipt ? '<span class="chat-message-time">' + esc(time) + receipt + '</span>' : '') + '</div>';
     }).join("");
   }
@@ -2612,7 +2850,8 @@ function replyToChatMessage(messageId) {
   const message = currentChatMessages.find(item => String(item.id) === String(messageId));
   if (!message) return;
   chatEditingMessageId = null;
-  chatReplyToMessage = { id: String(message.id), body: String(message.body || ""), isMine: message.is_mine === true, name: liveMatches.find(item => String(item.id) === String(activeChatMatchId))?.profile?.name || "your match" };
+  const replyText = String(message.body || (message.message_type === "voice" ? "Voice message" : message.attachment_name ? "File: " + message.attachment_name : "Message"));
+  chatReplyToMessage = { id: String(message.id), body: replyText, isMine: message.is_mine === true, name: liveMatches.find(item => String(item.id) === String(activeChatMatchId))?.profile?.name || "your match" };
   const input = $("chatMessageInput");
   if (input) input.focus();
   renderChatComposerContext();
@@ -2621,7 +2860,7 @@ function replyToChatMessage(messageId) {
 function copyChatMessage(messageId) {
   const message = currentChatMessages.find(item => String(item.id) === String(messageId));
   if (!message) return;
-  const value = String(message.body || "");
+  const value = String(message.body || (message.message_type === "voice" ? "Voice message" : message.attachment_name || ""));
   const success = () => { const status = $("chatStatus"); if (status) status.textContent = "Message copied."; };
   if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(value).then(success).catch(() => fallbackCopyChatText(value, success));
@@ -2711,6 +2950,14 @@ async function openLiveChat(matchId) {
   }, 5000);
 }
 function closeLiveChat() {
+  if (chatMediaRecorder && chatMediaRecorder.state !== "inactive") {
+    try { chatMediaRecorder.stop(); } catch (_) {}
+  }
+  if (chatMediaStream) chatMediaStream.getTracks().forEach(track => track.stop());
+  chatMediaStream = null;
+  chatMediaRecorder = null;
+  chatMediaChunks = [];
+  chatRecordingActive = false;
   activeChatMatchId = null;
   chatReplyToMessage = null;
   chatEditingMessageId = null;
