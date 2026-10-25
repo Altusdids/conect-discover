@@ -539,10 +539,6 @@ Deno.serve(async (req: Request) => {
       if (!viewer) {
         return jsonResponse({ error: "Create your Conect profile first" }, 409);
       }
-      if (!viewer.is_active) {
-        return jsonResponse({ error: "Your profile is not active" }, 403);
-      }
-
       // Renew an expired profile-photo URL only after checking that the
       // photo still exists and that the verified viewer may currently see it.
       if (action === "refresh_profile_photo_url") {
@@ -562,6 +558,10 @@ Deno.serve(async (req: Request) => {
           return jsonResponse({ error: "Could not verify this photo" }, 500);
         }
         if (!photoRow) return jsonResponse({ error: "This photo is no longer available" }, 404);
+
+        if (!viewer.is_active && photoRow.user_id !== viewer.id) {
+          return jsonResponse({ error: "Your profile is not active" }, 403);
+        }
 
         if (photoRow.user_id !== viewer.id) {
           const [targetResult, blocksResult] = await Promise.all([
@@ -602,6 +602,10 @@ Deno.serve(async (req: Request) => {
         } catch {
           return jsonResponse({ error: "Could not refresh this profile photo" }, 500);
         }
+      }
+
+      if (!viewer.is_active) {
+        return jsonResponse({ error: "Your profile is not active" }, 403);
       }
 
       // TRUST & SAFETY: all target IDs are checked server-side and the caller is derived from verified Telegram initData.
