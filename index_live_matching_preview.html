@@ -429,78 +429,75 @@ body:has(#portfolioPage:not(.hidden)){overflow:hidden}
   #discoverPage .feed-profile-card .photo-nav.next{right:64px!important}
 }
 
-/* Conect scroll repair: use natural document scrolling instead of a clipped fixed-height feed. */
-body:has(#discoverPage:not(.hidden)){
-  height:auto!important;overflow-x:hidden!important;overflow-y:auto!important;
-}
+/* TikTok-style discovery: one full profile per swipe/wheel step. */
+body:has(#discoverPage:not(.hidden)){height:100dvh!important;overflow:hidden!important}
 .app:has(#discoverPage:not(.hidden)){
-  height:auto!important;min-height:100dvh!important;display:block!important;
-  overflow:visible!important;padding-top:max(10px,env(safe-area-inset-top))!important;
-  padding-bottom:calc(112px + env(safe-area-inset-bottom))!important;
+  height:100dvh!important;min-height:0!important;display:flex!important;flex-direction:column!important;
+  overflow:hidden!important;padding-top:max(10px,env(safe-area-inset-top))!important;
+  padding-bottom:calc(91px + env(safe-area-inset-bottom))!important
 }
-.app:has(#discoverPage:not(.hidden))>header{flex:none!important}
+.app:has(#discoverPage:not(.hidden))>header{flex:0 0 auto!important;margin-bottom:8px!important}
+.app:has(#discoverPage:not(.hidden)) #demoNotice{display:none!important}
 .app:has(#discoverPage:not(.hidden)) #discoverPage{
-  display:block!important;flex:none!important;height:auto!important;min-height:0!important;
-  overflow:visible!important;margin:0!important;
+  display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-height:0!important;height:auto!important;
+  overflow:hidden!important;margin:0!important
 }
-#discoverPage .discover-fixed-header{flex:none!important}
+#discoverPage .discover-fixed-header{flex:0 0 auto!important}
 #discoverPage .profile-feed-wrap{
-  display:block!important;flex:none!important;height:auto!important;min-height:0!important;overflow:visible!important;
+  display:block!important;flex:1 1 auto!important;height:0!important;min-height:0!important;overflow:hidden!important
 }
 #discoverPage .profile-scroll-feed{
-  display:flex!important;flex-direction:column!important;gap:16px!important;
-  height:auto!important;max-height:none!important;overflow:visible!important;
-  overflow-x:hidden!important;overflow-y:visible!important;
-  scroll-snap-type:none!important;overscroll-behavior:auto!important;
-  touch-action:pan-y!important;-webkit-overflow-scrolling:touch;
+  display:block!important;height:100%!important;max-height:100%!important;width:100%!important;
+  overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-y:contain!important;
+  scroll-snap-type:y mandatory!important;scroll-behavior:smooth!important;
+  scrollbar-width:none!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important
 }
+#discoverPage .profile-scroll-feed::-webkit-scrollbar{display:none!important}
 #discoverPage .profile-scroll-card{
-  display:block!important;height:auto!important;min-height:0!important;width:100%!important;
-  padding:0!important;gap:0!important;overflow:visible!important;scroll-snap-align:none!important;
+  display:block!important;box-sizing:border-box!important;width:100%!important;height:100%!important;min-height:100%!important;
+  margin:0!important;padding:0!important;gap:0!important;overflow:hidden!important;
+  scroll-snap-align:start!important;scroll-snap-stop:always!important
 }
 #discoverPage .feed-profile-card{
-  display:block!important;flex:none!important;height:auto!important;min-height:0!important;
-  margin:0!important;padding:0!important;overflow:visible!important;
-  background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+  display:block!important;position:relative!important;width:100%!important;height:100%!important;min-height:0!important;
+  margin:0!important;padding:0!important;overflow:hidden!important;background:transparent!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important
 }
 #discoverPage .feed-profile-card .hero{
-  display:flex!important;flex-direction:column!important;justify-content:flex-end!important;
-  height:auto!important;min-height:480px!important;max-height:none!important;
-  padding-top:clamp(255px,45svh,410px)!important;
-  overflow:hidden!important;border-radius:0!important;touch-action:pan-y!important;
+  display:block!important;position:relative!important;width:100%!important;height:100%!important;min-height:0!important;
+  padding:0!important;overflow:hidden!important;border:0!important;border-radius:0!important;
+  touch-action:pan-y!important
 }
 #discoverPage .feed-profile-card .hero>img{
-  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
-  object-fit:cover!important;pointer-events:none!important;user-select:none;
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;
+  pointer-events:none!important;user-select:none!important
 }
 #discoverPage .feed-profile-card .hero:after{
-  inset:0!important;z-index:1!important;
-  background:linear-gradient(180deg,rgba(0,0,0,.04) 0%,rgba(0,0,0,.1) 32%,rgba(0,0,0,.68) 64%,rgba(0,0,0,.96) 100%)!important;
+  position:absolute!important;inset:0!important;z-index:1!important;
+  background:linear-gradient(180deg,rgba(0,0,0,.04) 0%,rgba(0,0,0,.08) 30%,rgba(0,0,0,.55) 62%,rgba(0,0,0,.94) 100%)!important
 }
 #discoverPage .feed-profile-card .onphoto{
-  position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
-  z-index:3!important;width:100%!important;max-height:none!important;height:auto!important;
-  margin:0!important;padding:12px 68px 20px 15px!important;
-  overflow:visible!important;overscroll-behavior:auto!important;touch-action:auto!important;
+  position:absolute!important;left:15px!important;right:67px!important;top:auto!important;bottom:15px!important;
+  z-index:3!important;width:auto!important;height:auto!important;max-height:none!important;
+  margin:0!important;padding:0!important;overflow:visible!important;overscroll-behavior:auto!important
 }
 #discoverPage .feed-profile-card .feed-profile-details,
 #discoverPage .feed-profile-card .feed-profile-details.feed-details-expanded{
-  max-height:none!important;height:auto!important;overflow:visible!important;
+  max-height:none!important;height:auto!important;overflow:visible!important
 }
 #discoverPage .feed-profile-card .side-actions.feed-profile-side-actions{
-  position:absolute!important;right:10px!important;top:clamp(205px,42svh,330px)!important;
-  bottom:auto!important;transform:none!important;z-index:12!important;
+  position:absolute!important;right:10px!important;top:50%!important;bottom:auto!important;
+  transform:translateY(-50%)!important;z-index:12!important
 }
-#discoverPage .feed-profile-card .photo-nav{top:clamp(205px,42svh,330px)!important}
+#discoverPage .feed-profile-card .photo-nav{top:46%!important}
 #discoverPage .feed-profile-card .photo-nav.next{right:62px!important}
-#discoverPage .feed-profile-actions{display:none!important}
 @media(max-width:560px){
-  #discoverPage .feed-profile-card .hero{min-height:440px!important;padding-top:clamp(230px,42svh,350px)!important}
-  #discoverPage .feed-profile-card .onphoto{padding:10px 60px 18px 12px!important}
-  #discoverPage .feed-profile-card .side-actions.feed-profile-side-actions{right:7px!important;top:clamp(190px,38svh,290px)!important}
-  #discoverPage .feed-profile-card .photo-nav{top:clamp(190px,38svh,290px)!important}
+  .app:has(#discoverPage:not(.hidden)){padding-top:max(8px,env(safe-area-inset-top))!important;padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}
+  #discoverPage .feed-profile-card .onphoto{left:12px!important;right:59px!important;bottom:12px!important}
+  #discoverPage .feed-profile-card .side-actions.feed-profile-side-actions{right:7px!important}
+  #discoverPage .feed-profile-card .side-actions.feed-profile-side-actions .side-action{width:39px!important;height:39px!important}
+  #discoverPage .feed-profile-card .photo-nav.next{right:52px!important}
 }
-
 </style></head>
 <body>
 <div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
@@ -2876,6 +2873,32 @@ function renderAll() {
 }
 
 
+// Desktop wheel: advance exactly one profile at a time, even when the pointer is over text/buttons.
+const discoveryWheelFeed = $("profileScrollFeed");
+if (discoveryWheelFeed) {
+  let lastDiscoveryWheelAt = 0;
+  discoveryWheelFeed.addEventListener("wheel", event => {
+    if (event.defaultPrevented || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+    const cards = Array.from(discoveryWheelFeed.querySelectorAll(":scope > .profile-scroll-card"));
+    if (!cards.length || $("discoverPage").classList.contains("hidden")) return;
+    event.preventDefault();
+    const now = Date.now();
+    if (now - lastDiscoveryWheelAt < 600) return;
+    lastDiscoveryWheelAt = now;
+    const feedTop = discoveryWheelFeed.getBoundingClientRect().top;
+    let current = 0, closest = Infinity;
+    cards.forEach((card, i) => {
+      const distance = Math.abs(card.getBoundingClientRect().top - feedTop);
+      if (distance < closest) { closest = distance; current = i; }
+    });
+    const next = Math.max(0, Math.min(cards.length - 1, current + (event.deltaY > 0 ? 1 : -1)));
+    if (next !== current) {
+      const destination = discoveryWheelFeed.scrollTop +
+        cards[next].getBoundingClientRect().top - feedTop;
+      discoveryWheelFeed.scrollTo({ top: destination, behavior: "smooth" });
+    }
+  }, { passive: false });
+}
 const languagePicker = $("appLanguageSelect");
 if (languagePicker) {
   const storedLanguage = localStorage.getItem("conect_language") || "en";
