@@ -986,7 +986,7 @@ nav button .nav-badge,.chat-request-count,.chat-list-unread{
   </div>
   <section class="panel account-delete-panel" aria-label="Delete account">
   <h2 data-i18n="settings.deleteAccount">Delete your account</h2>
-  <p>Permanently removes your Conect profile, photos, interests, likes, matches, chats, blocks, visits, and reports linked to this account. This cannot be undone.</p>
+  <p>Permanently removes your Conect profile, photos, interests, likes, matches, shared chats (including messages and attachments sent by either person), blocks, visits, and reports linked to this account. Your chat partner\u2019s independent profile and gallery remain, but shared conversation media is removed for both people. This cannot be undone.</p>
   <button type="button" class="account-delete-button" id="deleteAccountBtn" onclick="deleteConectAccount()" data-i18n="settings.deleteAccountButton">Delete account permanently</button>
   <p id="deleteAccountStatus" class="account-delete-status" role="status" aria-live="polite"></p>
 </section>
@@ -1623,7 +1623,7 @@ async function deleteConectAccount() {
     if (status) status.textContent = "Account deletion is available only when Conect is open inside your verified Telegram account.";
     return;
   }
-  if (!window.confirm("Permanently delete your Conect account and its associated profile data? This cannot be undone.")) return;
+  if (!window.confirm("Permanently delete your Conect account and associated data? This removes shared matches, messages, and all attachments in those conversations, including attachments sent by the other person. Their independent profile and gallery remain. This cannot be undone.")) return;
   const confirmation = window.prompt('To confirm permanent deletion, type DELETE');
   if (confirmation !== "DELETE") {
     if (status) status.textContent = "Deletion cancelled. No account data was deleted.";
