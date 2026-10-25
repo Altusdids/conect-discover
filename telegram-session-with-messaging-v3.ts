@@ -9,6 +9,20 @@ const corsHeaders = {
 
 const encoder = new TextEncoder();
 const PHOTO_BUCKET = "profile-photos";
+const CHAT_ATTACHMENT_BUCKET = "chat-attachments";
+const MAX_CHAT_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+const ALLOWED_CHAT_MIME_TYPES = new Set([
+  "application/pdf", "text/plain", "text/csv", "application/rtf", "application/zip",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "image/jpeg", "image/png", "image/webp", "image/gif",
+  "audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav",
+  "video/mp4", "video/webm",
+]);
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const MAX_PHOTO_DATA_URL_CHARS = 7_100_000;
 
@@ -321,6 +335,7 @@ Deno.serve(async (req: Request) => {
       action !== "record_swipe" &&
       action !== "load_messages" &&
       action !== "send_message" &&
+      action !== "send_attachment_message" &&
       action !== "edit_message" &&
       action !== "delete_message" &&
       action !== "search_users" &&
@@ -421,6 +436,7 @@ Deno.serve(async (req: Request) => {
       action === "record_swipe" ||
       action === "load_messages" ||
       action === "send_message" ||
+      action === "send_attachment_message" ||
       action === "edit_message" ||
       action === "delete_message" ||
       action === "search_users" ||
@@ -750,7 +766,7 @@ Deno.serve(async (req: Request) => {
       }
 
       // PRIVATE MESSAGING: only participants in a real, active match can read/send/edit/delete.
-      if (action === "load_messages" || action === "send_message" || action === "edit_message" || action === "delete_message") {
+      if (action === "load_messages" || action === "send_message" || action === "send_attachment_message" || action === "edit_message" || action === "delete_message") {
         const matchId = typeof body.matchId === "string" ? body.matchId.trim() : "";
         if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(matchId)) {
           return jsonResponse({ error: "Invalid conversation" }, 400);
@@ -782,6 +798,106 @@ Deno.serve(async (req: Request) => {
         }
         if ((blockRows || []).length) {
           return jsonResponse({ error: "Messaging is unavailable for this conversation" }, 403);
+        }
+
+        if (action === "send_attachment_message") {
+          const rawFileName = typeof body.fileName === "string" ? body.fileName.trim() : "";
+          const rawMimeType = typeof body.mimeType === "string" ? body.mimeType.split(";")[0].trim().toLowerCase() : "";
+          const fileBase64 = typeof body.fileBase64 === "string" ? body.fileBase64 : "";
+          const messageType = body.messageType === "voice" ? "voice" : "file";
+          const caption = typeof body.caption === "string" ? body.caption.trim().slice(0, 2000) : "";
+          const rawFileSize = Number(body.fileSize);
+
+          if (!rawFileName || rawFileName.length > 180) {
+            return jsonResponse({ error: "Choose a file with a valid filename" }, 400);
+          }
+          if (!ALLOWED_CHAT_MIME_TYPES.has(rawMimeType)) {
+            return jsonResponse({ error: "This file type is not supported" }, 415);
+          }
+          if (messageType === "voice" && !rawMimeType.startsWith("audio/")) {
+            return jsonResponse({ error: "A voice message must be an audio file" }, 400);
+          }
+          if (!fileBase64 || fileBase64.length > Math.ceil(MAX_CHAT_ATTACHMENT_BYTES * 4 / 3) + 8 ||
+              !/^[A-Za-z0-9+/]*={0,2}$/.test(fileBase64) || fileBase64.length % 4 !== 0) {
+            return jsonResponse({ error: "The file data is invalid or too large (maximum 10 MB)" }, 413);
+          }
+
+          let fileBytes: Uint8Array;
+          try {
+            const binary = atob(fileBase64);
+            fileBytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+          } catch {
+            return jsonResponse({ error: "Could not read the selected file" }, 400);
+          }
+          if (!fileBytes.length || fileBytes.byteLength > MAX_CHAT_ATTACHMENT_BYTES ||
+              (Number.isFinite(rawFileSize) && rawFileSize > 0 && rawFileSize !== fileBytes.byteLength)) {
+            return jsonResponse({ error: "Files must be between 1 byte and 10 MB" }, 413);
+          }
+
+          const safeFileName = rawFileName
+            .replace(/[^a-zA-Z0-9._ ()-]/g, "_")
+            .replace(/\.{2,}/g, ".")
+            .slice(0, 120) || (messageType === "voice" ? "voice-message" : "attachment");
+          const rawReplyTo = typeof body.replyToMessageId === "string" ? body.replyToMessageId.trim() : "";
+          if (rawReplyTo && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawReplyTo)) {
+            return jsonResponse({ error: "Invalid reply message" }, 400);
+          }
+          let replyToMessageId: string | null = null;
+          if (rawReplyTo) {
+            const { data: replyMessage, error: replyLookupError } = await admin
+              .from("messages")
+              .select("id")
+              .eq("id", rawReplyTo)
+              .eq("match_id", matchRow.id)
+              .maybeSingle();
+            if (replyLookupError) {
+              console.error("Attachment reply lookup error", replyLookupError.message);
+              return jsonResponse({ error: "Could not verify reply message" }, 500);
+            }
+            if (!replyMessage) return jsonResponse({ error: "The replied-to message is no longer available" }, 400);
+            replyToMessageId = replyMessage.id;
+          }
+
+          const storagePath = matchRow.id + "/" + viewer.id + "/" + crypto.randomUUID() + "-" + safeFileName;
+          const { error: uploadError } = await admin.storage
+            .from(CHAT_ATTACHMENT_BUCKET)
+            .upload(storagePath, fileBytes, { contentType: rawMimeType, upsert: false });
+          if (uploadError) {
+            console.error("Chat attachment storage upload error", uploadError.message);
+            return jsonResponse({ error: "Could not upload this file. Please try again." }, 500);
+          }
+
+          const { data: newMessage, error: insertError } = await admin
+            .from("messages")
+            .insert({
+              match_id: matchRow.id,
+              sender_user_id: viewer.id,
+              body: caption,
+              message_type: messageType,
+              attachment_path: storagePath,
+              attachment_name: safeFileName,
+              attachment_mime_type: rawMimeType,
+              attachment_size: fileBytes.byteLength,
+              reply_to_message_id: replyToMessageId,
+            })
+            .select("id, match_id, sender_user_id, body, created_at, read_at, reply_to_message_id, edited_at, message_type, attachment_path, attachment_name, attachment_mime_type, attachment_size")
+            .single();
+
+          if (insertError || !newMessage) {
+            console.error("Chat attachment message insert error", insertError?.message);
+            const { error: cleanupError } = await admin.storage.from(CHAT_ATTACHMENT_BUCKET).remove([storagePath]);
+            if (cleanupError) console.error("Chat attachment rollback cleanup error", cleanupError.message);
+            return jsonResponse({ error: "The file uploaded but could not be added to the conversation" }, 500);
+          }
+
+          const { data: signed, error: signedError } = await admin.storage
+            .from(CHAT_ATTACHMENT_BUCKET)
+            .createSignedUrl(storagePath, 3600);
+          if (signedError) console.warn("Chat attachment signed URL error", signedError.message);
+          return jsonResponse({
+            ok: true,
+            message: { ...newMessage, attachment_url: signed?.signedUrl || null, is_mine: true },
+          });
         }
 
         if (action === "edit_message") {
@@ -828,7 +944,7 @@ Deno.serve(async (req: Request) => {
           }
           const { data: ownMessage, error: ownMessageError } = await admin
             .from("messages")
-            .select("id, sender_user_id")
+            .select("id, sender_user_id, attachment_path")
             .eq("id", messageId)
             .eq("match_id", matchRow.id)
             .maybeSingle();
@@ -848,6 +964,12 @@ Deno.serve(async (req: Request) => {
           if (deleteError) {
             console.error("Delete message database error", deleteError.message);
             return jsonResponse({ error: "Could not delete message" }, 500);
+          }
+          if (ownMessage.attachment_path) {
+            const { error: storageError } = await admin.storage
+              .from(CHAT_ATTACHMENT_BUCKET)
+              .remove([ownMessage.attachment_path]);
+            if (storageError) console.error("Deleted chat message attachment cleanup error", storageError.message);
           }
           return jsonResponse({ ok: true, deleted: true, messageId });
         }
@@ -913,7 +1035,7 @@ Deno.serve(async (req: Request) => {
 
         const { data: messageRows, error: messagesError } = await admin
           .from("messages")
-          .select("id, match_id, sender_user_id, body, created_at, read_at, reply_to_message_id, edited_at")
+          .select("id, match_id, sender_user_id, body, created_at, read_at, reply_to_message_id, edited_at, message_type, attachment_path, attachment_name, attachment_mime_type, attachment_size")
           .eq("match_id", matchRow.id)
           .order("created_at", { ascending: true })
           .limit(200);
@@ -924,14 +1046,23 @@ Deno.serve(async (req: Request) => {
         }
 
         const messageBodiesById = new Map((messageRows || []).map((message: any) => [message.id, message.body]));
-        return jsonResponse({
-          ok: true,
-          messages: (messageRows || []).map((message: any) => ({
+        const messagesWithSignedAttachments = await Promise.all((messageRows || []).map(async (message: any) => {
+          let attachment_url: string | null = null;
+          if (message.attachment_path) {
+            const { data: signed, error: signedError } = await admin.storage
+              .from(CHAT_ATTACHMENT_BUCKET)
+              .createSignedUrl(message.attachment_path, 3600);
+            if (signedError) console.warn("Chat attachment signed URL error", signedError.message);
+            attachment_url = signed?.signedUrl || null;
+          }
+          return {
             ...message,
+            attachment_url,
             reply_to_body: message.reply_to_message_id ? messageBodiesById.get(message.reply_to_message_id) || "" : null,
             is_mine: message.sender_user_id === viewer.id,
-          })),
-        });
+          };
+        }));
+        return jsonResponse({ ok: true, messages: messagesWithSignedAttachments });
       }
 
       if (action === "load_relationships") {
