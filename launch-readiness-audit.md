@@ -1,6 +1,6 @@
 # Conect launch-readiness audit
 
-_Last updated: 2026-10-24_
+_Last updated: 2026-10-25_
 
 ## Changes added to the preview repository
 
@@ -48,14 +48,14 @@ Account deletion is intentionally permanent. A database failure after Storage re
 ## Launch essentials — drafted 24 October 2026
 
 ### Added to the repository
-- `privacy-policy.html`: user-facing privacy policy draft, linked from More → Settings & help. It explicitly identifies fields that the operator must complete before public launch.
+- `privacy-policy.html`: user-facing privacy policy draft, linked from More → Settings & help. Operator name (`SS Tulsa Stephen`), public contact/business address (`7G2P+GG Kampala`) and privacy/support email (`tulsa22nd@gmail.com`) have been added; verify the address is appropriate to publish and the email is working and monitored.
 - `community-guidelines.html`: age-18+ rule, consent, anti-harassment/scam rules, reporting guidance and safety reminders.
 - `account-deletion.html`: explains the in-app deletion steps, what the current deletion workflow removes, and limitations around backups and partial failures.
 - `moderation-runbook.md`: internal beta procedure for triaging reports, reviewing the Supabase reports table manually, and handling urgent safety matters.
 - Updated Settings & help to link all three public pages.
 
 ### Must be resolved before inviting a broad public audience
-- **Operator identity/contact:** replace the bracketed legal name, address and monitored privacy/support contact in the privacy policy. Do not ship the draft as a final policy with placeholders.
+- **Operator contact verification:** the supplied operator name, address and privacy/support email are now present in the policy. Verify the address is appropriate for public disclosure and that `tulsa22nd@gmail.com` is working and monitored. Do not treat the policy as final until the remaining items below are resolved.
 - **Uganda PDPO registration:** confirm the operator's registration obligations and complete required registration. Government guidance currently states the requirement applies broadly to persons/entities collecting or processing personal data.
 - **Retention schedule:** set and disclose retention periods for active records, provider backups and security logs. The code does not establish a complete documented retention schedule yet.
 - **Photo privacy decision:** current profile responses use public Supabase Storage URLs. Treat profile photos as viewable by anyone who obtains the URL. Decide whether to retain that behaviour with explicit disclosure or migrate to a private bucket and signed URLs.
@@ -64,4 +64,4 @@ Account deletion is intentionally permanent. A database failure after Storage re
 - **Legal review:** have the responsible operator review the public drafts for the real business setup, processing locations and legal obligations. These files are operational drafts, not legal advice or a certification of compliance.
 
 ### Important scope note
-The privacy, community and deletion pages are linked from the app, but the privacy policy is deliberately labelled as a pre-launch draft until the operator details and remaining decisions above are completed.
+The privacy, community and deletion pages are linked from the app. Operator details have been entered in the privacy policy, but it remains a pre-launch draft until contact verification and the remaining decisions above are completed.
