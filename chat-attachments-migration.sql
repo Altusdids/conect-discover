@@ -42,7 +42,7 @@ begin
       check (message_type in ('text', 'file', 'voice'));
   end if;
 end;
-$;
+$$;
 
 create index if not exists messages_attachment_path_idx
   on public.messages(attachment_path)
