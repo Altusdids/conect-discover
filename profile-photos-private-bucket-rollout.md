@@ -1,6 +1,6 @@
 # Conect profile-photo privacy rollout
 
-Status: the `telegram-session` Edge Function is deployed and active at version 26. The frontend scroll fix is committed (preview cache-buster `?v=ed40ef1`) and needs a live retest. The `profile-photos` bucket is still public; do not switch it until all app checks below pass.
+Status: `telegram-session` Edge Function version 26 is active. The latest frontend (`?v=ed40ef1`) passed the profile-photo screens and profile scroll/navigation regression tests. A read-only check immediately before the privacy switch confirmed `profile-photos` is still public (`public = true`). Next: switch it to private in the Supabase Dashboard, then run the post-switch checks below.
 
 ## Why this must be done in order
 
