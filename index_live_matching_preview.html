@@ -567,7 +567,7 @@ body:has(#discoverPage:not(.hidden)){height:100dvh!important;overflow:hidden!imp
     <div class="feed-filter-actions"><button type="button" class="secondary" onclick="resetFeedFilters()" data-i18n="common.reset">Reset</button><button type="button" class="primary" onclick="applyFeedFilters()" data-i18n="filter.showProfiles">Show profiles</button></div>
   </div>
 </div>
-<section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="liked" role="tab" aria-selected="true"><span>Liked</span><span class="likes-tab-badge" data-likes-count="liked">0</span></button><button data-likes-tab="matches" role="tab" aria-selected="false"><span>Matches</span><span class="likes-tab-badge" data-likes-count="matches">0</span></button><button data-likes-tab="likes" role="tab" aria-selected="false"><span>Likes</span><span class="likes-tab-badge" data-likes-count="likes">0</span></button></div><div class="likes-view-toolbar"><span id="likesResultsLabel">People</span><div class="likes-view-toggle" role="group" aria-label="Change profile layout"><button type="button" id="likesListMode" class="active" aria-pressed="true" onclick="setLikesView('list')" title="List view" aria-label="List view">☰</button><button type="button" id="likesGridMode" aria-pressed="false" onclick="setLikesView('grid')" title="Grid view" aria-label="Grid view">▦</button></div></div><div id="likesList"></div></section>
+<section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="likes" role="tab" aria-selected="true"><span>Likes</span><span class="likes-tab-badge" data-likes-count="likes">0</span></button><button data-likes-tab="matches" role="tab" aria-selected="false"><span>Matches</span><span class="likes-tab-badge" data-likes-count="matches">0</span></button><button data-likes-tab="liked" role="tab" aria-selected="false"><span>Liked</span><span class="likes-tab-badge" data-likes-count="liked">0</span></button></div><div class="likes-view-toolbar"><span id="likesResultsLabel">People</span><div class="likes-view-toggle" role="group" aria-label="Change profile layout"><button type="button" id="likesListMode" class="active" aria-pressed="true" onclick="setLikesView('list')" title="List view" aria-label="List view">☰</button><button type="button" id="likesGridMode" aria-pressed="false" onclick="setLikesView('grid')" title="Grid view" aria-label="Grid view">▦</button></div></div><div id="likesList"></div></section>
 <section id="chatsPage" class="hidden"><div id="chatInboxControls"></div><div id="chatList"></div></section>
 <section id="morePage" class="hidden"><h1 data-i18n="nav.more">More</h1><p data-i18n="more.intro">More ways to manage your Conect experience.</p><div class="panel"><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('profilePage')">♙  <span data-i18n="settings.editProfile">Edit my profile</span></button><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('likesPage')">♡  <span data-i18n="more.likesMatches">My likes and matches</span></button><button class="secondary" style="width:100%" onclick="showPage('settingsPage')">⚙  <span data-i18n="settings.title">Settings &amp; help</span></button></div></section>
 <section id="settingsPage" class="hidden">
@@ -1016,7 +1016,7 @@ async function syncCurrentProfile() {
   return { localOnly: false, profile: saved.profile, interests: saved.interests || interests };
 }
 
-let index=0,mode="swipe",purpose="both",likesTab="liked",currentUsername=localStorage.getItem("conect_username")||"",setupChoices={gender:"",showMe:"Any",orientation:"Any",lookingFor:"any"},liked=new Set(JSON.parse(localStorage.getItem("mm2_liked")||"[]")),passed=new Set(JSON.parse(localStorage.getItem("mm2_passed")||"[]")),matches=new Set(JSON.parse(localStorage.getItem("mm2_matches")||"[]")),myProfile=JSON.parse(localStorage.getItem("mm2_profile")||"{}");
+let index=0,mode="swipe",purpose="both",likesTab="likes",currentUsername=localStorage.getItem("conect_username")||"",setupChoices={gender:"",showMe:"Any",orientation:"Any",lookingFor:"any"},liked=new Set(JSON.parse(localStorage.getItem("mm2_liked")||"[]")),passed=new Set(JSON.parse(localStorage.getItem("mm2_passed")||"[]")),matches=new Set(JSON.parse(localStorage.getItem("mm2_matches")||"[]")),myProfile=JSON.parse(localStorage.getItem("mm2_profile")||"{}");
 const discoveryFilters={minAge:18,maxAge:99,location:"any",sharedInterests:false,withPhotos:false};
 const interestGroups=[
 ["🎨 Creative & Arts",["Live Music / Concerts","Photography","Painting / Sketching","Writing / Poetry","Dancing","Museums & Galleries"]],
@@ -1917,7 +1917,8 @@ function renderPortfolioPreview() {
       '<div class="location">⌖ ' + esc(profile.loc) + '</div>' +
       '<div class="feed-profile-details' + expandedClass + '">' + bioMarkup + '<div class="chips">' + interestMarkup + '</div>' +
       (showMore ? '<button type="button" class="feed-show-more" aria-expanded="' + String(portfolioExpanded) + '" onclick="togglePortfolioDetails()">' + (portfolioExpanded ? 'Hide' : 'Show more') + '</button>' : '') +
-      '</div><div class="portfolio-look-note">This is a preview — others can Like or Pass on your card.</div></div>' +
+      '</div><div class="portfolio-look-note">This is a preview — others can Like or Pass on your card.</div>' +
+      '<button type="button" class="smallbtn feed-view-profile" style="margin-top:8px" onclick="showOwnProfileFullView()">View full profile ↗</button></div>' +
       '<div class="side-actions feed-profile-side-actions" aria-label="Preview of profile actions">' +
         '<button type="button" class="side-action feed-pass-action" aria-label="Pass button preview" title="Pass" disabled>×</button>' +
         '<button type="button" class="side-action primary-like feed-like-action" aria-label="Like button preview" title="Like" disabled>♥</button>' +
@@ -2638,9 +2639,11 @@ function setDetailPhotoMode(mode, index) {
 function renderDetailPhotos() {
   const root = $("detailPhotoGallery");
   if (!root) return;
-  const p = liveDiscoveryMode
-    ? findConectProfile(detailPhotoProfileId)
-    : profiles.find(x => String(x.id) === String(detailPhotoProfileId));
+  const p = String(detailPhotoProfileId) === "my-portfolio-preview"
+    ? getPortfolioProfile()
+    : (liveDiscoveryMode
+      ? findConectProfile(detailPhotoProfileId)
+      : profiles.find(x => String(x.id) === String(detailPhotoProfileId)));
   if (!p) {
     root.innerHTML = '<div class="empty">This profile is no longer available.</div>';
     return;
@@ -2672,6 +2675,27 @@ function renderDetailPhotos() {
       '<div class="detail-photo-slide-count">' + (detailPhotoIndex + 1) + ' / ' + photos.length + '</div></div>';
   }
   root.innerHTML = toolbar + view;
+}
+
+function showOwnProfileFullView() {
+  const p = getPortfolioProfile();
+  detailPhotoProfileId = "my-portfolio-preview";
+  detailPhotoMode = "grid";
+  detailPhotoIndex = 0;
+  const purposeText = p.purpose === "dating" ? "Dating" : p.purpose === "friends" ? "Friendship" : "Dating and friendship";
+  const idTitle = esc(p.name || "Your name") + (p.age ? ", " + esc(p.age) : "");
+  $("detailContent").innerHTML =
+    '<button type="button" class="secondary" onclick="showPortfolioPreview()" style="margin-bottom:12px">‹ Back to portfolio</button>' +
+    '<div id="detailPhotoGallery"></div>' +
+    '<div class="detail-profile-heading"><div style="min-width:0;flex:1"><h2>' + idTitle +
+      '</h2><p class="detail-profile-location">⌖ ' + esc(p.loc || "Add your location") + '</p></div></div>' +
+    '<p>' + esc(p.bio || "No bio added yet. Add a short bio from Edit profile.") + '</p>' +
+    '<div class="chips">' + chips(p) + '</div>' +
+    '<p style="font-size:12px;margin-top:12px">Looking for: ' + esc(purposeText) + '</p>' +
+    '<div style="display:flex;gap:8px;margin-top:15px"><button type="button" class="primary" onclick="showPage(\'profilePage\')">Edit profile</button>' +
+      '<button type="button" class="secondary" onclick="showPortfolioPreview()">Back to preview</button></div>';
+  renderDetailPhotos();
+  showPage("detailPage");
 }
 
 function showDetail(id) {
