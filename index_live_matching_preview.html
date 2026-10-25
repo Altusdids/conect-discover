@@ -1133,6 +1133,52 @@ function photoSource(photo) {
   return "";
 }
 
+// Private profile-photo URLs expire after one hour. If an image fails because
+// its signed URL expired, ask the verified Edge Function for a fresh link.
+// Also handles stale public URLs left in browser cache during the rollout.
+function profilePhotoStoragePathFromUrl(value) {
+  if (typeof value !== "string" || !value) return "";
+  try {
+    const url = new URL(value, window.location.href);
+    const markers = [
+      "/storage/v1/object/sign/profile-photos/",
+      "/storage/v1/object/public/profile-photos/"
+    ];
+    const marker = markers.find(item => url.pathname.includes(item));
+    if (!marker) return "";
+    const path = decodeURIComponent(url.pathname.slice(url.pathname.indexOf(marker) + marker.length));
+    if (!path || path.startsWith("/") || path.includes("..") || path.includes("\\\\")) return "";
+    return path;
+  } catch (_) {
+    return "";
+  }
+}
+
+document.addEventListener("error", event => {
+  const img = event.target;
+  if (!(img instanceof HTMLImageElement)) return;
+  const storagePath = profilePhotoStoragePathFromUrl(img.currentSrc || img.src);
+  if (!storagePath) return;
+  const attempts = Number(img.dataset.photoRefreshAttempts || "0");
+  if (attempts >= 1) return;
+  img.dataset.photoRefreshAttempts = String(attempts + 1);
+  void conectBackendRequest("refresh_profile_photo_url", undefined, { storagePath })
+    .then(result => {
+      const freshUrl = photoSource(result && result.photo);
+      if (img.isConnected && freshUrl) img.src = freshUrl;
+    })
+    .catch(error => {
+      console.warn("Could not refresh expired profile photo URL", error && error.message);
+    });
+}, true);
+
+document.addEventListener("load", event => {
+  const img = event.target;
+  if (img instanceof HTMLImageElement && profilePhotoStoragePathFromUrl(img.currentSrc || img.src)) {
+    delete img.dataset.photoRefreshAttempts;
+  }
+}, true);
+
 function isStoragePhoto(photo) {
   return Boolean(photo && typeof photo === "object" && photo.storage_path);
 }
