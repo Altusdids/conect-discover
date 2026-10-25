@@ -195,6 +195,52 @@ function cleanString(value: unknown, max: number): string {
     : "";
 }
 
+// Profile photos are served only through temporary signed URLs. Keep the
+// legacy public_url field name temporarily because the existing frontend uses it.
+const PROFILE_PHOTO_URL_TTL_SECONDS = 60 * 60;
+
+async function signProfilePhotoRows(admin: any, photos: any[]) {
+  const rows = Array.isArray(photos) ? photos : [];
+  if (!rows.length) return [];
+
+  const paths = [...new Set<string>(
+    rows.map((photo: any) => photo.storage_path)
+      .filter((path: unknown): path is string => typeof path === "string" && path.length > 0),
+  )];
+  if (!paths.length) return [];
+
+  const { data, error } = await admin.storage
+    .from(PHOTO_BUCKET)
+    .createSignedUrls(paths, PROFILE_PHOTO_URL_TTL_SECONDS);
+
+  if (error || !Array.isArray(data)) {
+    console.error("Profile photo signed URL creation error", error?.message || "No signed URL data returned");
+    throw new Error("Could not create secure profile photo links");
+  }
+
+  const urlByPath = new Map<string, string>();
+  for (let i = 0; i < paths.length; i++) {
+    const item = data[i];
+    if (!item || item.error || typeof item.signedUrl !== "string" || !item.signedUrl) {
+      console.error("Profile photo signed URL missing", { path: paths[i], error: item?.error || null });
+      throw new Error("Could not create secure profile photo links");
+    }
+    urlByPath.set(paths[i], item.signedUrl);
+  }
+
+  const expiresAt = new Date(Date.now() + PROFILE_PHOTO_URL_TTL_SECONDS * 1000).toISOString();
+  return rows.map((photo: any) => {
+    const signedUrl = urlByPath.get(photo.storage_path);
+    if (!signedUrl) throw new Error("Could not create secure profile photo links");
+    return {
+      ...photo,
+      // Compatibility field; this value is now a signed URL, not a public URL.
+      public_url: signedUrl,
+      photo_url_expires_at: expiresAt,
+    };
+  });
+}
+
 // Normalize the remaining gallery after a successful deletion or
 // a failed upload reservation cleanup.
 async function normalizePhotoOrder(admin: any, profileId: string) {
@@ -229,19 +275,19 @@ async function normalizePhotoOrder(admin: any, profileId: string) {
       return null;
     }
 
-    const { data: publicData } = admin.storage
-      .from(PHOTO_BUCKET)
-      .getPublicUrl(photo.storage_path);
-
     result.push({
       ...photo,
       sort_order: i + 1,
       is_primary: i === 0,
-      public_url: publicData.publicUrl,
     });
   }
 
-  return result;
+  try {
+    return await signProfilePhotoRows(admin, result);
+  } catch (error) {
+    console.error("Photo ordering signed URL error", error instanceof Error ? error.message : error);
+    return null;
+  }
 }
 
 function acceptsGender(showMe: string, targetGender: string): boolean {
@@ -339,6 +385,7 @@ Deno.serve(async (req: Request) => {
       action !== "report_user" &&
       action !== "unblock_user" &&
       action !== "load_blocked_users" &&
+      action !== "refresh_profile_photo_url" &&
       action !== "load_profile_visits" &&
       action !== "record_profile_visit" &&
       action !== "delete_account"
@@ -475,6 +522,7 @@ Deno.serve(async (req: Request) => {
       action === "report_user" ||
       action === "unblock_user" ||
       action === "load_blocked_users" ||
+      action === "refresh_profile_photo_url" ||
       action === "load_profile_visits" ||
       action === "record_profile_visit"
     ) {
@@ -493,6 +541,67 @@ Deno.serve(async (req: Request) => {
       }
       if (!viewer.is_active) {
         return jsonResponse({ error: "Your profile is not active" }, 403);
+      }
+
+      // Renew an expired profile-photo URL only after checking that the
+      // photo still exists and that the verified viewer may currently see it.
+      if (action === "refresh_profile_photo_url") {
+        const storagePath = cleanString(body.storagePath, 500);
+        if (!storagePath || storagePath.startsWith("/") || storagePath.includes("..") || storagePath.includes("\\")) {
+          return jsonResponse({ error: "Invalid profile photo path" }, 400);
+        }
+
+        const { data: photoRow, error: photoLookupError } = await admin
+          .from("profile_photos")
+          .select("id, user_id, storage_path, sort_order, is_primary")
+          .eq("storage_path", storagePath)
+          .maybeSingle();
+
+        if (photoLookupError) {
+          console.error("Profile photo refresh lookup error", photoLookupError.message);
+          return jsonResponse({ error: "Could not verify this photo" }, 500);
+        }
+        if (!photoRow) return jsonResponse({ error: "This photo is no longer available" }, 404);
+
+        if (photoRow.user_id !== viewer.id) {
+          const [targetResult, blocksResult] = await Promise.all([
+            admin.from("profiles").select("id, is_active").eq("id", photoRow.user_id).maybeSingle(),
+            admin.from("blocks").select("blocker_user_id, blocked_user_id").or(
+              `and(blocker_user_id.eq.${viewer.id},blocked_user_id.eq.${photoRow.user_id}),and(blocker_user_id.eq.${photoRow.user_id},blocked_user_id.eq.${viewer.id})`,
+            ),
+          ]);
+
+          if (targetResult.error || blocksResult.error) {
+            console.error("Profile photo refresh access lookup error", {
+              profile: targetResult.error?.message,
+              blocks: blocksResult.error?.message,
+            });
+            return jsonResponse({ error: "Could not verify access to this photo" }, 500);
+          }
+
+          const blockRows = blocksResult.data || [];
+          const viewerBlockedTarget = blockRows.some((row: any) =>
+            row.blocker_user_id === viewer.id && row.blocked_user_id === photoRow.user_id
+          );
+          const targetBlockedViewer = blockRows.some((row: any) =>
+            row.blocker_user_id === photoRow.user_id && row.blocked_user_id === viewer.id
+          );
+
+          // A user may refresh a blocked profile only from their own blocked-users list.
+          if (targetBlockedViewer && !viewerBlockedTarget) {
+            return jsonResponse({ error: "This profile is not available" }, 403);
+          }
+          if (!viewerBlockedTarget && !targetResult.data?.is_active) {
+            return jsonResponse({ error: "This profile is not available" }, 404);
+          }
+        }
+
+        try {
+          const signedPhotos = await signProfilePhotoRows(admin, [photoRow]);
+          return jsonResponse({ ok: true, photo: signedPhotos[0] });
+        } catch {
+          return jsonResponse({ error: "Could not refresh this profile photo" }, 500);
+        }
       }
 
       // TRUST & SAFETY: all target IDs are checked server-side and the caller is derived from verified Telegram initData.
@@ -670,7 +779,7 @@ Deno.serve(async (req: Request) => {
 
         const [profilesResult, photosResult, interestsResult] = await Promise.all([
           admin.from("profiles").select("id, app_username, display_name, age, gender, country, city, bio, purpose, is_active").in("id", eligibleIds).eq("is_active", true),
-          admin.from("profile_photos").select("user_id, storage_path, sort_order, is_primary").in("user_id", eligibleIds).order("sort_order", { ascending: true }),
+          admin.from("profile_photos").select("id, user_id, storage_path, sort_order, is_primary").in("user_id", eligibleIds).order("sort_order", { ascending: true }),
           admin.from("profile_interests").select("user_id, interest, position").in("user_id", eligibleIds).order("position", { ascending: true }),
         ]);
         if (profilesResult.error || photosResult.error || interestsResult.error) {
@@ -678,9 +787,10 @@ Deno.serve(async (req: Request) => {
           return jsonResponse({ error: "Could not load profile visits" }, 500);
         }
         const photosByUser = new Map<string, any[]>();
-        for (const row of photosResult.data || []) {
+        const signedVisitPhotos = await signProfilePhotoRows(admin, photosResult.data || []);
+        for (const row of signedVisitPhotos) {
           const existing = photosByUser.get(row.user_id) || [];
-          existing.push({ public_url: admin.storage.from(PHOTO_BUCKET).getPublicUrl(row.storage_path).data.publicUrl, sort_order: row.sort_order, is_primary: row.is_primary });
+          existing.push(row);
           photosByUser.set(row.user_id, existing);
         }
         const interestsByUser = new Map<string, string[]>();
@@ -705,11 +815,12 @@ Deno.serve(async (req: Request) => {
         if (!blockedIds.length) return jsonResponse({ ok: true, blockedUsers: [] });
         const [profilesResult, photosResult] = await Promise.all([
           admin.from("profiles").select("id, app_username, display_name, age, gender, country, city, bio, purpose, is_active").in("id", blockedIds),
-          admin.from("profile_photos").select("user_id, storage_path, sort_order, is_primary").in("user_id", blockedIds).order("sort_order", { ascending: true }),
+          admin.from("profile_photos").select("id, user_id, storage_path, sort_order, is_primary").in("user_id", blockedIds).order("sort_order", { ascending: true }),
         ]);
         if (profilesResult.error || photosResult.error) { console.error("Blocked user profile lookup error", { profiles: profilesResult.error?.message, photos: photosResult.error?.message }); return jsonResponse({ error: "Could not load blocked users" }, 500); }
         const photosByUser = new Map<string, any[]>();
-        for (const row of photosResult.data || []) { const existing = photosByUser.get(row.user_id) || []; existing.push({ public_url: admin.storage.from(PHOTO_BUCKET).getPublicUrl(row.storage_path).data.publicUrl, sort_order: row.sort_order, is_primary: row.is_primary }); photosByUser.set(row.user_id, existing); }
+        const signedBlockedPhotos = await signProfilePhotoRows(admin, photosResult.data || []);
+        for (const row of signedBlockedPhotos) { const existing = photosByUser.get(row.user_id) || []; existing.push(row); photosByUser.set(row.user_id, existing); }
         const blockedUsers = (profilesResult.data || []).map((profile: any) => { const photos = photosByUser.get(profile.id) || []; const primary = photos.find((photo: any) => photo.is_primary) || photos[0] || null; return { id: profile.id, username: profile.app_username, name: profile.display_name, age: profile.age, gender: profile.gender, location: [profile.city, profile.country].filter(Boolean).join(", "), bio: profile.bio, purpose: profile.purpose, interests: [], photos, photo: primary?.public_url || null }; });
         return jsonResponse({ ok: true, blockedUsers });
       }
@@ -1241,7 +1352,7 @@ Deno.serve(async (req: Request) => {
               .eq("is_active", true),
             admin
               .from("profile_photos")
-              .select("user_id, storage_path, sort_order, is_primary")
+              .select("id, user_id, storage_path, sort_order, is_primary")
               .in("user_id", allIds)
               .order("sort_order", { ascending: true }),
             admin
@@ -1261,15 +1372,10 @@ Deno.serve(async (req: Request) => {
           }
 
           const photosByUser = new Map<string, any[]>();
-          for (const photo of photosResult.data || []) {
+          const signedRelationshipPhotos = await signProfilePhotoRows(admin, photosResult.data || []);
+          for (const photo of signedRelationshipPhotos) {
             const photos = photosByUser.get(photo.user_id) || [];
-            photos.push({
-              public_url: admin.storage
-                .from(PHOTO_BUCKET)
-                .getPublicUrl(photo.storage_path).data.publicUrl,
-              sort_order: photo.sort_order,
-              is_primary: photo.is_primary,
-            });
+            photos.push(photo);
             photosByUser.set(photo.user_id, photos);
           }
           const interestsByUser = new Map<string, string[]>();
@@ -1365,7 +1471,7 @@ Deno.serve(async (req: Request) => {
         const candidateIds = candidates.map((profile: any) => profile.id);
         const [photosResult, interestsResult] = await Promise.all([
           admin.from("profile_photos")
-            .select("user_id, storage_path, sort_order, is_primary")
+            .select("id, user_id, storage_path, sort_order, is_primary")
             .in("user_id", candidateIds)
             .order("sort_order", { ascending: true }),
           admin.from("profile_interests")
@@ -1382,13 +1488,10 @@ Deno.serve(async (req: Request) => {
         }
 
         const photosByUser = new Map<string, any[]>();
-        for (const photo of photosResult.data || []) {
+        const signedSearchPhotos = await signProfilePhotoRows(admin, photosResult.data || []);
+        for (const photo of signedSearchPhotos) {
           const list = photosByUser.get(photo.user_id) || [];
-          list.push({
-            public_url: admin.storage.from(PHOTO_BUCKET).getPublicUrl(photo.storage_path).data.publicUrl,
-            sort_order: photo.sort_order,
-            is_primary: photo.is_primary,
-          });
+          list.push(photo);
           photosByUser.set(photo.user_id, list);
         }
         const interestsByUser = new Map<string, string[]>();
@@ -1463,7 +1566,7 @@ Deno.serve(async (req: Request) => {
         const [photosResult, interestsResult] = await Promise.all([
           admin
             .from("profile_photos")
-            .select("user_id, storage_path, sort_order, is_primary")
+            .select("id, user_id, storage_path, sort_order, is_primary")
             .in("user_id", candidateIds)
             .order("sort_order", { ascending: true }),
           admin
@@ -1482,13 +1585,10 @@ Deno.serve(async (req: Request) => {
         }
 
         const photosByUser = new Map<string, any[]>();
-        for (const photo of photosResult.data || []) {
+        const signedDiscoveryPhotos = await signProfilePhotoRows(admin, photosResult.data || []);
+        for (const photo of signedDiscoveryPhotos) {
           const existing = photosByUser.get(photo.user_id) || [];
-          existing.push({
-            public_url: admin.storage.from(PHOTO_BUCKET).getPublicUrl(photo.storage_path).data.publicUrl,
-            sort_order: photo.sort_order,
-            is_primary: photo.is_primary,
-          });
+          existing.push(photo);
           photosByUser.set(photo.user_id, existing);
         }
         const interestsByUser = new Map<string, string[]>();
@@ -1961,19 +2061,23 @@ Deno.serve(async (req: Request) => {
           }, 500);
         }
 
-        const { data: publicData } = admin.storage
-          .from(PHOTO_BUCKET)
-          .getPublicUrl(storagePath);
-
-        return jsonResponse({
-          ok: true,
-          photo: {
+        let signedPhoto: any;
+        try {
+          signedPhoto = (await signProfilePhotoRows(admin, [{
             id: reservation.id,
+            user_id: photoProfile.id,
             storage_path: storagePath,
             sort_order: reservation.sort_order,
             is_primary: reservation.is_primary,
-            public_url: publicData.publicUrl,
-          },
+          }]))[0];
+        } catch {
+          // The uploaded row remains stored, but don't return an unsafe public URL.
+          return jsonResponse({ error: "Photo uploaded but a secure viewing link could not be created. Refresh your profile to reload the gallery." }, 500);
+        }
+
+        return jsonResponse({
+          ok: true,
+          photo: signedPhoto,
         });
       }
 
@@ -2121,12 +2225,12 @@ Deno.serve(async (req: Request) => {
         }, 500);
       }
 
-      const photos = (photoRows || []).map((photo) => ({
-        ...photo,
-        public_url: admin.storage
-          .from(PHOTO_BUCKET)
-          .getPublicUrl(photo.storage_path).data.publicUrl,
-      }));
+      let photos: any[];
+      try {
+        photos = await signProfilePhotoRows(admin, photoRows || []);
+      } catch {
+        return jsonResponse({ error: "Could not create secure links for your saved photos" }, 500);
+      }
 
       return jsonResponse({
         ok: true,
