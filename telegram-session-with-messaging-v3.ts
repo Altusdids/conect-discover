@@ -725,7 +725,7 @@ Deno.serve(async (req: Request) => {
         const messageResult = matchIds.length
           ? await admin
               .from("messages")
-              .select("id, match_id, sender_user_id, body, created_at, read_at")
+              .select("id, match_id, sender_user_id, body, created_at, read_at, message_type, attachment_name")
               .in("match_id", matchIds)
               .order("created_at", { ascending: false })
               .limit(1000)
@@ -751,6 +751,8 @@ Deno.serve(async (req: Request) => {
           if (!update.latest) {
             update.latest = {
               body: message.body,
+              message_type: message.message_type || "text",
+              attachment_name: message.attachment_name || null,
               sender_user_id: message.sender_user_id,
               created_at: message.created_at,
               is_mine: message.sender_user_id === viewer.id,
