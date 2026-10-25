@@ -498,6 +498,61 @@ body:has(#discoverPage:not(.hidden)){height:100dvh!important;overflow:hidden!imp
   #discoverPage .feed-profile-card .side-actions.feed-profile-side-actions .side-action{width:39px!important;height:39px!important}
   #discoverPage .feed-profile-card .photo-nav.next{right:52px!important}
 }
+
+/* Chat actions and username search polish. */
+.chat-send-btn{
+  flex:0 0 36px!important;width:36px!important;min-width:36px!important;
+  height:36px!important;min-height:36px!important;padding:0!important;
+  font-size:17px!important;line-height:1!important;overflow:hidden!important;
+}
+.chat-send-btn .chat-send-glyph{display:block;font-size:17px;line-height:1}
+.chat-send-btn[data-sending="true"]{opacity:.7;cursor:wait}
+.chat-send-btn[data-sending="true"] .chat-send-glyph{animation:chat-send-pulse .7s ease-in-out infinite alternate}
+@keyframes chat-send-pulse{from{opacity:.45;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+.chat-composer-context{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 12px;margin:8px 0 0;border-left:3px solid #e83d72;
+  border-radius:9px;background:#24252c;color:#e9dce3;font-size:12px
+}
+.chat-composer-context span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-composer-context button{flex:0 0 28px;width:28px;height:28px;border:0;border-radius:50%;background:#383943;color:#fff;font-size:20px;line-height:1;cursor:pointer}
+.chat-message{padding-top:15px!important}
+.chat-message-body{white-space:pre-wrap;overflow-wrap:anywhere}
+.chat-message-edited{font-size:10px;opacity:.7;margin-left:5px;font-style:italic}
+.chat-message-quote{display:block;padding:7px 9px;margin:0 0 7px;border-left:3px solid #f1a6c1;background:#0002;border-radius:7px;font-size:11px;opacity:.92}
+.chat-message-actions{position:absolute;right:3px;top:2px;z-index:4}
+.chat-message-more{width:22px;height:20px;padding:0;border:0;border-radius:7px;background:#0002;color:inherit;font-size:17px;line-height:1;display:grid;place-items:center;cursor:pointer;opacity:.82}
+.chat-message-menu{position:absolute;top:22px;right:0;z-index:30;width:142px;padding:5px;border:1px solid #474852;border-radius:12px;background:#212229;box-shadow:0 9px 28px #0009;display:grid;gap:2px}
+.chat-message-menu.hidden{display:none!important}
+.chat-message-menu button{width:100%;padding:9px 10px;border:0;border-radius:8px;text-align:left;background:transparent;color:#f8f7fa;font:inherit;font-size:12px;cursor:pointer}
+.chat-message-menu button:hover,.chat-message-menu button:focus-visible{background:#ffffff12}
+.chat-message-menu button.danger{color:#ff9b9b}
+.username-search-overlay{position:fixed;inset:0;z-index:80;background:#000b;display:flex;align-items:flex-end;justify-content:center;padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
+.username-search-overlay.hidden{display:none!important}
+.username-search-sheet{width:min(100%,560px);max-height:88dvh;overflow:auto;-webkit-overflow-scrolling:touch;background:#1b1c23;border:1px solid #3b3c47;border-radius:24px;padding:17px 16px 18px;box-shadow:0 18px 55px #0009}
+.username-search-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.username-search-head h2{font-size:21px;line-height:1.15;margin:0}
+.username-search-head p{font-size:12px;margin:5px 0 0}
+.username-search-close{flex:0 0 34px;width:34px;height:34px;border:0;border-radius:50%;background:#30313a;color:#fff;font-size:24px;line-height:1;cursor:pointer}
+.username-search-form{display:flex;gap:8px;margin:14px 0 10px}
+.username-search-form input{flex:1;min-width:0;width:100%;padding:12px;border-radius:12px;border:1px solid #41424d;background:#252630;color:#fff;font:inherit}
+.username-search-form button{flex:0 0 auto;padding:0 15px}
+.username-search-shortcuts{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 12px}
+.username-search-status{font-size:12px;color:var(--muted);margin:8px 0}
+.username-search-results{display:grid;gap:7px}
+.username-search-result{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #343540;border-radius:14px;background:#22232a;min-width:0}
+.username-search-result .chat-avatar{flex:0 0 44px;width:44px;height:44px}
+.username-search-result-body{flex:1;min-width:0}
+.username-search-result-name{font-weight:750;font-size:14px;overflow-wrap:anywhere}
+.username-search-result-username{color:var(--muted);font-size:12px;margin-top:2px}
+.username-search-result button{flex:0 0 auto;padding:8px 10px;font-size:12px}
+@media(max-width:380px){
+  .chat-send-btn{flex-basis:34px!important;width:34px!important;min-width:34px!important;height:34px!important;min-height:34px!important}
+  .username-search-sheet{padding:15px 12px}
+  .username-search-result{gap:8px;padding:8px}
+  .username-search-result button{padding:7px 8px}
+}
+
 </style></head>
 <body>
 <div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
@@ -569,6 +624,15 @@ body:has(#discoverPage:not(.hidden)){height:100dvh!important;overflow:hidden!imp
 </div>
 <section id="likesPage" class="hidden"><h1>Likes</h1><p>Keep track of people you like, your matches, and people who like you.</p><div class="likes-tabs" role="tablist" aria-label="Likes sections"><button class="active" data-likes-tab="likes" role="tab" aria-selected="true"><span>Likes</span><span class="likes-tab-badge" data-likes-count="likes">0</span></button><button data-likes-tab="matches" role="tab" aria-selected="false"><span>Matches</span><span class="likes-tab-badge" data-likes-count="matches">0</span></button><button data-likes-tab="liked" role="tab" aria-selected="false"><span>Liked</span><span class="likes-tab-badge" data-likes-count="liked">0</span></button></div><div class="likes-view-toolbar"><span id="likesResultsLabel">People</span><div class="likes-view-toggle" role="group" aria-label="Change profile layout"><button type="button" id="likesListMode" class="active" aria-pressed="true" onclick="setLikesView('list')" title="List view" aria-label="List view">☰</button><button type="button" id="likesGridMode" aria-pressed="false" onclick="setLikesView('grid')" title="Grid view" aria-label="Grid view">▦</button></div></div><div id="likesList"></div></section>
 <section id="chatsPage" class="hidden"><div id="chatInboxControls"></div><div id="chatList"></div></section>
+<div id="usernameSearchOverlay" class="username-search-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="usernameSearchTitle" onclick="if(event.target===this)closeUsernameSearch()">
+  <div class="username-search-sheet">
+    <div class="username-search-head"><div><h2 id="usernameSearchTitle">Find someone</h2><p>Search Conect members by username.</p></div><button type="button" class="username-search-close" onclick="closeUsernameSearch()" aria-label="Close search">×</button></div>
+    <form id="usernameSearchForm" class="username-search-form"><input id="usernameSearchInput" type="search" autocomplete="off" maxlength="21" placeholder="Username (e.g. @alex_25)" aria-label="Search by username" required><button type="submit" class="primary">Search</button></form>
+    <div class="username-search-shortcuts"><span style="font-size:11px;color:var(--muted)">Search by username, not display name.</span><button type="button" class="secondary" id="usernameSearchRequestsBtn" onclick="closeUsernameSearch();openChatRequests()">Requests <span id="usernameSearchRequestCount"></span></button></div>
+    <p id="usernameSearchStatus" class="username-search-status" role="status" aria-live="polite"></p>
+    <div id="usernameSearchResults" class="username-search-results"></div>
+  </div>
+</div>
 <section id="morePage" class="hidden"><h1 data-i18n="nav.more">More</h1><p data-i18n="more.intro">More ways to manage your Conect experience.</p><div class="panel"><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('profilePage')">♙  <span data-i18n="settings.editProfile">Edit my profile</span></button><button class="secondary" style="width:100%;margin-bottom:8px" onclick="showPage('likesPage')">♡  <span data-i18n="more.likesMatches">My likes and matches</span></button><button class="secondary" style="width:100%" onclick="showPage('settingsPage')">⚙  <span data-i18n="settings.title">Settings &amp; help</span></button></div></section>
 <section id="settingsPage" class="hidden">
   <button type="button" class="secondary" style="margin:0 0 12px" onclick="showPage('morePage')" data-i18n="common.backMore">‹ Back to More</button>
@@ -1046,6 +1110,10 @@ let activeChatMatchId = null;
 let chatRefreshTimer = null;
 let liveChatLoadBusy = false;
 let liveChatSendBusy = false;
+let chatReplyToMessage = null;
+let chatEditingMessageId = null;
+let currentChatMessages = [];
+let chatUserSearchBusy = false;
 let showChatRequests = false;
 let chatSearchQuery = "";
 const chatMessagePreviews = new Map();
@@ -2168,7 +2236,7 @@ function renderChatInboxControls() {
   }
   const requestCount = liveDiscoveryMode ? chatRequestProfiles().length : 0;
   controls.innerHTML =
-    '<div class="chat-page-header"><h1>Chats</h1><button type="button" class="chat-plus-btn" onclick="openChatRequests()" aria-label="Chat requests" title="Chat requests"><span aria-hidden="true">+</span>' +
+    '<div class="chat-page-header"><h1>Chats</h1><button type="button" class="chat-plus-btn" onclick="openUsernameSearch()" aria-label="Find someone by username" title="Find someone by username"><span aria-hidden="true">+</span>' +
     (requestCount ? '<span class="chat-request-count">' + requestCount + '</span>' : '') + '</button></div>' +
     '<label class="chat-search" for="chatSearchInput"><span class="chat-search-icon" aria-hidden="true">⌕</span><input id="chatSearchInput" type="search" autocomplete="off" placeholder="Search chats" aria-label="Search chats" value="' + esc(chatSearchQuery) + '"></label>';
   const input = $("chatSearchInput");
@@ -2255,6 +2323,72 @@ function filterChats(query) {
   chatSearchQuery = String(query || "");
   renderChatList();
 }
+function openUsernameSearch() {
+  const overlay = $("usernameSearchOverlay");
+  if (!overlay) return;
+  showChatRequests = false;
+  overlay.classList.remove("hidden");
+  const status = $("usernameSearchStatus");
+  const results = $("usernameSearchResults");
+  const count = $("usernameSearchRequestCount");
+  if (status) status.textContent = "Enter at least 3 characters of a username.";
+  if (results) results.innerHTML = "";
+  if (count) count.textContent = liveDiscoveryMode && chatRequestProfiles().length ? "(" + chatRequestProfiles().length + ")" : "";
+  const input = $("usernameSearchInput");
+  if (input) { input.value = ""; setTimeout(() => input.focus(), 50); }
+}
+function closeUsernameSearch() {
+  $("usernameSearchOverlay")?.classList.add("hidden");
+}
+function openSearchedConectProfile(profileId) {
+  const p = findConectProfile(profileId);
+  closeUsernameSearch();
+  if (p) showDetail(p.id);
+}
+async function searchConectUsers() {
+  if (chatUserSearchBusy) return;
+  const input = $("usernameSearchInput");
+  const status = $("usernameSearchStatus");
+  const root = $("usernameSearchResults");
+  if (!input || !root) return;
+  const query = input.value.trim().replace(/^@+/, "").toLowerCase();
+  if (query.length < 3 || !/^[a-z0-9_]{3,20}$/.test(query)) {
+    if (status) status.textContent = "Use a username with 3–20 letters, numbers, or underscores.";
+    root.innerHTML = "";
+    return;
+  }
+  chatUserSearchBusy = true;
+  if (status) status.textContent = "Searching usernames…";
+  root.innerHTML = "";
+  const button = $("usernameSearchForm")?.querySelector('button[type="submit"]');
+  if (button) { button.disabled = true; button.textContent = "Searching…"; }
+  try {
+    const result = await conectBackendRequest("search_users", undefined, { query });
+    const found = (Array.isArray(result.profiles) ? result.profiles : []).map(mapConectProfile);
+    for (const person of found) {
+      const existingIndex = profiles.findIndex(item => String(item.id) === String(person.id));
+      if (existingIndex >= 0) profiles[existingIndex] = { ...profiles[existingIndex], ...person };
+      else profiles.push(person);
+    }
+    if (!found.length) {
+      if (status) status.textContent = "No active profiles found for that username. Try a different spelling.";
+      return;
+    }
+    if (status) status.textContent = found.length + (found.length === 1 ? " profile found." : " profiles found.");
+    root.innerHTML = found.map(person =>
+      '<div class="username-search-result">' + chatAvatarMarkup(person) +
+        '<div class="username-search-result-body"><div class="username-search-result-name">' + esc(person.name) + (person.age ? ", " + esc(person.age) : "") + '</div>' +
+        '<div class="username-search-result-username">@' + esc(person.username || query) + '</div>' +
+        '<div class="username-search-result-username">' + esc(person.loc || "Location not specified") + '</div></div>' +
+        '<button type="button" class="secondary" onclick="openSearchedConectProfile(\'' + esc(person.id) + '\')">View</button></div>'
+    ).join("");
+  } catch (error) {
+    if (status) status.textContent = "Search failed: " + (error.message || "request failed") + ". Check that the messaging backend has been deployed.";
+  } finally {
+    chatUserSearchBusy = false;
+    if (button) { button.disabled = false; button.textContent = "Search"; }
+  }
+}
 function openChatRequests() {
   showChatRequests = true;
   renderChats();
@@ -2322,10 +2456,11 @@ function renderLiveChatShell() {
         '</button>' +
       '</header>' +
       '<div id="messageThread" class="chat-thread" role="log" aria-live="polite"><div class="chat-empty">Loading conversation…</div></div>' +
+      '<div id="chatComposerContext" class="chat-composer-context hidden"><span id="chatComposerContextText"></span><button type="button" onclick="clearChatComposerContext()" aria-label="Cancel reply or edit" title="Cancel">×</button></div>' +
       '<form id="chatComposer" class="chat-composer">' +
         '<button type="button" class="chat-emoji-btn" id="chatEmojiBtn" aria-label="Open emoji picker" title="Add emoji" onclick="toggleChatEmojiPicker()">☺</button>' +
         '<textarea id="chatMessageInput" maxlength="4000" aria-label="Message" placeholder="Message…" required rows="1"></textarea>' +
-        '<button id="chatSendBtn" type="submit" class="chat-send-btn" aria-label="Send message" title="Send message">➤</button>' +
+        '<button id="chatSendBtn" type="submit" class="chat-send-btn" aria-label="Send message" title="Send message"><span class="chat-send-glyph" aria-hidden="true">➤</span></button>' +
       '</form>' +
       '<div id="chatEmojiTray" class="chat-emoji-tray hidden" aria-label="Choose an emoji">' +
         ['👋','❤️','😂','😍','🥹','🔥','👍','🙏','😭','✨','🤍','😊','🎉','😅','💯','😉'].map(emoji => '<button type="button" onclick="insertChatEmoji(\'' + emoji + '\')" aria-label="Insert ' + emoji + '">' + emoji + '</button>').join('') +
@@ -2349,6 +2484,11 @@ function renderLiveChatShell() {
       if (input.value.trim()) void sendLiveMessage();
     }
   });
+  const usernameSearchForm = $("usernameSearchForm");
+  usernameSearchForm?.addEventListener("submit", event => {
+    event.preventDefault();
+    void searchConectUsers();
+  });
 }
 function toggleChatEmojiPicker() {
   const tray = $("chatEmojiTray");
@@ -2369,17 +2509,19 @@ function insertChatEmoji(emoji) {
 function renderLiveMessages(messages, forceScroll = false) {
   const thread = $("messageThread");
   if (!thread) return;
+  currentChatMessages = Array.isArray(messages) ? messages : [];
   const wasNearBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 90;
-  if (messages.length && activeChatMatchId) {
-    const latest = messages[messages.length - 1];
+  if (currentChatMessages.length && activeChatMatchId) {
+    const latest = currentChatMessages[currentChatMessages.length - 1];
     chatMessagePreviews.set(String(activeChatMatchId), { body: String(latest.body || ""), mine: latest.is_mine === true, created_at: latest.created_at || null });
   }
-  if (!messages.length) {
+  if (!currentChatMessages.length) {
     thread.innerHTML = '<div class="chat-empty">No messages yet. Say hello 👋</div>';
   } else {
     let previousDay = "";
-    thread.innerHTML = messages.map(message => {
+    thread.innerHTML = currentChatMessages.map(message => {
       const mine = message.is_mine === true;
+      const messageId = String(message.id || "");
       let time = "";
       let day = "";
       if (message.created_at) {
@@ -2404,12 +2546,113 @@ function renderLiveMessages(messages, forceScroll = false) {
       const receipt = mine ? (message.read_at
         ? '<span class="chat-message-receipt" aria-label="Seen">✓✓</span>'
         : '<span class="chat-message-receipt" aria-label="Sent">✓</span>') : '';
-      return separator + '<div class="chat-message ' + (mine ? "mine" : "theirs") + '">' +
-        esc(message.body) + (time || receipt ? '<span class="chat-message-time">' + esc(time) + receipt + '</span>' : '') + '</div>';
+      const quoted = message.reply_to_body
+        ? '<div class="chat-message-quote">↪ ' + esc(message.reply_to_body.length > 160 ? message.reply_to_body.slice(0,157) + "…" : message.reply_to_body) + '</div>'
+        : '';
+      const editedLabel = message.edited_at ? '<span class="chat-message-edited">edited</span>' : '';
+      const messageOptions = '<div class="chat-message-actions"><button type="button" class="chat-message-more" onclick="toggleChatMessageMenu(this)" aria-label="Message options" title="Message options">⋯</button>' +
+        '<div class="chat-message-menu hidden" role="menu">' +
+        '<button type="button" role="menuitem" onclick="replyToChatMessage(\'' + esc(messageId) + '\')">↩ Reply</button>' +
+        '<button type="button" role="menuitem" onclick="copyChatMessage(\'' + esc(messageId) + '\')">▢ Copy</button>' +
+        (mine ? '<button type="button" role="menuitem" onclick="editChatMessage(\'' + esc(messageId) + '\')">✎ Edit</button><button type="button" role="menuitem" class="danger" onclick="deleteChatMessage(\'' + esc(messageId) + '\')">× Delete</button>' : '') +
+        '</div></div>';
+      return separator + '<div class="chat-message ' + (mine ? "mine" : "theirs") + '" data-message-id="' + esc(messageId) + '">' +
+        messageOptions + quoted + '<div class="chat-message-body">' + esc(message.body || "") + editedLabel + '</div>' +
+        (time || receipt ? '<span class="chat-message-time">' + esc(time) + receipt + '</span>' : '') + '</div>';
     }).join("");
   }
   if (forceScroll || wasNearBottom) thread.scrollTop = thread.scrollHeight;
 }
+function toggleChatMessageMenu(button) {
+  const wrapper = button && button.closest(".chat-message-actions");
+  if (!wrapper) return;
+  const menu = wrapper.querySelector(".chat-message-menu");
+  const shouldOpen = menu && menu.classList.contains("hidden");
+  document.querySelectorAll(".chat-message-menu").forEach(item => item.classList.add("hidden"));
+  if (menu && shouldOpen) menu.classList.remove("hidden");
+}
+function renderChatComposerContext() {
+  const bar = $("chatComposerContext");
+  const label = $("chatComposerContextText");
+  if (!bar || !label) return;
+  if (chatEditingMessageId) {
+    const original = currentChatMessages.find(item => String(item.id) === String(chatEditingMessageId));
+    label.textContent = "Editing message" + (original ? ": " + String(original.body || "").slice(0, 100) : "");
+    bar.classList.remove("hidden");
+  } else if (chatReplyToMessage) {
+    label.textContent = "Replying to " + (chatReplyToMessage.isMine ? "your message" : chatReplyToMessage.name) + ": " + chatReplyToMessage.body.slice(0, 110);
+    bar.classList.remove("hidden");
+  } else {
+    bar.classList.add("hidden");
+    label.textContent = "";
+  }
+}
+function clearChatComposerContext() {
+  chatReplyToMessage = null;
+  chatEditingMessageId = null;
+  renderChatComposerContext();
+}
+function replyToChatMessage(messageId) {
+  const message = currentChatMessages.find(item => String(item.id) === String(messageId));
+  if (!message) return;
+  chatEditingMessageId = null;
+  chatReplyToMessage = { id: String(message.id), body: String(message.body || ""), isMine: message.is_mine === true, name: liveMatches.find(item => String(item.id) === String(activeChatMatchId))?.profile?.name || "your match" };
+  const input = $("chatMessageInput");
+  if (input) input.focus();
+  renderChatComposerContext();
+  document.querySelectorAll(".chat-message-menu").forEach(item => item.classList.add("hidden"));
+}
+function copyChatMessage(messageId) {
+  const message = currentChatMessages.find(item => String(item.id) === String(messageId));
+  if (!message) return;
+  const value = String(message.body || "");
+  const success = () => { const status = $("chatStatus"); if (status) status.textContent = "Message copied."; };
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(value).then(success).catch(() => fallbackCopyChatText(value, success));
+  } else fallbackCopyChatText(value, success);
+  document.querySelectorAll(".chat-message-menu").forEach(item => item.classList.add("hidden"));
+}
+function fallbackCopyChatText(value, success) {
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  try { if (document.execCommand("copy")) success(); else alert("Copy is unavailable in this browser."); }
+  catch (_) { alert("Copy is unavailable in this browser."); }
+  finally { textarea.remove(); }
+}
+function editChatMessage(messageId) {
+  const message = currentChatMessages.find(item => String(item.id) === String(messageId));
+  if (!message || message.is_mine !== true) return;
+  chatReplyToMessage = null;
+  chatEditingMessageId = String(message.id);
+  const input = $("chatMessageInput");
+  if (input) {
+    input.value = String(message.body || "");
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  renderChatComposerContext();
+  document.querySelectorAll(".chat-message-menu").forEach(item => item.classList.add("hidden"));
+}
+async function deleteChatMessage(messageId) {
+  const message = currentChatMessages.find(item => String(item.id) === String(messageId));
+  if (!message || message.is_mine !== true || !activeChatMatchId) return;
+  if (!window.confirm("Delete this message? It will be removed from the conversation.")) return;
+  const status = $("chatStatus");
+  try {
+    await conectBackendRequest("delete_message", undefined, { matchId: activeChatMatchId, messageId: String(message.id) });
+    if (status) status.textContent = "Message deleted.";
+    await loadLiveMessages(false);
+  } catch (error) {
+    if (status) status.textContent = "Could not delete message: " + (error.message || "request failed");
+  }
+  document.querySelectorAll(".chat-message-menu").forEach(item => item.classList.add("hidden"));
+}
+
 async function loadLiveMessages(silent = false) {
   const matchId = activeChatMatchId;
   if (!matchId || liveChatLoadBusy) return;
@@ -2466,14 +2709,22 @@ async function sendLiveMessage() {
   }
   const matchId = activeChatMatchId;
   const button = $("chatSendBtn");
+  const editingId = chatEditingMessageId;
   liveChatSendBusy = true;
-  if (button) { button.disabled = true; button.textContent = "Sending…"; }
+  if (button) { button.disabled = true; button.dataset.sending = "true"; }
   input.disabled = true;
   try {
-    await conectBackendRequest("send_message", undefined, { matchId, message });
+    if (editingId) {
+      await conectBackendRequest("edit_message", undefined, { matchId, messageId: editingId, message });
+    } else {
+      await conectBackendRequest("send_message", undefined, {
+        matchId, message, replyToMessageId: chatReplyToMessage ? chatReplyToMessage.id : null
+      });
+    }
     if (activeChatMatchId !== matchId) return;
     input.value = "";
     input.style.height = "auto";
+    clearChatComposerContext();
     $("chatEmojiTray")?.classList.add("hidden");
     $("chatStatus").textContent = "";
     await loadLiveMessages(false);
@@ -2484,7 +2735,7 @@ async function sendLiveMessage() {
       ". Check that the messaging backend has been deployed.";
   } finally {
     liveChatSendBusy = false;
-    if (button) { button.disabled = false; button.textContent = "Send"; }
+    if (button) { button.disabled = false; button.dataset.sending = "false"; }
     if (input) input.disabled = false;
   }
 }
