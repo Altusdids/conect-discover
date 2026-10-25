@@ -691,6 +691,61 @@ nav.chat-conversation-nav-hidden{display:none!important}
   .app:has(.chat-conversation) .chat-message.media-only{max-width:88%!important}
 }
 
+
+/* Received-message menus are portaled outside the scroll viewport so they are never clipped. */
+.chat-message-actions{z-index:80!important}
+.chat-message-more{position:relative;z-index:81!important;min-width:24px!important;min-height:23px!important;background:#30313a!important;border:1px solid #ffffff18!important;color:inherit!important}
+.chat-message-menu[data-portaled="true"]{
+  position:fixed!important;z-index:99999!important;width:158px!important;max-width:calc(100vw - 16px)!important;
+  max-height:calc(100dvh - 20px)!important;overflow-y:auto!important;display:grid!important;
+  padding:6px!important;border:1px solid #555660!important;border-radius:13px!important;
+  background:#23242b!important;box-shadow:0 12px 35px #000b!important;overscroll-behavior:contain
+}
+.chat-message-menu[data-portaled="true"].hidden{display:none!important}
+.chat-message.media-only .chat-message-more,.chat-message.voice-message .chat-message-more{opacity:1!important}
+.chat-message.theirs .chat-message-more{background:#34353d!important;color:#fff!important}
+.chat-record-cancel,.chat-record-finish,.chat-recording-panel{display:none!important}
+.chat-record-cancel{
+  order:0!important;flex:0 0 42px!important;width:42px!important;min-width:42px!important;
+  height:42px!important;min-height:42px!important;padding:0!important;place-items:center;
+  border:1px solid #4b3038!important;border-radius:50%!important;background:#211d22!important;
+  color:#ff6688!important;font-size:27px!important;line-height:1!important
+}
+.chat-recording-panel{
+  order:1!important;flex:1 1 auto!important;min-width:0!important;height:42px!important;min-height:42px!important;
+  padding:0 12px!important;align-items:center!important;gap:8px!important;border:1px solid #36363e!important;
+  border-radius:24px!important;background:#212226!important;color:#f9f8fa!important;overflow:hidden
+}
+.chat-recording-dot{flex:0 0 9px;width:9px;height:9px;border-radius:50%;background:#ff315b;box-shadow:0 0 0 0 #ff315b75;animation:chat-record-dot 1.2s infinite}
+.chat-recording-elapsed{flex:0 0 auto;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap;color:#fbf9fb}
+.chat-recording-wave{height:26px;display:flex;align-items:center;justify-content:center;gap:2px;flex:1;min-width:30px;overflow:hidden}
+.chat-recording-wave span{height:var(--bar);max-height:24px;min-width:2px;flex:1;border-radius:5px;background:#e24b70;opacity:.88;animation:chat-record-wave .68s ease-in-out infinite alternate;animation-delay:calc(var(--i, 0) * -25ms)}
+.chat-recording-wave span:nth-child(3n){animation-delay:-180ms}
+.chat-recording-wave span:nth-child(4n){animation-delay:-370ms}
+.chat-recording-label{flex:0 0 auto;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#bdbec7}
+.chat-record-finish{
+  order:2!important;flex:0 0 42px!important;width:42px!important;min-width:42px!important;
+  height:42px!important;min-height:42px!important;padding:0!important;display:none!important;
+  place-items:center;border:0!important;border-radius:50%!important;background:#dc3c68!important;
+  color:#fff!important;font-size:28px!important;font-weight:500!important;line-height:1!important
+}
+.chat-composer.is-recording .chat-emoji-btn,
+.chat-composer.is-recording .chat-attach-btn,
+.chat-composer.is-recording #chatMessageInput,
+.chat-composer.is-recording .chat-record-btn,
+.chat-composer.is-recording .chat-send-btn{display:none!important}
+.chat-composer.is-recording .chat-record-cancel{display:grid!important}
+.chat-composer.is-recording .chat-recording-panel{display:flex!important}
+.chat-composer.is-recording .chat-record-finish{display:grid!important}
+@keyframes chat-record-dot{0%{box-shadow:0 0 0 0 #ff315b65}70%{box-shadow:0 0 0 6px #ff315b00}100%{box-shadow:0 0 0 0 #ff315b00}}
+@keyframes chat-record-wave{from{transform:scaleY(.48);opacity:.58}to{transform:scaleY(1);opacity:1}}
+@media(max-width:390px){
+ .chat-record-cancel,.chat-record-finish{flex-basis:36px!important;width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important}
+ .chat-recording-panel{height:38px!important;min-height:38px!important;padding:0 8px!important;gap:6px!important}
+ .chat-recording-label{max-width:56px;font-size:10px}
+ .chat-recording-wave{gap:1px}
+}
+
 </style></head>
 <body>
 <div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
@@ -1260,6 +1315,9 @@ let chatMediaRecorder = null;
 let chatMediaStream = null;
 let chatMediaChunks = [];
 let chatRecordingActive = false;
+let chatRecordingCancelled = false;
+let chatRecordingStartedAt = 0;
+let chatRecordingTimer = null;
 let showChatRequests = false;
 let chatSearchQuery = "";
 const chatMessagePreviews = new Map();
@@ -2616,6 +2674,9 @@ function renderLiveChatShell() {
         '<textarea id="chatMessageInput" maxlength="4000" aria-label="Message" placeholder="Message…" rows="1"></textarea>' +
         '<button type="button" class="chat-record-btn" id="chatRecordBtn" aria-label="Record voice message" title="Record voice message" onclick="toggleChatVoiceRecording()">🎙</button>' +
         '<button id="chatSendBtn" type="submit" class="chat-send-btn" aria-label="Send message" title="Send message"><span class="chat-send-glyph" aria-hidden="true">➤</span></button>' +
+        '<button type="button" id="chatCancelRecordingBtn" class="chat-record-cancel" aria-label="Cancel recording" title="Cancel recording" onclick="cancelChatVoiceRecording()">×</button>' +
+        '<div id="chatRecordingPanel" class="chat-recording-panel" aria-live="polite"><span class="chat-recording-dot"></span><span id="chatRecordingElapsed" class="chat-recording-elapsed">0:00</span><div class="chat-recording-wave" aria-hidden="true">' + Array.from({length:28},(_,i)=>'<span style="--bar:' + (7 + ((i*13+5)%19)) + 'px"></span>').join('') + '</div><span class="chat-recording-label">Recording…</span></div>' +
+        '<button type="button" id="chatFinishRecordingBtn" class="chat-record-finish" aria-label="Send voice message" title="Send voice message" onclick="finishChatVoiceRecording()">↑</button>' +
       '</form>' +
       '<input id="chatAttachmentInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" hidden>' +
       '<p id="chatMediaStatus" class="chat-media-status" role="status" aria-live="polite"></p>' +
@@ -2851,12 +2912,41 @@ async function sendChatAttachment(file, type = "file") {
     if (composerInput) composerInput.disabled = false;
   }
 }
+function setChatRecordingUI(active) {
+  const composer = $("chatComposer");
+  if (composer) composer.classList.toggle("is-recording", Boolean(active));
+}
+function startChatRecordingTimer() {
+  clearInterval(chatRecordingTimer);
+  chatRecordingStartedAt = Date.now();
+  const elapsed = $("chatRecordingElapsed");
+  const update = () => {
+    if (elapsed) elapsed.textContent = formatVoiceTime((Date.now() - chatRecordingStartedAt) / 1000);
+  };
+  update();
+  chatRecordingTimer = setInterval(update, 250);
+}
+function finishChatVoiceRecording() {
+  if (!chatRecordingActive || !chatMediaRecorder || chatMediaRecorder.state === "inactive") return;
+  chatRecordingCancelled = false;
+  const status = $("chatStatus");
+  if (status) status.textContent = "Preparing your voice message…";
+  try { chatMediaRecorder.stop(); } catch (_) {}
+}
+function cancelChatVoiceRecording() {
+  if (!chatRecordingActive || !chatMediaRecorder) return;
+  chatRecordingCancelled = true;
+  try {
+    if (chatMediaRecorder.state !== "inactive") chatMediaRecorder.stop();
+    else cleanupChatRecorder();
+  } catch (_) {
+    cleanupChatRecorder();
+  }
+}
 async function toggleChatVoiceRecording() {
   if (chatUploadBusy || !activeChatMatchId) return;
-  if (chatRecordingActive && chatMediaRecorder) {
-    const status = $("chatStatus");
-    if (status) status.textContent = "Preparing your voice message…";
-    try { chatMediaRecorder.stop(); } catch (_) {}
+  if (chatRecordingActive) {
+    finishChatVoiceRecording();
     return;
   }
   if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function" || typeof MediaRecorder === "undefined") {
@@ -2871,18 +2961,26 @@ async function toggleChatVoiceRecording() {
     const chosen = preferredTypes.find(mime => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mime));
     if (chosen) options.mimeType = chosen;
     chatMediaChunks = [];
+    chatRecordingCancelled = false;
     chatMediaRecorder = new MediaRecorder(chatMediaStream, options);
     chatMediaRecorder.ondataavailable = event => { if (event.data && event.data.size) chatMediaChunks.push(event.data); };
     chatMediaRecorder.onerror = () => {
+      cleanupChatRecorder();
       const status = $("chatStatus");
       if (status) status.textContent = "Voice recording failed. Check microphone permission and try again.";
-      cleanupChatRecorder();
     };
     chatMediaRecorder.onstop = () => {
       const recorder = chatMediaRecorder;
       const chunks = chatMediaChunks.slice();
+      const wasCancelled = chatRecordingCancelled;
       const actualType = String((recorder && recorder.mimeType) || (chunks[0] && chunks[0].type) || "audio/webm").split(";")[0].toLowerCase();
       cleanupChatRecorder();
+      if (wasCancelled) {
+        chatRecordingCancelled = false;
+        const status = $("chatStatus");
+        if (status) status.textContent = "Recording cancelled.";
+        return;
+      }
       if (!chunks.length) {
         const status = $("chatStatus");
         if (status) status.textContent = "No audio was recorded. Please try again.";
@@ -2895,15 +2993,10 @@ async function toggleChatVoiceRecording() {
     };
     chatMediaRecorder.start();
     chatRecordingActive = true;
-    const recordBtn = $("chatRecordBtn");
-    if (recordBtn) {
-      recordBtn.classList.add("recording");
-      recordBtn.textContent = "■";
-      recordBtn.setAttribute("aria-label", "Stop and send voice message");
-      recordBtn.title = "Stop and send voice message";
-    }
+    setChatRecordingUI(true);
+    startChatRecordingTimer();
     const status = $("chatStatus");
-    if (status) status.textContent = "Recording… tap ■ to send the voice message.";
+    if (status) status.textContent = "";
   } catch (error) {
     cleanupChatRecorder();
     const status = $("chatStatus");
@@ -2911,11 +3004,17 @@ async function toggleChatVoiceRecording() {
   }
 }
 function cleanupChatRecorder() {
+  if (chatRecordingTimer !== null) {
+    clearInterval(chatRecordingTimer);
+    chatRecordingTimer = null;
+  }
   if (chatMediaStream) chatMediaStream.getTracks().forEach(track => track.stop());
   chatMediaStream = null;
   chatMediaRecorder = null;
   chatMediaChunks = [];
   chatRecordingActive = false;
+  chatRecordingStartedAt = 0;
+  setChatRecordingUI(false);
   const recordBtn = $("chatRecordBtn");
   if (recordBtn) {
     recordBtn.classList.remove("recording");
@@ -2923,7 +3022,9 @@ function cleanupChatRecorder() {
     recordBtn.setAttribute("aria-label", "Record voice message");
     recordBtn.title = "Record voice message";
   }
+  syncChatComposerActions();
 }
+
 function chatMessagesSignature(messages) {
   return JSON.stringify((Array.isArray(messages) ? messages : []).map(message => ({
     id: String(message.id || ""),
@@ -3070,14 +3171,38 @@ function renderLiveMessages(messages, forceScroll = false) {
   }
   if (forceScroll || wasNearBottom) thread.scrollTop = thread.scrollHeight;
 }
+function closeChatMessageMenus() {
+  document.querySelectorAll('.chat-message-menu[data-portaled="true"]').forEach(item => item.remove());
+  document.querySelectorAll(".chat-message-menu:not([data-portaled='true'])").forEach(item => item.classList.add("hidden"));
+}
 function toggleChatMessageMenu(button) {
   const wrapper = button && button.closest(".chat-message-actions");
   if (!wrapper) return;
-  const menu = wrapper.querySelector(".chat-message-menu");
-  const shouldOpen = menu && menu.classList.contains("hidden");
-  document.querySelectorAll(".chat-message-menu").forEach(item => item.classList.add("hidden"));
-  if (menu && shouldOpen) menu.classList.remove("hidden");
+  const sourceMenu = wrapper.querySelector(".chat-message-menu");
+  const wasClosed = sourceMenu && sourceMenu.classList.contains("hidden");
+  closeChatMessageMenus();
+  if (!sourceMenu || !wasClosed) return;
+  const menu = sourceMenu.cloneNode(true);
+  menu.classList.remove("hidden");
+  menu.dataset.portaled = "true";
+  menu.style.visibility = "hidden";
+  document.body.appendChild(menu);
+  const buttonRect = button.getBoundingClientRect();
+  const menuRect = menu.getBoundingClientRect();
+  const margin = 8;
+  const left = Math.max(margin, Math.min(window.innerWidth - menuRect.width - margin, buttonRect.right - menuRect.width));
+  let top = buttonRect.bottom + 5;
+  if (top + menuRect.height > window.innerHeight - margin) top = buttonRect.top - menuRect.height - 5;
+  top = Math.max(margin, Math.min(window.innerHeight - menuRect.height - margin, top));
+  menu.style.left = left + "px";
+  menu.style.top = top + "px";
+  menu.style.right = "auto";
+  menu.style.visibility = "visible";
 }
+document.addEventListener("click", event => {
+  if (event.target.closest(".chat-message-actions") || event.target.closest('.chat-message-menu[data-portaled="true"]')) return;
+  closeChatMessageMenus();
+});
 function renderChatComposerContext() {
   const bar = $("chatComposerContext");
   const label = $("chatComposerContextText");
@@ -3114,7 +3239,7 @@ function replyToChatMessage(messageId) {
   const input = $("chatMessageInput");
   if (input) input.focus();
   renderChatComposerContext();
-  document.querySelectorAll(".chat-message-menu").forEach(item => item.classList.add("hidden"));
+  closeChatMessageMenus();
 }
 function copyChatMessage(messageId) {
   const message = currentChatMessages.find(item => String(item.id) === String(messageId));
@@ -3124,7 +3249,7 @@ function copyChatMessage(messageId) {
   if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(value).then(success).catch(() => fallbackCopyChatText(value, success));
   } else fallbackCopyChatText(value, success);
-  document.querySelectorAll(".chat-message-menu").forEach(item => item.classList.add("hidden"));
+  closeChatMessageMenus();
 }
 function fallbackCopyChatText(value, success) {
   const textarea = document.createElement("textarea");
@@ -3150,7 +3275,7 @@ function editChatMessage(messageId) {
     input.dispatchEvent(new Event("input", { bubbles: true }));
   }
   renderChatComposerContext();
-  document.querySelectorAll(".chat-message-menu").forEach(item => item.classList.add("hidden"));
+  closeChatMessageMenus();
 }
 async function deleteChatMessage(messageId) {
   const message = currentChatMessages.find(item => String(item.id) === String(messageId));
@@ -3164,7 +3289,7 @@ async function deleteChatMessage(messageId) {
   } catch (error) {
     if (status) status.textContent = "Could not delete message: " + (error.message || "request failed");
   }
-  document.querySelectorAll(".chat-message-menu").forEach(item => item.classList.add("hidden"));
+  closeChatMessageMenus();
 }
 
 async function loadLiveMessages(silent = false) {
