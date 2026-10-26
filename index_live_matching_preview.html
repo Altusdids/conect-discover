@@ -917,6 +917,17 @@ body:has(#detailPage:not(.hidden)){height:auto!important;min-height:100dvh!impor
 <div class="setup-card">
 <label for="profilePhotoInput">Profile picture (required)</label>
 <div class="photo-upload" style="margin-top:8px"><img id="profilePhotoPreview" class="photo-preview" alt="Your profile photo preview"><input id="profilePhotoInput" type="file" accept="image/*" class="field" style="margin-bottom:0"><div class="helper">Choose a clear JPEG, PNG, or WebP photo. When opened inside Telegram, your photo can sync to Conect.</div></div>
+<div class="photo-rules" style="margin-top:14px;padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:#121318">
+  <h3 style="margin:0 0 7px;font-size:14px;color:#f3d2c9">📸 Photo rules</h3>
+  <ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.6;color:var(--muted)">
+    <li>Use a clear, genuine photo of yourself.</li>
+    <li>No nudity or sexually explicit images.</li>
+    <li>No violent, hateful, illegal, or misleading images.</li>
+    <li>Only upload photos you have permission to use; respect other people’s privacy.</li>
+    <li>Keep phone numbers, addresses, and other private contact details out of photos.</li>
+  </ul>
+  <p style="margin:8px 0 0;font-size:11px;color:var(--muted)">Photos that break Conect’s Community Guidelines may be removed.</p>
+</div>
 <p id="photoError" role="alert" style="font-size:12px;color:#ff8c8c"></p>
 </div>
 <button class="primary continue-wide" id="finishSetupBtn">Save profile & continue →</button>
