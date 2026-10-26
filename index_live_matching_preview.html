@@ -1036,6 +1036,37 @@ body:has(#detailPage:not(.hidden)){height:auto!important;min-height:100dvh!impor
   <button type="button" class="account-delete-button" id="deleteAccountBtn" onclick="deleteConectAccount()" data-i18n="settings.deleteAccountButton">Delete account permanently</button>
   <p id="deleteAccountStatus" class="account-delete-status" role="status" aria-live="polite"></p>
 </section>
+  <div class="panel" aria-label="About Conect">
+    <h2 style="font-size:17px;margin:0 0 6px">About Conect</h2>
+    <p style="font-size:12px;margin:0 0 12px;color:var(--muted)">Learn what Conect is, how it works, and how to contact support.</p>
+    <button type="button" class="secondary" style="width:100%" onclick="showPage('aboutPage')">ℹ️ About Conect</button>
+  </div>
+</section>
+<section id="aboutPage" class="hidden">
+  <button type="button" class="secondary" style="margin:0 0 12px" onclick="showPage('settingsPage')">‹ Back to Settings &amp; help</button>
+  <h1>About Conect</h1>
+  <div class="panel" style="text-align:center;padding:24px 18px">
+    <div aria-hidden="true" style="font-size:48px;line-height:1.2;margin-bottom:10px">💞</div>
+    <h2 style="font-size:24px;margin:0 0 8px">Conect</h2>
+    <p style="margin:0;color:var(--muted)">Meet new people worldwide for dating, friendship, and meaningful connections.</p>
+    <p style="font-size:11px;color:var(--muted);margin:12px 0 0">Early access · Beta</p>
+  </div>
+  <div class="panel">
+    <h2 style="font-size:17px;margin:0 0 8px">How Conect works</h2>
+    <p style="font-size:13px;color:var(--muted)">Discover people through their profiles and shared interests. Likes become a match when the interest is mutual, and matching unlocks private chat.</p>
+    <p style="font-size:13px;color:var(--muted)">Conect is for adults aged 18 and older. Be respectful, protect your personal information, and use the report or block tools if something feels wrong.</p>
+  </div>
+  <div class="panel">
+    <h2 style="font-size:17px;margin:0 0 8px">Questions or feedback?</h2>
+    <p style="font-size:13px;color:var(--muted)">Contact the Conect team if you have a question, suggestion, or need support.</p>
+    <a class="secondary" href="https://t.me/altusdids" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px">Contact @altusdids on Telegram</a>
+    <a class="secondary" href="mailto:tulsa22nd@gmail.com" style="display:block;text-align:center;text-decoration:none">Email support</a>
+  </div>
+  <div class="panel">
+    <h2 style="font-size:17px;margin:0 0 8px">Learn more</h2>
+    <a href="./privacy-policy.html" target="_blank" rel="noopener noreferrer" class="secondary" style="display:block;text-align:center;text-decoration:none;margin-bottom:8px">Privacy policy</a>
+    <a href="./community-guidelines.html" target="_blank" rel="noopener noreferrer" class="secondary" style="display:block;text-align:center;text-decoration:none">Community guidelines</a>
+  </div>
 </section>
 <section id="profilePage" class="hidden"><h1>Your profile</h1><p>Manage your details, photos, and how you appear to others.</p>
 <button type="button" class="profile-hero" id="openBasicsBtn" aria-label="Edit basic profile details">
@@ -1883,7 +1914,7 @@ document.addEventListener("keydown", event => {
   if (event.key === "Escape" && !$("onboardingTutorial").classList.contains("hidden")) finishConectTutorial();
 });
 
-function showPage(id){["signInPage","interestsSetupPage","profilePhotoSetupPage","discoverPage","likesPage","chatsPage","morePage","settingsPage","profilePage","portfolioPage","detailPage"].forEach(x=>$(x).classList.toggle("hidden",x!==id));document.querySelector("nav").classList.toggle("hidden",id==="signInPage"||id==="interestsSetupPage"||id==="profilePhotoSetupPage");document.querySelector("nav")?.classList.toggle("chat-conversation-nav-hidden",id==="chatsPage"&&Boolean(activeChatMatchId));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id||(id==="portfolioPage"&&b.dataset.page==="profilePage")||(id==="settingsPage"&&b.dataset.page==="morePage")));if(id==="likesPage")renderLikes();if(id==="chatsPage")renderChats();if(id==="profilePage"){ $("myUsername").value=currentUsername;$("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("myBio").value=myProfile.bio||"";$("myPurpose").value=myProfile.purpose||"both";$("profilePagePhoto").src=myProfile.photo||"";$("profileHeroName").textContent=(myProfile.name||"Your name")+(myProfile.age?", "+myProfile.age:"");$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+(myProfile.loc||"Add your location");renderProfilePhotos();$("profileInterestSummary").innerHTML=(myProfile.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join("")||"No interests selected yet.";if($("myEmail"))$("myEmail").value=myProfile.email||"";void loadProfileVisits();void loadBlockedUsers();} if(id==="discoverPage") maybeStartOnboardingTutorial();}
+function showPage(id){["signInPage","interestsSetupPage","profilePhotoSetupPage","discoverPage","likesPage","chatsPage","morePage","settingsPage","aboutPage","profilePage","portfolioPage","detailPage"].forEach(x=>$(x).classList.toggle("hidden",x!==id));document.querySelector("nav").classList.toggle("hidden",id==="signInPage"||id==="interestsSetupPage"||id==="profilePhotoSetupPage");document.querySelector("nav")?.classList.toggle("chat-conversation-nav-hidden",id==="chatsPage"&&Boolean(activeChatMatchId));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id||(id==="portfolioPage"&&b.dataset.page==="profilePage")||(id==="settingsPage"&&b.dataset.page==="morePage")||(id==="aboutPage"&&b.dataset.page==="morePage")));if(id==="likesPage")renderLikes();if(id==="chatsPage")renderChats();if(id==="profilePage"){ $("myUsername").value=currentUsername;$("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("myBio").value=myProfile.bio||"";$("myPurpose").value=myProfile.purpose||"both";$("profilePagePhoto").src=myProfile.photo||"";$("profileHeroName").textContent=(myProfile.name||"Your name")+(myProfile.age?", "+myProfile.age:"");$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+(myProfile.loc||"Add your location");renderProfilePhotos();$("profileInterestSummary").innerHTML=(myProfile.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join("")||"No interests selected yet.";if($("myEmail"))$("myEmail").value=myProfile.email||"";void loadProfileVisits();void loadBlockedUsers();} if(id==="discoverPage") maybeStartOnboardingTutorial();}
 function likeDetailProfile(profileId){if(liveDiscoveryMode){void recordLiveSwipe(profileId,"like",true);return}const p=profiles.find(x=>String(x.id)===String(profileId));if(p)likePerson(p.id)}
 function passDetailProfile(profileId){if(liveDiscoveryMode){void recordLiveSwipe(profileId,"pass",false);showPage("discoverPage");return}const p=profiles.find(x=>String(x.id)===String(profileId));if(!p)return;passed.add(p.id);persist();index=0;renderAll();showPage("discoverPage")}
 function showDetail(id){const p=liveDiscoveryMode?findConectProfile(id):profiles.find(x=>String(x.id)===String(id));if(!p){alert("That profile is no longer available. Refresh Discover and try again.");return}if(liveDiscoveryMode)void recordProfileVisit(p.id);$("detailContent").innerHTML=`<img src="${p.img}" style="width:100%;max-height:390px;object-fit:cover;border-radius:15px"><h2>${esc(p.name)}, ${p.age}</h2><p>⌖ ${esc(p.loc)}</p><p>${esc(p.bio)}</p><div class="chips">${chips(p)}</div><p style="font-size:12px">Looking for: ${p.purpose.join(" and ")}</p><div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likeDetailProfile('${p.id}')">♥ Like</button><button class="secondary" onclick="passDetailProfile('${p.id}')">Pass</button></div>`;showPage("detailPage")}
