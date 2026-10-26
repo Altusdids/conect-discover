@@ -879,6 +879,28 @@ nav button .nav-badge,.chat-request-count,.chat-list-unread{
 /* Opening a profile from inside a chat must release the conversation's fixed, non-scrolling viewport. */
 body:has(#detailPage:not(.hidden)){height:auto!important;min-height:100dvh!important;overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
 .app:has(#detailPage:not(.hidden)){height:auto!important;min-height:100dvh!important;display:block!important;overflow:visible!important;padding-bottom:calc(24px + env(safe-area-inset-bottom))!important}
+
+/* First-login product walkthrough */
+#onboardingTutorial{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(6,5,9,.84);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+#onboardingTutorial.hidden{display:none!important}
+.tutorial-card{width:min(100%,470px);max-height:min(88dvh,720px);overflow:auto;border:1px solid var(--line);border-radius:24px;background:linear-gradient(160deg,#201820 0%,#121116 78%);box-shadow:0 26px 90px rgba(0,0,0,.55);padding:22px}
+.tutorial-top{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.tutorial-close{width:34px;height:34px;border:1px solid var(--line);border-radius:50%;background:#121116;color:var(--text);font-size:22px;cursor:pointer}
+.tutorial-icon{width:66px;height:66px;display:grid;place-items:center;margin:18px 0 13px;border-radius:20px;background:linear-gradient(135deg,rgba(255,192,48,.14),rgba(255,42,110,.18));border:1px solid rgba(255,90,135,.35);font-size:32px}
+.tutorial-card h2{font-size:25px;line-height:1.18;letter-spacing:-.45px;margin:0 0 10px;color:var(--text)}
+.tutorial-card p{font-size:14px;line-height:1.6;color:var(--muted);margin:0 0 12px}
+.tutorial-points{display:grid;gap:9px;list-style:none;padding:0;margin:17px 0 20px}
+.tutorial-points li{display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.5;color:var(--text)}
+.tutorial-points li::before{content:"✓";flex:0 0 21px;height:21px;display:grid;place-items:center;border-radius:50%;background:rgba(255,65,117,.15);color:#ff7298;font-weight:900}
+.tutorial-progress{height:4px;border-radius:99px;background:#34303a;overflow:hidden;margin:18px 0}
+.tutorial-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffca37,#ff2879);transition:width .2s ease}
+.tutorial-actions{display:flex;align-items:center;gap:8px;margin-top:14px}
+.tutorial-actions button{min-height:44px}
+.tutorial-actions .tutorial-skip{margin-right:auto;padding:10px 4px;border:0;background:transparent;color:var(--muted);font-size:12px;cursor:pointer}
+.tutorial-actions .tutorial-back{min-width:78px}
+.tutorial-actions .tutorial-next{min-width:130px}
+@media(max-width:430px){.tutorial-card{padding:18px;border-radius:20px}.tutorial-card h2{font-size:23px}.tutorial-actions{flex-wrap:wrap}.tutorial-actions .tutorial-skip{order:3;width:100%;text-align:center;margin:2px 0 0}.tutorial-actions .tutorial-next{flex:1}}
+
 </style></head>
 <body>
 <div id="globalErrorBanner" class="global-error-banner hidden" role="alert" aria-live="assertive"><span>Something went wrong. Please try again. If it continues, close and reopen Conect.</span><button type="button" onclick="dismissGlobalError()">Dismiss</button></div><div class="app">
@@ -1056,6 +1078,22 @@ body:has(#detailPage:not(.hidden)){height:auto!important;min-height:100dvh!impor
 <section id="detailPage" class="hidden"><button class="secondary" id="backDiscover">← Back to discover</button><div id="detailContent" class="panel"></div></section>
 </div>
 <nav aria-label="Main navigation"><button class="active" data-page="discoverPage"><b>✥</b><span data-i18n="nav.feed">Feed</span></button><button data-page="likesPage"><b>♥<span class="nav-badge hidden" id="likesBadge">0</span></b><span data-i18n="nav.likes">Likes</span></button><button data-page="chatsPage"><b>▣<span class="nav-badge hidden" id="chatsBadge">0</span></b><span data-i18n="nav.chats">Chats</span></button><button data-page="morePage"><b>♣</b><span data-i18n="nav.more">More</span></button><button data-page="profilePage"><b>♟</b><span data-i18n="nav.profile">Profile</span></button></nav>
+
+<div id="onboardingTutorial" class="hidden" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle" aria-describedby="tutorialBody">
+  <div class="tutorial-card">
+    <div class="tutorial-top"><span id="tutorialCounter">GETTING STARTED · 1 OF 5</span><button type="button" id="tutorialCloseBtn" class="tutorial-close" aria-label="Skip tutorial">×</button></div>
+    <div class="tutorial-icon" id="tutorialIcon" aria-hidden="true">💜</div>
+    <h2 id="tutorialTitle">Welcome to Conect</h2>
+    <p id="tutorialBody">Here is a quick tour of the main features.</p>
+    <ul id="tutorialPoints" class="tutorial-points"></ul>
+    <div class="tutorial-progress" aria-hidden="true"><span id="tutorialProgressFill"></span></div>
+    <div class="tutorial-actions">
+      <button type="button" id="tutorialSkipBtn" class="tutorial-skip">Skip tutorial</button>
+      <button type="button" id="tutorialBackBtn" class="secondary tutorial-back">← Back</button>
+      <button type="button" id="tutorialNextBtn" class="primary tutorial-next">Next →</button>
+    </div>
+  </div>
+</div>
 <script>
 const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#101116');tg.setBackgroundColor('#101116')}catch(e){}}
 let profiles=[
@@ -1740,7 +1778,112 @@ async function deleteConectAccount() {
   }
 }
 
-function showPage(id){["signInPage","interestsSetupPage","profilePhotoSetupPage","discoverPage","likesPage","chatsPage","morePage","settingsPage","profilePage","portfolioPage","detailPage"].forEach(x=>$(x).classList.toggle("hidden",x!==id));document.querySelector("nav").classList.toggle("hidden",id==="signInPage"||id==="interestsSetupPage"||id==="profilePhotoSetupPage");document.querySelector("nav")?.classList.toggle("chat-conversation-nav-hidden",id==="chatsPage"&&Boolean(activeChatMatchId));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id||(id==="portfolioPage"&&b.dataset.page==="profilePage")||(id==="settingsPage"&&b.dataset.page==="morePage")));if(id==="likesPage")renderLikes();if(id==="chatsPage")renderChats();if(id==="profilePage"){ $("myUsername").value=currentUsername;$("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("myBio").value=myProfile.bio||"";$("myPurpose").value=myProfile.purpose||"both";$("profilePagePhoto").src=myProfile.photo||"";$("profileHeroName").textContent=(myProfile.name||"Your name")+(myProfile.age?", "+myProfile.age:"");$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+(myProfile.loc||"Add your location");renderProfilePhotos();$("profileInterestSummary").innerHTML=(myProfile.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join("")||"No interests selected yet.";if($("myEmail"))$("myEmail").value=myProfile.email||"";void loadProfileVisits();void loadBlockedUsers();}}
+
+const CONECT_TUTORIAL_STEPS = [
+  {
+    icon: "💜",
+    title: "Welcome to Conect",
+    body: "Conect helps adults meet people worldwide for dating, friendship, and meaningful connections.",
+    points: ["Explore at your own pace.", "Be genuine and respectful.", "You can skip this tour at any time."]
+  },
+  {
+    icon: "🌍",
+    title: "Discover people",
+    body: "Discover is where you browse member profiles and find people who interest you.",
+    points: ["Scroll through profiles or switch to the grid view.", "Open a profile to learn more about the person.", "Use Like when you want to show interest."]
+  },
+  {
+    icon: "💞",
+    title: "Likes and matches",
+    body: "A match happens when two people like each other.",
+    points: ["Use the Likes area to see people who like you.", "Check Matches for people who have liked you back.", "Your Liked tab keeps track of profiles you liked."]
+  },
+  {
+    icon: "💬",
+    title: "Chat requests and messages",
+    body: "Conect requires mutual interest before messaging unlocks.",
+    points: ["Open Chats and choose Requests to see incoming likes.", "Like someone back to create a mutual match.", "After matching, you can exchange messages, photos, videos, and voice notes."]
+  },
+  {
+    icon: "🛡️",
+    title: "Your profile and staying safe",
+    body: "Keep your profile current and use Conect's safety tools whenever you need them.",
+    points: ["Use Profile to manage your details, interests, and photos.", "Use the profile actions to block or report a member when appropriate.", "Never share passwords, verification codes, or private contact details with strangers."]
+  }
+];
+let conectTutorialStep = 0;
+
+function conectTutorialStorageKey() {
+  const telegramId = verifiedTelegramUser && verifiedTelegramUser.id != null
+    ? String(verifiedTelegramUser.id)
+    : "";
+  const accountKey = telegramId
+    ? "telegram_" + telegramId
+    : "username_" + String(currentUsername || "local").trim().toLowerCase();
+  return "conect_first_login_tutorial_v1_" + accountKey;
+}
+
+function renderConectTutorialStep() {
+  const step = CONECT_TUTORIAL_STEPS[conectTutorialStep];
+  if (!step) return;
+  $("tutorialCounter").textContent = "GETTING STARTED · " + (conectTutorialStep + 1) + " OF " + CONECT_TUTORIAL_STEPS.length;
+  $("tutorialIcon").textContent = step.icon;
+  $("tutorialTitle").textContent = step.title;
+  $("tutorialBody").textContent = step.body;
+  const points = $("tutorialPoints");
+  points.replaceChildren();
+  step.points.forEach(point => {
+    const li = document.createElement("li");
+    li.textContent = point;
+    points.appendChild(li);
+  });
+  $("tutorialProgressFill").style.width = (((conectTutorialStep + 1) / CONECT_TUTORIAL_STEPS.length) * 100) + "%";
+  $("tutorialBackBtn").disabled = conectTutorialStep === 0;
+  $("tutorialNextBtn").textContent = conectTutorialStep === CONECT_TUTORIAL_STEPS.length - 1 ? "Start exploring →" : "Next →";
+  $("tutorialSkipBtn").classList.toggle("hidden", conectTutorialStep === CONECT_TUTORIAL_STEPS.length - 1);
+}
+
+function finishConectTutorial() {
+  $("onboardingTutorial").classList.add("hidden");
+  try { localStorage.setItem(conectTutorialStorageKey(), "done"); } catch (_) {}
+}
+
+function maybeStartOnboardingTutorial() {
+  if (!currentUsername || !myProfile || !myProfile.photo || !Array.isArray(myProfile.interests) || myProfile.interests.length < 3) return;
+  if (typeof tg !== "undefined" && tg && typeof tg.initData === "string" && tg.initData.trim() && !verifiedTelegramUser) return;
+  let key;
+  try { key = localStorage.getItem(conectTutorialStorageKey()); } catch (_) { key = null; }
+  if (key === "done") return;
+  conectTutorialStep = 0;
+  $("tutorialSkipBtn").classList.remove("hidden");
+  renderConectTutorialStep();
+  $("onboardingTutorial").classList.remove("hidden");
+}
+
+$("tutorialNextBtn").addEventListener("click", () => {
+  if (conectTutorialStep >= CONECT_TUTORIAL_STEPS.length - 1) {
+    finishConectTutorial();
+    return;
+  }
+  conectTutorialStep += 1;
+  renderConectTutorialStep();
+});
+$("tutorialBackBtn").addEventListener("click", () => {
+  if (conectTutorialStep > 0) {
+    conectTutorialStep -= 1;
+    renderConectTutorialStep();
+  }
+});
+$("tutorialSkipBtn").addEventListener("click", finishConectTutorial);
+$("tutorialCloseBtn").addEventListener("click", finishConectTutorial);
+$("onboardingTutorial").addEventListener("click", event => {
+  if (event.target === $("onboardingTutorial")) finishConectTutorial();
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !$("onboardingTutorial").classList.contains("hidden")) finishConectTutorial();
+});
+
+function showPage(id){["signInPage","interestsSetupPage","profilePhotoSetupPage","discoverPage","likesPage","chatsPage","morePage","settingsPage","profilePage","portfolioPage","detailPage"].forEach(x=>$(x).classList.toggle("hidden",x!==id));document.querySelector("nav").classList.toggle("hidden",id==="signInPage"||id==="interestsSetupPage"||id==="profilePhotoSetupPage");document.querySelector("nav")?.classList.toggle("chat-conversation-nav-hidden",id==="chatsPage"&&Boolean(activeChatMatchId));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id||(id==="portfolioPage"&&b.dataset.page==="profilePage")||(id==="settingsPage"&&b.dataset.page==="morePage")));if(id==="likesPage")renderLikes();if(id==="chatsPage")renderChats();if(id==="profilePage"){ $("myUsername").value=currentUsername;$("myName").value=myProfile.name||"";$("myAge").value=myProfile.age||"";$("myGender").value=myProfile.gender||"";$("myOrientation").value=myProfile.orientation||"Any";$("myShowMe").value=myProfile.showMe||"Any";$("myLocation").value=myProfile.loc||"";$("myBio").value=myProfile.bio||"";$("myPurpose").value=myProfile.purpose||"both";$("profilePagePhoto").src=myProfile.photo||"";$("profileHeroName").textContent=(myProfile.name||"Your name")+(myProfile.age?", "+myProfile.age:"");$("profileHeroDetails").textContent="@"+(currentUsername||"username")+" · "+(myProfile.loc||"Add your location");renderProfilePhotos();$("profileInterestSummary").innerHTML=(myProfile.interests||[]).map(i=>`<span class="chip">${esc(i)}</span>`).join("")||"No interests selected yet.";if($("myEmail"))$("myEmail").value=myProfile.email||"";void loadProfileVisits();void loadBlockedUsers();} if(id==="discoverPage") maybeStartOnboardingTutorial();}
 function likeDetailProfile(profileId){if(liveDiscoveryMode){void recordLiveSwipe(profileId,"like",true);return}const p=profiles.find(x=>String(x.id)===String(profileId));if(p)likePerson(p.id)}
 function passDetailProfile(profileId){if(liveDiscoveryMode){void recordLiveSwipe(profileId,"pass",false);showPage("discoverPage");return}const p=profiles.find(x=>String(x.id)===String(profileId));if(!p)return;passed.add(p.id);persist();index=0;renderAll();showPage("discoverPage")}
 function showDetail(id){const p=liveDiscoveryMode?findConectProfile(id):profiles.find(x=>String(x.id)===String(id));if(!p){alert("That profile is no longer available. Refresh Discover and try again.");return}if(liveDiscoveryMode)void recordProfileVisit(p.id);$("detailContent").innerHTML=`<img src="${p.img}" style="width:100%;max-height:390px;object-fit:cover;border-radius:15px"><h2>${esc(p.name)}, ${p.age}</h2><p>⌖ ${esc(p.loc)}</p><p>${esc(p.bio)}</p><div class="chips">${chips(p)}</div><p style="font-size:12px">Looking for: ${p.purpose.join(" and ")}</p><div class="row" style="display:flex;gap:8px;margin-top:15px"><button class="primary" onclick="likeDetailProfile('${p.id}')">♥ Like</button><button class="secondary" onclick="passDetailProfile('${p.id}')">Pass</button></div>`;showPage("detailPage")}
