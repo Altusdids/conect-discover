@@ -902,16 +902,25 @@ body:has(#detailPage:not(.hidden)){height:auto!important;min-height:100dvh!impor
 </section>
 <section id="interestsSetupPage" class="hidden" style="max-width:520px;margin:10px auto 20px">
 <div class="progress"><span style="background:#e94b70"></span><span style="background:#e94b70"></span><span></span></div>
-<h1 class="setup-title">Add your photo & interests</h1><p>Help people get to know you. Add a profile picture and choose at least 3 interests (up to 10).</p>
+<h1 class="setup-title">Choose your interests</h1><p>Choose at least 3 interests (up to 10). You can add your profile picture on the next page.</p>
+<div class="setup-card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><b>Choose your interests</b><span class="interest-count" id="interestCount">0 / 10 selected</span></div>
+<div id="interestCategories"></div>
+<p id="interestError" role="alert" style="font-size:12px;color:#ff8c8c"></p>
+</div>
+<button class="primary continue-wide" id="continueToPhotoBtn">Continue to profile photo →</button>
+<button class="secondary continue-wide" id="backToBasicsBtn" style="margin-top:8px">← Back to profile details</button>
+</section>
+<section id="profilePhotoSetupPage" class="hidden" style="max-width:520px;margin:10px auto 20px">
+<div class="progress"><span style="background:#e94b70"></span><span style="background:#e94b70"></span><span style="background:#e94b70"></span></div>
+<h1 class="setup-title">Add your profile picture</h1><p>Choose a clear photo so people can recognize you. Your interests are saved on the previous step.</p>
 <div class="setup-card">
 <label for="profilePhotoInput">Profile picture (required)</label>
 <div class="photo-upload" style="margin-top:8px"><img id="profilePhotoPreview" class="photo-preview" alt="Your profile photo preview"><input id="profilePhotoInput" type="file" accept="image/*" class="field" style="margin-bottom:0"><div class="helper">Choose a clear JPEG, PNG, or WebP photo. When opened inside Telegram, your photo can sync to Conect.</div></div>
 <p id="photoError" role="alert" style="font-size:12px;color:#ff8c8c"></p>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px"><b>Choose your interests</b><span class="interest-count" id="interestCount">0 / 10 selected</span></div>
-<div id="interestCategories"></div>
-<p id="interestError" role="alert" style="font-size:12px;color:#ff8c8c"></p>
 </div>
-<button class="primary continue-wide" id="finishSetupBtn">Continue to Conect →</button><button class="secondary continue-wide" id="backToBasicsBtn" style="margin-top:8px">← Back to profile details</button>
+<button class="primary continue-wide" id="finishSetupBtn">Save profile & continue →</button>
+<button class="secondary continue-wide" id="backToInterestsBtn" style="margin-top:8px">← Back to interests</button>
 </section>
 <section id="discoverPage" class="hidden">
 <div class="discover-fixed-header">
@@ -1375,7 +1384,13 @@ async function verifyTelegramSession() {
           showPage("discoverPage");
         } else {
           renderInterestChoices();
-          showPage("interestsSetupPage");
+          if (Array.isArray(myProfile.interests) && myProfile.interests.length >= 3) {
+            if (profilePhotoData) $("profilePhotoPreview").src = profilePhotoData;
+            else $("profilePhotoPreview").removeAttribute("src");
+            showPage("profilePhotoSetupPage");
+          } else {
+            showPage("interestsSetupPage");
+          }
         }
       } else {
         // Do not migrate a generic device cache: it may belong to another
@@ -1911,7 +1926,7 @@ $("setupCountry").addEventListener("change",()=>{const country=$("setupCountry")
 $("setupCity").addEventListener("change",()=>{if($("setupCity").value)$("setupCityManual").value="";});
 $("setupCityManual").addEventListener("input",()=>{if($("setupCityManual").value.trim())$("setupCity").value="";});
 $("setupCity").addEventListener("change",()=>{if($("setupCity").value)$("setupCityManual").value="";});
-$("signInBtn").onclick=()=>{const username=$("signInUsername").value.trim().toLowerCase(),name=$("setupName").value.trim(),age=Number($("setupAge").value),country=$("setupCountry").value.trim(),city=($("setupCityManual").value.trim()||$("setupCity").value.trim());if(!/^[A-Za-z0-9_]{3,20}$/.test(username)){$("signInError").textContent="Enter a username with 3–20 letters, numbers, and underscores.";return}if(!name){$("signInError").textContent="Please enter your name.";return}if(!Number.isInteger(age)||age<18||age>99){$("signInError").textContent="Conect is for adults aged 18 and older. Enter a valid age.";return}if(!setupChoices.gender){$("signInError").textContent="Please choose your gender.";return}if(!country||!city){$("signInError").textContent="Please enter your country and city.";return}currentUsername=username;localStorage.setItem("conect_username",username);myProfile={...myProfile,name,age,gender:setupChoices.gender,showMe:"Any",orientation:setupChoices.orientation,country,city,loc:`${city}, ${country}`};localStorage.setItem("mm2_profile",JSON.stringify(myProfile));$("signInError").textContent="";renderInterestChoices();if(profilePhotoData){$("profilePhotoPreview").src=profilePhotoData}else{$("profilePhotoPreview").removeAttribute("src")}showPage("interestsSetupPage")};
+$("signInBtn").onclick=()=>{const username=$("signInUsername").value.trim().toLowerCase(),name=$("setupName").value.trim(),age=Number($("setupAge").value),country=$("setupCountry").value.trim(),city=($("setupCityManual").value.trim()||$("setupCity").value.trim());if(!/^[A-Za-z0-9_]{3,20}$/.test(username)){$("signInError").textContent="Enter a username with 3–20 letters, numbers, and underscores.";return}if(!name){$("signInError").textContent="Please enter your name.";return}if(!Number.isInteger(age)||age<18||age>99){$("signInError").textContent="Conect is for adults aged 18 and older. Enter a valid age.";return}if(!setupChoices.gender){$("signInError").textContent="Please choose your gender.";return}if(!country||!city){$("signInError").textContent="Please enter your country and city.";return}currentUsername=username;localStorage.setItem("conect_username",username);myProfile={...myProfile,name,age,gender:setupChoices.gender,showMe:"Any",orientation:setupChoices.orientation,country,city,loc:`${city}, ${country}`};localStorage.setItem("mm2_profile",JSON.stringify(myProfile));$("signInError").textContent="";renderInterestChoices();$("interestError").textContent="";$("photoError").textContent="";if(profilePhotoData){$("profilePhotoPreview").src=profilePhotoData}else{$("profilePhotoPreview").removeAttribute("src")}showPage("interestsSetupPage")};
 $("signInUsername").value=currentUsername;
 if(myProfile.name){$("setupName").value=myProfile.name}if(myProfile.age){$("setupAge").value=myProfile.age}if(myProfile.gender){setupChoices.gender=myProfile.gender}if(myProfile.showMe){setupChoices.showMe=myProfile.showMe}if(myProfile.orientation){setupChoices.orientation=myProfile.orientation}if(myProfile.country){$("setupCountry").value=myProfile.country;loadCities(myProfile.country,myProfile.city||"")}else if(myProfile.city){$("setupCityManual").value=myProfile.city}document.querySelectorAll("[data-group]").forEach(btn=>btn.classList.toggle("active",setupChoices[btn.dataset.group]===btn.dataset.value));
 
@@ -2111,6 +2126,28 @@ $("photoCropZoom").addEventListener("input", event => {
 });
 window.addEventListener("resize", () => { if (photoCropState) renderPhotoCrop(); });
 
+$("continueToPhotoBtn").onclick = () => {
+  if (selectedInterests.size < 3) {
+    $("interestError").textContent = "Choose at least 3 interests to continue.";
+    return;
+  }
+  $("interestError").textContent = "";
+  myProfile = { ...myProfile, interests: [...selectedInterests] };
+  try {
+    localStorage.setItem("mm2_profile", JSON.stringify(myProfile));
+  } catch (_) {
+    $("interestError").textContent = "Your interests could not be saved. Please try again.";
+    return;
+  }
+  $("photoError").textContent = "";
+  if (profilePhotoData) $("profilePhotoPreview").src = profilePhotoData;
+  else $("profilePhotoPreview").removeAttribute("src");
+  showPage("profilePhotoSetupPage");
+};
+$("backToInterestsBtn").onclick = () => {
+  $("photoError").textContent = "";
+  showPage("interestsSetupPage");
+};
 $("profilePhotoInput").onchange = e => {
   const file = e.target.files?.[0];
   e.target.value = "";
@@ -2127,16 +2164,12 @@ $("finishSetupBtn").onclick = async () => {
     $("photoError").textContent = "Please add a profile picture before continuing.";
     return;
   }
-  if (selectedInterests.size < 3) {
-    $("interestError").textContent = "Choose at least 3 interests to continue.";
-    return;
-  }
 
   myProfile = { ...myProfile, photo: profilePhotoData, photos: profilePhotos, interests: [...selectedInterests] };
   try {
     localStorage.setItem("mm2_profile", JSON.stringify(myProfile));
   } catch (_) {
-    $("interestError").textContent = "Your photo could not be saved. Try a smaller image.";
+    $("photoError").textContent = "Your profile could not be saved. Try a smaller image.";
     return;
   }
 
@@ -2160,12 +2193,12 @@ $("finishSetupBtn").onclick = async () => {
     await loadLiveExperience();
     showPage("discoverPage");
   } catch (err) {
-    $("interestError").textContent = "Profile saving or photo upload failed: " + err.message + ". Your local profile is preserved; try again after checking your connection.";
+    $("photoError").textContent = "Profile saving or photo upload failed: " + err.message + ". Your local profile is preserved; try again after checking your connection.";
   } finally {
     btn.disabled = false;
     btn.textContent = old;
   }
-};
+}
 $("backToBasicsBtn").onclick=()=>showPage("signInPage");
 $("filterBtn").onclick=openFeedFilters;
 $("backDiscover").onclick=()=>showPage("discoverPage");
@@ -4204,5 +4237,5 @@ void verifyTelegramSession().then(() => {
   const completeProfile = Boolean(currentUsername && myProfile.name && Number(myProfile.age) >= 18 && myProfile.gender && myProfile.country && myProfile.city && myProfile.photo && Array.isArray(myProfile.interests) && myProfile.interests.length >= 3);
   if (verifiedTelegramUser && completeProfile) void loadLiveExperience();
 });
-if(currentUsername&&myProfile.name&&myProfile.age&&myProfile.gender&&myProfile.country&&myProfile.city){if(myProfile.photo&&Array.isArray(myProfile.interests)&&myProfile.interests.length>=3){showPage("discoverPage")}else{renderInterestChoices();if(profilePhotoData){$("profilePhotoPreview").src=profilePhotoData}showPage("interestsSetupPage")}}else{showPage("signInPage")} 
+if(currentUsername&&myProfile.name&&myProfile.age&&myProfile.gender&&myProfile.country&&myProfile.city){if(myProfile.photo&&Array.isArray(myProfile.interests)&&myProfile.interests.length>=3){showPage("discoverPage")}else{renderInterestChoices();if(Array.isArray(myProfile.interests)&&myProfile.interests.length>=3){if(profilePhotoData){$("profilePhotoPreview").src=profilePhotoData}else{$("profilePhotoPreview").removeAttribute("src")}showPage("profilePhotoSetupPage")}else{showPage("interestsSetupPage")}}}else{showPage("signInPage")} 
 </script></body></html>
