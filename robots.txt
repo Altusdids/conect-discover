@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://altusdids.github.io/conect-discover/sitemap.xml
+Sitemap: https://altusdids.github.io/conect-discover/sitemap.txt
